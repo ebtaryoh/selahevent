@@ -1,0 +1,114 @@
+"use client";
+
+import { useState } from "react";
+import { ArrowRight, Loader2, Mail } from "lucide-react";
+import { loginOrganization } from "@/lib/actions";
+import { GoogleIcon, AppleIcon, FacebookIcon, XIcon } from "@/components/social-icons";
+import Link from "next/link";
+
+export function LoginForm() {
+  const [isPending, setIsPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setIsPending(true);
+    setError(null);
+    const formData = new FormData(e.currentTarget);
+    try {
+      await loginOrganization(formData);
+    } catch (err: any) {
+      console.error(err);
+      setIsPending(false);
+      setError(err.message || "Failed to sign in. Please try again.");
+    }
+  }
+
+  function handleOAuthClick(provider: string) {
+    alert(`${provider} login requires API keys to be configured in production.`);
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6 max-w-md mx-auto w-full">
+      <div className="rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-paper p-6 sm:p-8 shadow-sm">
+        
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <button onClick={() => handleOAuthClick("Google")} type="button" className="btn btn-ghost !border border-[rgba(22,19,17,0.1)] !bg-white !px-4 !py-2.5 flex items-center justify-center gap-2 text-[0.875rem] font-medium text-ink shadow-sm hover:!bg-parchment transition-colors">
+            <GoogleIcon className="h-5 w-5" />
+            Google
+          </button>
+          <button onClick={() => handleOAuthClick("Apple")} type="button" className="btn btn-ghost !border border-[rgba(22,19,17,0.1)] !bg-white !px-4 !py-2.5 flex items-center justify-center gap-2 text-[0.875rem] font-medium text-ink shadow-sm hover:!bg-parchment transition-colors">
+            <AppleIcon className="h-5 w-5" />
+            Apple
+          </button>
+          <button onClick={() => handleOAuthClick("Facebook")} type="button" className="btn btn-ghost !border border-[rgba(22,19,17,0.1)] !bg-[#1877F2] !px-4 !py-2.5 flex items-center justify-center gap-2 text-[0.875rem] font-medium text-white shadow-sm hover:brightness-110 transition-all">
+            <FacebookIcon className="h-5 w-5" />
+            Facebook
+          </button>
+          <button onClick={() => handleOAuthClick("X")} type="button" className="btn btn-ghost !border border-[rgba(22,19,17,0.1)] !bg-black !px-4 !py-2.5 flex items-center justify-center gap-2 text-[0.875rem] font-medium text-white shadow-sm hover:bg-zinc-800 transition-colors">
+            <XIcon className="h-4 w-4" />
+            X (Twitter)
+          </button>
+        </div>
+
+        <div className="relative mb-8">
+          <div className="absolute inset-0 flex items-center" aria-hidden="true">
+            <div className="w-full border-t border-[rgba(22,19,17,0.1)]"></div>
+          </div>
+          <div className="relative flex justify-center text-sm font-medium leading-6">
+            <span className="bg-paper px-6 text-warm-500">Or continue with email</span>
+          </div>
+        </div>
+
+        <div className="space-y-5">
+          {error && (
+            <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
+              {error}
+            </div>
+          )}
+          
+          <div>
+            <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-ink flex items-center gap-1.5">
+              <Mail size={14} className="text-warm-400"/> Workspace Email
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              placeholder="hello@church.com"
+              className="input !w-full"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-4 pt-2">
+        <button
+          type="submit"
+          disabled={isPending}
+          className="btn btn-primary !px-8 !py-3.5 w-full text-[1rem]"
+        >
+          {isPending ? (
+            <>
+              <Loader2 size={18} className="mr-2 animate-spin" />
+              Signing in...
+            </>
+          ) : (
+            <>
+              Sign In to Workspace
+              <ArrowRight size={18} strokeWidth={2.1} className="ml-2" />
+            </>
+          )}
+        </button>
+
+        <p className="text-center text-[0.875rem] text-warm-500">
+          Don't have a workspace?{" "}
+          <Link href="/register" className="font-semibold text-brass hover:text-brass-deep transition-colors">
+            Create one
+          </Link>
+        </p>
+      </div>
+    </form>
+  );
+}
