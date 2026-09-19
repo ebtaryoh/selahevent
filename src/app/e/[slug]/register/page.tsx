@@ -35,8 +35,8 @@ export default async function RegisterPage({ params }: Params) {
     description: t.description || "",
     price: t.price,
     currency: event.currency,
-    badge: t.isPremium ? "Premium" : null,
-    benefits: t.isPremium ? ["Priority seating", "Exclusive session access"] : null,
+    badge: t.badge,
+    benefits: t.benefits,
     remaining: t.capacity - t.sold,
   }));
 
