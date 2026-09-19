@@ -100,6 +100,13 @@ export const events = pgTable(
       }[]
     >(),
     blueprintId: uuid("blueprint_id"),
+    customQuestions: jsonb("custom_questions").$type<{
+      id: string;
+      label: string;
+      type: "text" | "select";
+      options?: string[];
+      required: boolean;
+    }[]>().default([]),
     createdAt: createdAt(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
@@ -208,6 +215,7 @@ export const registrations = pgTable(
     emergencyPhone: text("emergency_phone").default("").notNull(),
     amount: integer("amount").default(0).notNull(),
     source: text("source").default("event_page").notNull(),
+    customAnswers: jsonb("custom_answers").$type<Record<string, string>>().default({}),
     createdAt: createdAt(),
   },
   (t) => [

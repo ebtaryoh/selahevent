@@ -143,6 +143,7 @@ export async function POST(request: Request) {
         emergencyPhone: String(payload.emergencyPhone ?? "").trim(),
         amount,
         source: "event_page",
+        customAnswers: (payload.customAnswers as Record<string, string>) ?? {},
       })
       .returning();
 

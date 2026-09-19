@@ -1,16 +1,38 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Loader2, CalendarDays, MapPin, Tag, UploadCloud, ImageIcon } from "lucide-react";
+import { Plus, X, ArrowRight, Loader2, CalendarDays, MapPin, Tag, UploadCloud, ImageIcon, ListTodo } from "lucide-react";
 import { createEvent } from "@/lib/actions";
+
+export type CustomQuestion = {
+  id: string;
+  label: string;
+  type: "text" | "select";
+  required: boolean;
+  options?: string[];
+};
 
 export function CreateEventForm() {
   const [isPending, setIsPending] = useState(false);
+  const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>([]);
+
+  function addQuestion() {
+    setCustomQuestions([...customQuestions, { id: Math.random().toString(36).substring(7), label: "", type: "text", required: false }]);
+  }
+  
+  function updateQuestion(id: string, field: keyof CustomQuestion, value: any) {
+    setCustomQuestions(customQuestions.map(q => q.id === id ? { ...q, [field]: value } : q));
+  }
+
+  function removeQuestion(id: string) {
+    setCustomQuestions(customQuestions.filter(q => q.id !== id));
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setIsPending(true);
     const formData = new FormData(e.currentTarget);
+    formData.append("customQuestions", JSON.stringify(customQuestions));
     try {
       await createEvent(formData);
     } catch (err) {
@@ -144,6 +166,93 @@ export function CreateEventForm() {
                 className="input !w-full"
               />
             </div>
+          </div>
+        </div>
+
+        {/* Custom Registration Questions */}
+        <div className="rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-paper p-6 shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-display flex items-center gap-2 text-lg font-semibold text-ink">
+              <ListTodo size={18} className="text-brass" /> Custom Questions
+            </h2>
+            <button
+              type="button"
+              onClick={addQuestion}
+              className="btn btn-secondary !py-1.5 !px-3 !text-sm"
+            >
+              <Plus size={16} className="mr-1" /> Add Question
+            </button>
+          </div>
+          <p className="mb-6 text-sm text-warm-500">
+            Ask attendees for specific information during registration (e.g. Dietary Restrictions, Job Title).
+          </p>
+
+          <div className="space-y-4">
+            {customQuestions.length === 0 ? (
+              <div className="text-center py-6 border border-dashed rounded-xl border-warm-200 text-warm-500 text-sm">
+                No custom questions added.
+              </div>
+            ) : (
+              customQuestions.map((q, index) => (
+                <div key={q.id} className="relative rounded-xl border border-warm-200 bg-parchment p-4 pr-12">
+                  <button
+                    type="button"
+                    onClick={() => removeQuestion(q.id)}
+                    className="absolute right-3 top-3 text-warm-400 hover:text-red-500 transition-colors"
+                  >
+                    <X size={18} />
+                  </button>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="sm:col-span-2">
+                      <label className="mb-1.5 block text-xs font-medium text-ink">Question Label</label>
+                      <input
+                        type="text"
+                        value={q.label}
+                        onChange={(e) => updateQuestion(q.id, "label", e.target.value)}
+                        placeholder="e.g. Do you have any dietary restrictions?"
+                        className="input !w-full !py-2 !text-sm"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1.5 block text-xs font-medium text-ink">Answer Type</label>
+                      <select
+                        value={q.type}
+                        onChange={(e) => updateQuestion(q.id, "type", e.target.value)}
+                        className="input !w-full !py-2 !text-sm"
+                      >
+                        <option value="text">Short Text</option>
+                        <option value="select">Dropdown Select</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center pt-6">
+                      <label className="flex items-center gap-2 cursor-pointer text-sm text-ink">
+                        <input
+                          type="checkbox"
+                          checked={q.required}
+                          onChange={(e) => updateQuestion(q.id, "required", e.target.checked)}
+                          className="rounded border-warm-300 text-brass focus:ring-brass"
+                        />
+                        Required answer
+                      </label>
+                    </div>
+                    {q.type === "select" && (
+                      <div className="sm:col-span-2">
+                        <label className="mb-1.5 block text-xs font-medium text-ink">Dropdown Options (comma separated)</label>
+                        <input
+                          type="text"
+                          value={q.options?.join(", ") || ""}
+                          onChange={(e) => updateQuestion(q.id, "options", e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
+                          placeholder="e.g. Vegetarian, Vegan, Gluten-Free"
+                          className="input !w-full !py-2 !text-sm"
+                          required
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
 

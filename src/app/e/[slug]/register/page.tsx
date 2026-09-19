@@ -52,6 +52,7 @@ export default async function RegisterPage({ params }: Params) {
             venueAddress: event.venueAddress,
             startsAt: event.startsAt?.toISOString() || new Date().toISOString(),
             endsAt: event.endsAt?.toISOString() || new Date().toISOString(),
+            customQuestions: event.customQuestions,
           }}
           tickets={tickets} 
         />

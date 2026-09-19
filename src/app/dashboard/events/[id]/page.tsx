@@ -392,6 +392,7 @@ export default async function EventManagePage({
                   <th scope="col">Location</th>
                   <th scope="col">Amount</th>
                   <th scope="col">Hospitality</th>
+                  <th scope="col">Custom Answers</th>
                   <th scope="col">Status</th>
                   <th scope="col">Registered</th>
                 </tr>
@@ -434,6 +435,22 @@ export default async function EventManagePage({
                             None
                           </span>
                         ) : null}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="flex flex-col gap-1 text-[0.795rem] text-warm-600">
+                        {reg.customAnswers && Object.keys(reg.customAnswers).length > 0 ? (
+                          Object.entries(reg.customAnswers).map(([k, v]) => {
+                            const q = event.customQuestions?.find(q => q.id === k);
+                            return (
+                              <div key={k}>
+                                <span className="font-medium text-ink">{q?.label || k}:</span> {String(v)}
+                              </div>
+                            )
+                          })
+                        ) : (
+                          <span className="text-warm-300">—</span>
+                        )}
                       </div>
                     </td>
                     <td>

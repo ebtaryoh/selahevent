@@ -63,6 +63,16 @@ export async function createEvent(formData: FormData) {
     }
   }
 
+  const customQuestionsRaw = formData.get("customQuestions") as string;
+  let customQuestions = [];
+  if (customQuestionsRaw) {
+    try {
+      customQuestions = JSON.parse(customQuestionsRaw);
+    } catch (e) {
+      console.error("Failed to parse custom questions", e);
+    }
+  }
+
   // Insert Event
   const [newEvent] = await db
     .insert(events)
@@ -78,6 +88,7 @@ export async function createEvent(formData: FormData) {
       description,
       coverImage,
       media: mediaPaths,
+      customQuestions,
       status: "published",
       visibility: "public",
       readiness: 100, // Fully ready for demo
@@ -192,6 +203,16 @@ export async function registerAttendee(formData: FormData) {
   const phone = formData.get("phone") as string;
   const church = formData.get("church") as string;
 
+  const customAnswersRaw = formData.get("customAnswers") as string;
+  let customAnswers = {};
+  if (customAnswersRaw) {
+    try {
+      customAnswers = JSON.parse(customAnswersRaw);
+    } catch (e) {
+      console.error("Failed to parse custom answers", e);
+    }
+  }
+
   // Generate unique codes
   const uuid = crypto.randomUUID();
   const ticketCode = `SEL-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
@@ -223,6 +244,7 @@ export async function registerAttendee(formData: FormData) {
       amount: ticket.price,
       status: "confirmed", // Assuming free for now
       source: "event_page",
+      customAnswers,
     })
     .returning();
 

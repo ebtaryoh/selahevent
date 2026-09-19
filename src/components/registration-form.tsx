@@ -39,6 +39,13 @@ export type EventSummary = {
   venueAddress: string | null;
   startsAt: string;
   endsAt: string;
+  customQuestions?: {
+    id: string;
+    label: string;
+    type: "text" | "select";
+    options?: string[];
+    required: boolean;
+  }[] | null;
 };
 
 type FormState = {
@@ -109,6 +116,8 @@ export function RegistrationForm({
   const [form, setForm] = useState<FormState>(() =>
     initial(tickets[0]?.id ?? "")
   );
+  
+  const [customAnswers, setCustomAnswers] = useState<Record<string, string>>({});
 
   const selectedTicket = useMemo(
     () => tickets.find((t) => t.id === form.ticketTypeId) ?? tickets[0],
@@ -146,6 +155,12 @@ export function RegistrationForm({
         errors.emergencyPhone = "Please enter a valid phone number.";
       if (!form.consent)
         errors.consent = "Please accept the privacy notice to continue.";
+
+      event.customQuestions?.forEach((q) => {
+        if (q.required && !customAnswers[q.id]?.trim()) {
+          errors[`customQuestion_${q.id}`] = "This field is required.";
+        }
+      });
     }
 
     setFieldErrors(errors);
@@ -188,6 +203,7 @@ export function RegistrationForm({
           dietary: form.dietary,
           emergencyName: form.emergencyName,
           emergencyPhone: form.emergencyPhone,
+          customAnswers,
         }),
       });
 
@@ -511,6 +527,45 @@ export function RegistrationForm({
                   />
                 </Field>
               </div>
+
+              {event.customQuestions && event.customQuestions.length > 0 && (
+                <div className="mt-8 border-t border-[rgba(22,19,17,0.1)] pt-8">
+                  <h3 className="mb-5 text-[1.05rem] font-semibold text-ink">
+                    Additional Information
+                  </h3>
+                  <div className="grid gap-5">
+                    {event.customQuestions.map((q) => (
+                      <Field
+                        key={q.id}
+                        label={q.label}
+                        required={q.required}
+                        error={fieldErrors[`customQuestion_${q.id}`]}
+                      >
+                        {q.type === "select" ? (
+                          <select
+                            className="input appearance-none bg-white"
+                            value={customAnswers[q.id] || ""}
+                            onChange={(e) => setCustomAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
+                            aria-invalid={Boolean(fieldErrors[`customQuestion_${q.id}`])}
+                          >
+                            <option value="">Select an option...</option>
+                            {q.options?.map(opt => (
+                              <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            className="input"
+                            value={customAnswers[q.id] || ""}
+                            onChange={(e) => setCustomAnswers(prev => ({ ...prev, [q.id]: e.target.value }))}
+                            aria-invalid={Boolean(fieldErrors[`customQuestion_${q.id}`])}
+                          />
+                        )}
+                      </Field>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="mt-8 rounded-[13px] border border-[rgba(192,138,46,0.28)] bg-[rgba(192,138,46,0.07)] p-5">
                 <div className="flex items-start gap-3">
