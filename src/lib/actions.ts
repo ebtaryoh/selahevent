@@ -7,7 +7,7 @@ import { eq, ilike, or, and } from "drizzle-orm";
 import { db } from "@/db";
 import { events, ticketTypes, organizations, registrations, checkIns } from "@/db/schema";
 import { getOrganization } from "./data";
-import { promises as fs } from "fs";
+import { put } from "@vercel/blob";
 import path from "path";
 import { ensureSeed } from "./seed";
 
@@ -47,18 +47,19 @@ export async function createEvent(formData: FormData) {
   const mediaPaths: { type: "image" | "video"; url: string }[] = [];
   
   if (mediaFiles && mediaFiles.length > 0) {
-    const uploadDir = path.join(process.cwd(), "public/uploads");
-    await fs.mkdir(uploadDir, { recursive: true });
-
     for (const file of mediaFiles) {
       if (file.size === 0) continue;
       
-      const buffer = Buffer.from(await file.arrayBuffer());
       const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-      await fs.writeFile(path.join(uploadDir, filename), buffer);
+      
+      // Upload to Vercel Blob
+      const blob = await put(filename, file, { 
+        access: 'public',
+        multipart: true
+      });
       
       const type = file.type.startsWith("video/") ? "video" : "image";
-      mediaPaths.push({ type, url: `/uploads/${filename}` });
+      mediaPaths.push({ type, url: blob.url });
     }
   }
 
