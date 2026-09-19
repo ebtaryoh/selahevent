@@ -1,8 +1,6 @@
-import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
-import { db } from "@/db";
-import { events, registrations } from "@/db/schema";
 import { cookies } from "next/headers";
+import { getEventById, getRegistrations } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
@@ -23,22 +21,17 @@ export async function GET(request: Request) {
   }
 
   // Fetch event to get custom questions and verify ownership
-  const event = await db.query.events.findFirst({
-    where: eq(events.id, eventId),
-  });
+  const event = await getEventById(eventId);
 
   if (!event || event.organizationId !== orgId) {
     return new NextResponse("Forbidden", { status: 403 });
   }
 
   // Fetch all registrations
-  const eventRegistrations = await db.query.registrations.findMany({
-    where: eq(registrations.eventId, eventId),
-    orderBy: (registrations, { desc }) => [desc(registrations.createdAt)],
-  });
+  const eventRegistrations = await getRegistrations(eventId, 10000);
 
   // Extract dynamic headers from custom questions
-  const customHeaders = event.customQuestions?.map(q => q.label) || [];
+  const customHeaders = event.customQuestions?.map((q: any) => q.label) || [];
   const baseHeaders = [
     "Code",
     "Status",
@@ -62,7 +55,7 @@ export async function GET(request: Request) {
     return `"${str}"`;
   };
 
-  const rows = eventRegistrations.map(reg => {
+  const rows = eventRegistrations.map((reg: any) => {
     const baseFields = [
       reg.code,
       reg.status,
@@ -77,7 +70,7 @@ export async function GET(request: Request) {
       reg.createdAt?.toISOString()
     ];
 
-    const customFields = event.customQuestions?.map(q => {
+    const customFields = event.customQuestions?.map((q: any) => {
       const answers = reg.customAnswers as Record<string, string> | null;
       return answers ? (answers[q.id] || "") : "";
     }) || [];
