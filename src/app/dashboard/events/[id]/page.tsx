@@ -52,7 +52,7 @@ export default async function EventManagePage({
   const [stats, registrations, sessions, volunteers, tickets] =
     await Promise.all([
       getEventStats(event.id),
-      getRegistrations(event.id, 8),
+      getRegistrations(event.id, 1000), // View all attendees in CRM
       getSessions(event.id),
       getVolunteers(event.id),
       getTickets(event.id),
@@ -367,12 +367,23 @@ export default async function EventManagePage({
           <SectionHead
             eyebrow="Registrations"
             title="Latest registrations."
-            description="Sensitive fields such as emergency contacts and dietary notes are hidden here and only visible to authorised roles."
+            description={
+              <>
+                <span className="flex items-center gap-1 text-signal-green mb-1 font-medium">
+                  <ShieldCheck size={14} /> Data Sovereignty Guaranteed
+                </span>
+                We never email your attendees. You own this data. Sensitive fields (emergency contacts, dietary notes) are only visible to authorised roles.
+              </>
+            }
           />
           <div className="flex flex-wrap gap-3">
-            <button type="button" className="btn btn-ghost">
+            <a 
+              href={`/api/export-registrations?eventId=${event.id}`} 
+              className="btn btn-ghost"
+              download
+            >
               <Download size={16} /> Export CSV
-            </button>
+            </a>
             <Link
               href={`/e/${event.slug}/register`}
               className="btn btn-primary"
