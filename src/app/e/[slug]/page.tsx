@@ -112,7 +112,15 @@ export default async function EventPage({ params }: Params) {
   };
 
   return (
-    <div className="min-h-screen bg-parchment">
+    <div 
+      className="min-h-screen bg-parchment" 
+      style={event.brandColor ? {
+        '--color-brass': event.brandColor,
+        '--color-brass-deep': `color-mix(in srgb, ${event.brandColor}, black 20%)`,
+        '--color-brass-light': `color-mix(in srgb, ${event.brandColor}, white 30%)`,
+        '--color-brass-wash': `color-mix(in srgb, ${event.brandColor}, white 85%)`,
+      } as React.CSSProperties : undefined}
+    >
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

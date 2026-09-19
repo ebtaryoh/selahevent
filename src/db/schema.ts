@@ -107,6 +107,7 @@ export const events = pgTable(
       options?: string[];
       required: boolean;
     }[]>().default([]),
+    brandColor: text("brand_color").default("#c08a2e").notNull(),
     createdAt: createdAt(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()

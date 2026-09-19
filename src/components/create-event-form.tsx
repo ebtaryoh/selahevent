@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, X, ArrowRight, Loader2, CalendarDays, MapPin, Tag, UploadCloud, ImageIcon, ListTodo } from "lucide-react";
+import { Plus, X, ArrowRight, Loader2, CalendarDays, MapPin, Tag, UploadCloud, ImageIcon, ListTodo, Palette } from "lucide-react";
 import { createEvent } from "@/lib/actions";
 
 export type CustomQuestion = {
@@ -129,6 +129,36 @@ export function CreateEventForm() {
                 required
                 className="input !w-full"
               />
+            </div>
+          </div>
+        </div>
+
+        {/* Branding */}
+        <div className="rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-paper p-6 shadow-sm">
+          <h2 className="font-display mb-4 flex items-center gap-2 text-lg font-semibold text-ink">
+            <Palette size={18} className="text-brass" /> Branding
+          </h2>
+          
+          <div>
+            <label htmlFor="brandColor" className="mb-1.5 block text-sm font-medium text-ink">
+              Brand Color
+            </label>
+            <p className="mb-3 text-xs text-warm-500">
+              Select a primary color for your event page. This will adapt buttons, borders, and accents to match your brand.
+            </p>
+            <div className="flex items-center gap-3">
+              <input
+                id="brandColor"
+                name="brandColor"
+                type="color"
+                defaultValue="#c08a2e"
+                className="h-10 w-14 cursor-pointer rounded border border-warm-200 bg-transparent p-1"
+                onChange={(e) => {
+                  const span = e.target.nextElementSibling;
+                  if (span) span.textContent = e.target.value;
+                }}
+              />
+              <span className="text-sm text-warm-600 font-mono">#c08a2e</span>
             </div>
           </div>
         </div>

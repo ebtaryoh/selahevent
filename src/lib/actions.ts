@@ -89,6 +89,7 @@ export async function createEvent(formData: FormData) {
       coverImage,
       media: mediaPaths,
       customQuestions,
+      brandColor: (formData.get("brandColor") as string) || "#c08a2e",
       status: "published",
       visibility: "public",
       readiness: 100, // Fully ready for demo
