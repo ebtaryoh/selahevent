@@ -221,6 +221,21 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                 className="input !w-full !rounded-[12px] !py-3 resize-none"
               />
             </div>
+
+            <div>
+              <label htmlFor="capacity" className="mb-1.5 block text-sm font-medium text-ink">
+                Capacity (0 for unlimited)
+              </label>
+              <input
+                id="capacity"
+                name="capacity"
+                type="number"
+                min="0"
+                required
+                defaultValue={initialData?.capacity ?? 0}
+                className="input !w-full"
+              />
+            </div>
           </div>
         </div>
 

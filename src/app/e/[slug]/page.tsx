@@ -632,11 +632,13 @@ export default async function EventPage({ params }: Params) {
 
                   <div className="mt-7 flex items-baseline gap-2">
                     <span className="font-display tnum text-[2.35rem] leading-none font-semibold text-ink">
-                      {formatMoney(ticket.price, ticket.currency)}
+                      {Number(ticket.price) === 0 ? "Free" : formatMoney(ticket.price, ticket.currency)}
                     </span>
-                    <span className="text-[0.8125rem] text-warm-400">
-                      per person
-                    </span>
+                    {Number(ticket.price) !== 0 && (
+                      <span className="text-[0.8125rem] text-warm-400">
+                        per person
+                      </span>
+                    )}
                   </div>
 
                   {ticket.benefits?.length ? (
@@ -657,29 +659,40 @@ export default async function EventPage({ params }: Params) {
                   ) : null}
 
                   <div className="mt-auto pt-8">
-                    <div className="flex items-center justify-between text-[0.785rem] text-warm-500">
-                      <span>
-                        {remaining > 0
-                          ? `${formatNumber(remaining)} places remaining`
-                          : "Currently at capacity"}
-                      </span>
-                      <span className="tnum">
-                        {percent(ticket.sold, ticket.capacity)}% taken
-                      </span>
-                    </div>
-                    <div className="mt-2.5 h-[5px] w-full overflow-hidden rounded-full bg-[rgba(22,19,17,0.09)]">
-                      <div
-                        className="h-full rounded-full"
-                        style={{
-                          width: `${Math.max(
-                            2,
-                            percent(ticket.sold, ticket.capacity)
-                          )}%`,
-                          background:
-                            "linear-gradient(90deg, var(--color-brass), var(--color-brass-light))",
-                        }}
-                      />
-                    </div>
+                    {ticket.capacity > 0 ? (
+                      <>
+                        <div className="flex items-center justify-between text-[0.785rem] text-warm-500">
+                          <span>
+                            {remaining > 0
+                              ? `${formatNumber(remaining)} places remaining`
+                              : "Currently at capacity"}
+                          </span>
+                          <span className="tnum">
+                            {percent(ticket.sold, ticket.capacity)}% taken
+                          </span>
+                        </div>
+                        <div className="mt-2.5 h-[5px] w-full overflow-hidden rounded-full bg-[rgba(22,19,17,0.09)]">
+                          <div
+                            className="h-full rounded-full"
+                            style={{
+                              width: `${Math.max(
+                                2,
+                                percent(ticket.sold, ticket.capacity)
+                              )}%`,
+                              background:
+                                "linear-gradient(90deg, var(--color-brass), var(--color-brass-light))",
+                            }}
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex items-center justify-between text-[0.785rem] text-warm-500">
+                        <span>Unlimited places available</span>
+                        <span className="tnum">
+                          {formatNumber(ticket.sold)} taken
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </article>
               );

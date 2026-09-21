@@ -21,6 +21,7 @@ import {
   getAuditLogs,
   getBlueprints,
   getEventStats,
+  getEventTicketDistribution,
   getEventsForOrganization,
   getOrganization,
   getTasks,
@@ -52,6 +53,10 @@ export default async function DashboardPage() {
   const stats = await Promise.all(
     featured.map((e) => getEventStats(e.id).then((s) => ({ event: e, s })))
   );
+  
+  const ticketDist = featured.length > 0 
+    ? await getEventTicketDistribution(featured[0].id) 
+    : [];
 
   const totalRegistered = stats.reduce((sum, row) => sum + row.s.registered, 0);
   const totalCheckedIn = stats.reduce((sum, row) => sum + row.s.checkedIn, 0);
@@ -371,46 +376,48 @@ export default async function DashboardPage() {
               Ticket distribution
             </div>
             <h2 className="font-display mt-3 text-[1.38rem] leading-tight font-semibold text-ink">
-              Kingdom Leadership Summit 2027
+              {featured[0]?.title ?? "No upcoming events"}
             </h2>
 
             <div className="mt-7 space-y-5">
-              {[
-                { name: "General Admission", sold: 612, capacity: 900 },
-                { name: "Premium Delegate", sold: 188, capacity: 300 },
-                { name: "Student & Youth", sold: 176, capacity: 250 },
-                { name: "Single Day Pass", sold: 64, capacity: 200 },
-              ].map((row) => (
-                <div key={row.name}>
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-[0.845rem] font-medium text-ink">
-                      {row.name}
-                    </span>
-                    <span className="tnum text-[0.795rem] text-warm-400">
-                      {formatNumber(row.sold)} / {formatNumber(row.capacity)}
-                    </span>
+              {ticketDist.length > 0 ? (
+                ticketDist.map((row) => (
+                  <div key={row.name}>
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-[0.845rem] font-medium text-ink">
+                        {row.name}
+                      </span>
+                      <span className="tnum text-[0.795rem] text-warm-400">
+                        {formatNumber(row.sold)} / {formatNumber(row.capacity)}
+                      </span>
+                    </div>
+                    <div className="mt-2">
+                      <ProgressBar
+                        value={percent(row.sold, row.capacity)}
+                        tone={row.sold / row.capacity > 0.8 ? "green" : "brass"}
+                      />
+                    </div>
                   </div>
-                  <div className="mt-2">
-                    <ProgressBar
-                      value={percent(row.sold, row.capacity)}
-                      tone={row.sold / row.capacity > 0.8 ? "green" : "brass"}
-                    />
-                  </div>
+                ))
+              ) : (
+                <div className="text-[0.845rem] text-warm-400">
+                  No ticket tiers defined.
                 </div>
-              ))}
+              )}
             </div>
 
-            <div className="mt-8 flex items-start gap-3 rounded-[11px] bg-[rgba(192,138,46,0.08)] p-4">
-              <Radio
-                size={17}
-                className="mt-0.5 shrink-0 text-[var(--color-brass-deep)]"
-              />
-              <p className="text-[0.805rem] leading-[1.7] text-warm-600">
-                Premium Delegate is filling fastest relative to capacity.
-                Consider opening the additional 40 reserved places before the
-                early-bird window closes.
-              </p>
-            </div>
+            {ticketDist.some(row => row.sold / row.capacity > 0.8) && (
+              <div className="mt-8 flex items-start gap-3 rounded-[11px] bg-[rgba(192,138,46,0.08)] p-4">
+                <Radio
+                  size={17}
+                  className="mt-0.5 shrink-0 text-[var(--color-brass-deep)]"
+                />
+                <p className="text-[0.805rem] leading-[1.7] text-warm-600">
+                  {ticketDist.filter(row => row.sold / row.capacity > 0.8).map(row => row.name).join(", ")} is filling fastest relative to capacity.
+                  Consider opening additional reserved places.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Activity */}
@@ -533,21 +540,22 @@ export default async function DashboardPage() {
                 Your next event is already half-built.
               </h2>
               <p className="mt-5 max-w-[36rem] text-[1.005rem] leading-[1.78] text-[rgba(247,243,236,0.78)]">
-                {blueprints.length} saved blueprints, {formatNumber(18)}{" "}
-                speaker profiles, 6 communication timelines and every venue
-                you&apos;ve used — ready to start from, never applied without
+                {blueprints.length} saved blueprints, {formatNumber(stats[0]?.s.sessionCount ?? 0)}{" "}
+                sessions, and custom questions you&apos;ve used — ready to start from, never applied without
                 your confirmation.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link href="/dashboard/blueprints" className="btn btn-brass">
                   <Compass size={17} /> Browse the library
                 </Link>
-                <Link
-                  href="/e/kingdom-leadership-summit-2027"
-                  className="btn btn-light"
-                >
-                  <CalendarDays size={17} /> View a public page
-                </Link>
+                {featured[0] && (
+                  <Link
+                    href={`/e/${featured[0].slug}`}
+                    className="btn btn-light"
+                  >
+                    <CalendarDays size={17} /> View public page
+                  </Link>
+                )}
               </div>
             </div>
 

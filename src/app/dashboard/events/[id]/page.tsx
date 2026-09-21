@@ -162,8 +162,12 @@ export default async function EventManagePage({
         {[
           {
             label: "Registered",
-            value: formatNumber(stats.registered),
-            detail: `${percent(stats.registered, event.capacity)}% of capacity`,
+            value: (
+              <>
+                {formatNumber(stats.registered)} <span className="text-warm-400 text-[1.4rem]">/ {event.capacity > 0 ? formatNumber(event.capacity) : 'Unlimited'}</span>
+              </>
+            ),
+            detail: event.capacity > 0 ? `${percent(stats.registered, event.capacity)}% of capacity` : "Unlimited capacity",
           },
           {
             label: "Checked in",
@@ -224,8 +228,8 @@ export default async function EventManagePage({
 
             <ul className="mt-8 space-y-0">
               {[
-                ["Registration window", "Open until 15 Mar 2027", true],
-                ["Ticket types", `${tickets.length} configured`, true],
+                ["Registration window", `Open until ${formatDate(event.startsAt)}`, true],
+                ["Ticket types", `${tickets.length} configured`, tickets.length > 0],
                 [
                   "Payment gateway",
                   "Paystack · test mode (no live charges)",
@@ -234,16 +238,16 @@ export default async function EventManagePage({
                 [
                   "Volunteer coverage",
                   `${stats.confirmedVolunteers}/${stats.volunteerCount} confirmed`,
-                  stats.volunteerCount - stats.confirmedVolunteers === 0,
+                  stats.volunteerCount > 0 ? (stats.volunteerCount - stats.confirmedVolunteers === 0) : false,
                 ],
                 [
                   "Accommodation",
                   `${stats.accommodation} delegates requiring rooms`,
                   true,
                 ],
-                ["Transport", "2 buses still unassigned", false],
-                ["Communication timeline", "4 scheduled · 1 draft", true],
-                ["Certificates", "Attendance threshold 80%", true],
+                ["Transport", `${stats.transport} delegates requiring transport`, stats.transport === 0],
+                ["Communication timeline", "0 scheduled · 0 draft", false],
+                ["Certificates", "Not configured", false],
               ].map(([label, value, ok]) => (
                 <li
                   key={String(label)}
@@ -283,23 +287,22 @@ export default async function EventManagePage({
                   {
                     icon: BedDouble,
                     label: "Accommodation",
-                    value: "63 of 80 rooms allocated",
-                    detail: "17 rooms available · 4 accessible rooms held",
-                    progress: 79,
+                    value: `${stats.accommodation} delegates requiring rooms`,
+                    detail: "Room assignments pending",
+                    progress: 0,
                   },
                   {
                     icon: Bus,
                     label: "Transportation",
-                    value: "4 of 6 routes confirmed",
-                    detail: "Lagos Island · Ikeja · Lekki · Ajah · Airport",
-                    progress: 67,
+                    value: `${stats.transport} delegates requiring transport`,
+                    detail: "Route planning pending",
+                    progress: 0,
                   },
                   {
                     icon: Users,
                     label: "Volunteer departments",
                     value: `${new Set(volunteers.map((v) => v.department)).size} departments active`,
-                    detail:
-                      "Ushering, Protocol, Media, Welfare, Security, Medical, Transport, Prayer",
+                    detail: "Pending assignments",
                     progress: percent(
                       stats.confirmedVolunteers,
                       Math.max(1, stats.volunteerCount)
@@ -308,9 +311,9 @@ export default async function EventManagePage({
                   {
                     icon: Mail,
                     label: "Communications",
-                    value: "4 scheduled · 2 sent",
-                    detail: "Next: T-14 preparation reminder · 4 Mar 2027",
-                    progress: 62,
+                    value: "0 scheduled · 0 sent",
+                    detail: "No active campaigns",
+                    progress: 0,
                   },
                 ].map((row) => (
                   <div key={row.label}>

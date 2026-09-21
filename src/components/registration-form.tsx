@@ -566,7 +566,9 @@ export function RegistrationForm({
                             {ticket.description}
                           </span>
                           <span className="tnum mt-2 block text-[0.8rem] text-warm-400">
-                            {ticket.remaining > 0
+                            {ticket.capacity === 0
+                              ? "Unlimited places available"
+                              : ticket.remaining > 0
                               ? `${ticket.remaining.toLocaleString()} places remaining`
                               : "At capacity"}
                           </span>
