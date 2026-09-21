@@ -81,7 +81,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
         }
         
         if (res.slug) {
-          router.push(`/dashboard/events/${res.eventId}/command`);
+          router.push(`/dashboard/events/${res.eventId}`);
         }
       } else {
         // Create new from scratch

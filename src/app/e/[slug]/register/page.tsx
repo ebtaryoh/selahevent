@@ -37,6 +37,7 @@ export default async function RegisterPage({ params }: Params) {
     currency: event.currency,
     badge: t.badge,
     benefits: t.benefits,
+    capacity: t.capacity,
     remaining: t.capacity - t.sold,
   }));
 
@@ -61,6 +62,7 @@ export default async function RegisterPage({ params }: Params) {
             venueAddress: event.venueAddress,
             startsAt: event.startsAt?.toISOString() || new Date().toISOString(),
             endsAt: event.endsAt?.toISOString() || new Date().toISOString(),
+            coverImage: event.coverImage,
             customQuestions: event.customQuestions,
           }}
           tickets={tickets} 

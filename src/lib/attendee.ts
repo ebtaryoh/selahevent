@@ -5,6 +5,7 @@ import { attendees, otps } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
+import { sendEmailOTP } from "@/lib/email";
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "super-secret-attendee-key-change-in-prod"
@@ -28,9 +29,13 @@ export async function requestAttendeeOTP(email: string, orgId: string) {
 
     // In a real app, send an email here using Resend, SendGrid, etc.
     // For this prototype, we'll log it to the console so we can use it.
-    console.log(`\n\n========================================`);
-    console.log(`🔐 ATTENDEE OTP FOR ${email}: ${code}`);
-    console.log(`========================================\n\n`);
+    if (process.env.NODE_ENV !== "production") {
+      console.log(`\n\n========================================`);
+      console.log(`🔐 ATTENDEE OTP FOR ${email}: ${code}`);
+      console.log(`========================================\n\n`);
+    }
+
+    await sendEmailOTP(email, code);
 
     return { success: true };
   } catch (error: any) {

@@ -9,6 +9,7 @@ import {
   ticketTypes,
   attendees,
 } from "@/db/schema";
+import { sendTicketConfirmation } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
@@ -90,7 +91,7 @@ export async function POST(request: Request) {
           .then((r) => r[0])
       : undefined;
 
-  if (ticket && ticket.sold >= ticket.capacity) {
+  if (ticket && ticket.capacity > 0 && ticket.sold >= ticket.capacity) {
     return NextResponse.json(
       {
         ok: false,
@@ -210,6 +211,23 @@ export async function POST(request: Request) {
         .set({ sold: ticket.sold + 1 })
         .where(eq(ticketTypes.id, ticket.id));
     }
+
+    // Send ticket confirmation email
+    void sendTicketConfirmation(created.email, {
+      attendeeName: created.firstName,
+      eventName: event.title,
+      ticketName: ticket?.name || "General Admission",
+      ticketCode: created.ticketCode,
+      startsAt: new Date(event.startsAt).toLocaleString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "numeric",
+      }),
+      venueName: event.venueName || event.city || "Virtual Event",
+    });
 
     const response = NextResponse.json({
       ok: true,

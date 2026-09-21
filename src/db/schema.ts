@@ -96,14 +96,7 @@ export const events = pgTable(
       withTimezone: true,
     }),
     readiness: integer("readiness").default(0).notNull(),
-    commsPlan: jsonb("comms_plan").$type<
-      {
-        offset: string;
-        label: string;
-        channel: string;
-        status: "scheduled" | "sent" | "draft";
-      }[]
-    >(),
+
     blueprintId: uuid("blueprint_id"),
     customQuestions: jsonb("custom_questions").$type<{
       id: string;

@@ -247,3 +247,26 @@ export function ProgressBar({
     </div>
   );
 }
+
+export function Field({
+  label,
+  description,
+  children,
+  className,
+}: {
+  label: ReactNode;
+  description?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("grid gap-1.5", className)}>
+      <label className="text-[0.875rem] font-medium text-ink">{label}</label>
+      {description && (
+        <span className="text-[0.8rem] text-warm-500 mb-1">{description}</span>
+      )}
+      {children}
+    </div>
+  );
+}
+

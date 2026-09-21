@@ -29,6 +29,7 @@ export type TicketOption = {
   currency: string;
   badge: string | null;
   benefits: string[] | null;
+  capacity: number;
   remaining: number;
 };
 
@@ -41,6 +42,7 @@ export type EventSummary = {
   venueAddress: string | null;
   startsAt: string;
   endsAt: string;
+  coverImage: string | null;
   customQuestions?: {
     id: string;
     label: string;

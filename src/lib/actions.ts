@@ -1,7 +1,9 @@
 "use server";
 
 import fs from "fs";
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { sendEmailOTP, sendEventCreatedNotification } from "@/lib/email";
 import { redirect } from "next/navigation";
 import { eq, ilike, or, and } from "drizzle-orm";
 import { db } from "@/db";
@@ -165,7 +167,7 @@ export async function createEvent(formData: FormData) {
       name: "General Admission",
       description: "Standard access to the event.",
       price: 0,
-      capacity: 1000,
+      capacity: 0, // Set to unlimited by default
       isVisible: true,
     });
 
@@ -175,7 +177,12 @@ export async function createEvent(formData: FormData) {
     // Audit log
     void logAudit(org.id, org.name, "created event", "event", newEvent.id, `"${newEvent.title}"`);
 
-    redirectUrl = `/dashboard/events/${newEvent.id}/command`;
+    // Send email notification (non-blocking)
+    if (org.email) {
+      void sendEventCreatedNotification(org.email, newEvent.title, newEvent.id);
+    }
+
+    redirectUrl = `/dashboard/events/${newEvent.id}`;
   } catch (dbError: any) {
     console.error("Database Insert Error:", dbError);
     return { error: dbError.message || String(dbError) };
@@ -385,6 +392,9 @@ export async function loginOrganization(formData: FormData) {
     console.log(`    Code: ${code}  (expires in 10 min)`);
     console.log(`========================================\n`);
   }
+
+  // Always attempt to send the real email if Resend is configured
+  await sendEmailOTP(email, code);
 
   return { step: "otp" as const, email };
 }
@@ -643,6 +653,9 @@ export async function createEventFromBlueprint(blueprintId: string, overrides: {
   venueName?: string;
   city?: string;
   country?: string;
+  description?: string;
+  coverImage?: string;
+  media?: any;
 }) {
   const org = await getOrganization();
   if (!org) {
@@ -670,16 +683,16 @@ export async function createEventFromBlueprint(blueprintId: string, overrides: {
     registrationClosesAt: overrides.registrationClosesAt,
     theme: s.theme,
     tagline: s.tagline,
-    description: s.description,
+    description: overrides.description || s.description,
     eventType: s.eventType,
     timezone: s.timezone,
     venueName: overrides.venueName,
     city: overrides.city || s.city,
     country: overrides.country || s.country,
     mode: s.mode,
-    coverImage: s.coverImage,
+    coverImage: overrides.coverImage || s.coverImage,
     brandColor: s.brandColor,
-    media: s.media,
+    media: overrides.media || s.media,
     customQuestions: s.customQuestions,
   }).returning();
 
@@ -717,6 +730,11 @@ export async function createEventFromBlueprint(blueprintId: string, overrides: {
   revalidatePath(`/dashboard/events`);
   revalidatePath(`/dashboard/blueprints`);
   
+  // Send email notification (non-blocking)
+  if (org.email) {
+    void sendEventCreatedNotification(org.email, newEvent.title, newEvent.id);
+  }
+
   return { success: true, eventId: newEvent.id, slug: newEvent.slug };
 }
 
