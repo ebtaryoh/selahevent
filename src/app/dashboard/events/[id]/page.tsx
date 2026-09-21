@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   TriangleAlert,
   Users,
+  Ticket,
 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -27,6 +28,8 @@ import {
   getSessions,
   getTickets,
   getVolunteers,
+  getOrganization,
+  getSpeakers,
 } from "@/lib/data";
 import { SaveBlueprintButton } from "./save-blueprint-button";
 import {
@@ -46,18 +49,26 @@ export default async function EventManagePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
+  console.log("EventManagePage params:", params);
+  const unwrappedParams = await params;
+  console.log("EventManagePage unwrapped:", unwrappedParams);
+  const { id } = unwrappedParams;
+  console.log("EventManagePage id:", id);
   const event = await getEventById(id);
   if (!event) notFound();
 
-  const [stats, registrations, sessions, volunteers, tickets] =
+  const [stats, registrations, sessions, volunteers, tickets, org, eventSpeakers] =
     await Promise.all([
       getEventStats(event.id),
       getRegistrations(event.id, 1000), // View all attendees in CRM
       getSessions(event.id),
       getVolunteers(event.id),
       getTickets(event.id),
+      getOrganization(),
+      getSpeakers(event.id),
     ]);
+
+  if (!org) notFound();
 
   return (
     <div className="space-y-11">
@@ -145,10 +156,28 @@ export default async function EventManagePage({
                   <Share2 size={16} /> Test registration
                 </Link>
                 <Link
+                  href={`/dashboard/events/${event.id}/tickets`}
+                  className="btn btn-light"
+                >
+                  <Ticket size={16} /> Tickets
+                </Link>
+                <Link
+                  href={`/dashboard/events/${event.id}/speakers`}
+                  className="btn btn-light"
+                >
+                  <Users size={16} /> Speakers
+                </Link>
+                <Link
+                  href={`/dashboard/events/${event.id}/volunteers`}
+                  className="btn btn-light"
+                >
+                  <Users size={16} /> Volunteers
+                </Link>
+                <Link
                   href={`/dashboard/events/${event.id}/edit`}
                   className="btn btn-light"
                 >
-                  <Pencil size={16} /> Edit event
+                  <Pencil size={16} /> Edit
                 </Link>
                 <SaveBlueprintButton eventId={event.id} />
               </div>
@@ -230,10 +259,11 @@ export default async function EventManagePage({
               {[
                 ["Registration window", `Open until ${formatDate(event.startsAt)}`, true],
                 ["Ticket types", `${tickets.length} configured`, tickets.length > 0],
+                ["Speakers", `${eventSpeakers.length} profiles complete`, eventSpeakers.length > 0],
                 [
                   "Payment gateway",
-                  "Paystack · test mode (no live charges)",
-                  true,
+                  org.paymentGateway === "none" ? "Not connected" : `${titleCase(org.paymentGateway)} · ${org.paymentGatewayMode} mode`,
+                  org.paymentGateway !== "none",
                 ],
                 [
                   "Volunteer coverage",
@@ -246,8 +276,18 @@ export default async function EventManagePage({
                   true,
                 ],
                 ["Transport", `${stats.transport} delegates requiring transport`, stats.transport === 0],
-                ["Communication timeline", "0 scheduled · 0 draft", false],
-                ["Certificates", "Not configured", false],
+                [
+                  "Communication timeline",
+                  event.commsPlan && event.commsPlan.length > 0 
+                    ? `${event.commsPlan.filter(c => c.status === "scheduled").length} scheduled · ${event.commsPlan.filter(c => c.status === "draft").length} draft`
+                    : "0 scheduled · 0 draft",
+                  event.commsPlan ? event.commsPlan.length > 0 : false,
+                ],
+                [
+                  "Certificates",
+                  event.certificateThreshold > 0 ? `Configured · attendance threshold ${event.certificateThreshold}%` : "Not configured",
+                  event.certificateThreshold > 0,
+                ],
               ].map(([label, value, ok]) => (
                 <li
                   key={String(label)}
@@ -311,14 +351,19 @@ export default async function EventManagePage({
                   {
                     icon: Mail,
                     label: "Communications",
-                    value: "0 scheduled · 0 sent",
-                    detail: "No active campaigns",
+                    value: event.commsPlan && event.commsPlan.length > 0
+                      ? `${event.commsPlan.filter(c => c.status === "scheduled").length} scheduled · ${event.commsPlan.filter(c => c.status === "sent").length} sent`
+                      : "0 scheduled · 0 sent",
+                    detail: event.commsPlan && event.commsPlan.length > 0
+                      ? "Campaigns active"
+                      : "No active campaigns",
                     progress: 0,
+                    href: `/dashboard/events/${event.id}/communications`,
                   },
                 ].map((row) => (
-                  <div key={row.label}>
+                  <Link key={row.label} href={row.href || "#"} className="block group">
                     <div className="flex items-start gap-4">
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[rgba(192,138,46,0.13)]">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-[rgba(192,138,46,0.13)] transition-colors group-hover:bg-[rgba(192,138,46,0.2)]">
                         <row.icon
                           size={18}
                           className="text-[var(--color-brass-deep)]"
@@ -341,7 +386,7 @@ export default async function EventManagePage({
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </div>

@@ -92,12 +92,14 @@ export default async function DashboardPage() {
             <Link href="/dashboard/events/new" className="btn btn-primary">
               <Plus size={17} /> Create event
             </Link>
-            <Link
-              href="/dashboard/events/22222222-2222-4222-8222-222222222222/command"
-              className="btn btn-ghost"
-            >
-              <QrCode size={17} /> Open check-in
-            </Link>
+            {featured[0] && (
+              <Link
+                href={`/dashboard/events/${featured[0].id}/command`}
+                className="btn btn-ghost"
+              >
+                <QrCode size={17} /> Open check-in
+              </Link>
+            )}
             <button type="button" className="btn btn-ghost">
               <Download size={17} /> Export
             </button>
@@ -276,18 +278,20 @@ export default async function DashboardPage() {
           <div className="flex items-start justify-between gap-5 border-b border-[rgba(22,19,17,0.1)] px-7 py-6">
             <div>
               <div className="eyebrow text-[0.585rem] text-warm-400">
-                Event health · {featured[0]?.title}
+                Event health {featured[0] ? `· ${featured[0].title}` : ""}
               </div>
               <h2 className="font-display mt-3 text-[1.52rem] leading-tight font-semibold text-ink">
                 Readiness checklist
               </h2>
             </div>
-            <Link
-              href={`/dashboard/events/${featured[0]?.id}`}
-              className="pill pill-brass"
-            >
-              Open event <ArrowUpRight size={12} />
-            </Link>
+            {featured[0] && (
+              <Link
+                href={`/dashboard/events/${featured[0].id}`}
+                className="pill pill-brass"
+              >
+                Open event <ArrowUpRight size={12} />
+              </Link>
+            )}
           </div>
 
           <ul>

@@ -55,6 +55,7 @@ export async function getEventBySlug(slug: string) {
 }
 
 export async function getEventById(id: string) {
+  if (!id || id === "undefined") return null;
   await ensureSeed();
   return db
     .select()
@@ -161,6 +162,20 @@ export type EventStats = {
 };
 
 export async function getEventStats(eventId: string): Promise<EventStats> {
+  if (!eventId || eventId === "undefined") {
+    return {
+      registered: 0,
+      checkedIn: 0,
+      revenue: 0,
+      pendingPayments: 0,
+      accommodation: 0,
+      transport: 0,
+      volunteerCount: 0,
+      confirmedVolunteers: 0,
+      openTasks: 0,
+      sessionCount: 0,
+    };
+  }
   await ensureSeed();
 
   const [regAgg] = await db

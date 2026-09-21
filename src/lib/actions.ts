@@ -720,3 +720,142 @@ export async function createEventFromBlueprint(blueprintId: string, overrides: {
   return { success: true, eventId: newEvent.id, slug: newEvent.slug };
 }
 
+
+/* ------------------------------------------------------------------ */
+/* Tickets                                                            */
+/* ------------------------------------------------------------------ */
+
+export async function createTicketType(eventId: string, formData: FormData) {
+  const org = await getOrganization();
+  if (!org) return { error: "Not authenticated" };
+
+  const event = await db.query.events.findFirst({
+    where: eq(events.id, eventId),
+  });
+
+  if (!event || event.organizationId !== org.id) {
+    return { error: "Event not found or unauthorized" };
+  }
+
+  const name = formData.get("name") as string;
+  const description = (formData.get("description") as string) || "";
+  const price = formData.get("price") ? parseInt(formData.get("price") as string, 10) : 0;
+  const capacity = formData.get("capacity") ? parseInt(formData.get("capacity") as string, 10) : 0;
+  const isVisible = formData.get("isVisible") === "on" || formData.get("isVisible") === "true";
+  
+  const benefitsRaw = formData.get("benefits") as string;
+  const benefits = benefitsRaw ? benefitsRaw.split("\n").map(b => b.trim()).filter(Boolean) : [];
+
+  let redirectUrl = "";
+  try {
+    await db.insert(ticketTypes).values({
+      eventId,
+      name,
+      description,
+      price,
+      capacity,
+      isVisible,
+      benefits,
+      currency: org.currency || "NGN",
+    });
+
+    revalidatePath(`/dashboard/events/${eventId}/tickets`);
+    revalidatePath(`/e/${event.slug}`);
+    
+    redirectUrl = `/dashboard/events/${eventId}/tickets`;
+  } catch (dbError: any) {
+    console.error("Database Insert Error:", dbError);
+    return { error: dbError.message || String(dbError) };
+  }
+  
+  if (redirectUrl) {
+    redirect(redirectUrl);
+  }
+}
+
+export async function updateTicketType(ticketId: string, eventId: string, formData: FormData) {
+  const org = await getOrganization();
+  if (!org) return { error: "Not authenticated" };
+
+  const event = await db.query.events.findFirst({
+    where: eq(events.id, eventId),
+  });
+
+  if (!event || event.organizationId !== org.id) {
+    return { error: "Event not found or unauthorized" };
+  }
+
+  const name = formData.get("name") as string;
+  const description = (formData.get("description") as string) || "";
+  const price = formData.get("price") ? parseInt(formData.get("price") as string, 10) : 0;
+  const capacity = formData.get("capacity") ? parseInt(formData.get("capacity") as string, 10) : 0;
+  const isVisible = formData.get("isVisible") === "on" || formData.get("isVisible") === "true";
+  
+  const benefitsRaw = formData.get("benefits") as string;
+  const benefits = benefitsRaw ? benefitsRaw.split("\n").map(b => b.trim()).filter(Boolean) : [];
+
+  let redirectUrl = "";
+  try {
+    await db
+      .update(ticketTypes)
+      .set({
+        name,
+        description,
+        price,
+        capacity,
+        isVisible,
+        benefits,
+      })
+      .where(eq(ticketTypes.id, ticketId));
+
+    revalidatePath(`/dashboard/events/${eventId}/tickets`);
+    revalidatePath(`/e/${event.slug}`);
+    
+    redirectUrl = `/dashboard/events/${eventId}/tickets`;
+  } catch (dbError: any) {
+    console.error("Database Update Error:", dbError);
+    return { error: dbError.message || String(dbError) };
+  }
+
+  if (redirectUrl) {
+    redirect(redirectUrl);
+  }
+}
+
+export async function deleteTicketType(ticketId: string, eventId: string) {
+  const org = await getOrganization();
+  if (!org) return { error: "Not authenticated" };
+
+  const event = await db.query.events.findFirst({
+    where: eq(events.id, eventId),
+  });
+
+  if (!event || event.organizationId !== org.id) {
+    return { error: "Event not found or unauthorized" };
+  }
+
+  let redirectUrl = "";
+  try {
+    const ticket = await db.query.ticketTypes.findFirst({
+      where: eq(ticketTypes.id, ticketId),
+    });
+
+    if (ticket && ticket.sold > 0) {
+      return { error: "Cannot delete a ticket type that has registrations." };
+    }
+
+    await db.delete(ticketTypes).where(eq(ticketTypes.id, ticketId));
+
+    revalidatePath(`/dashboard/events/${eventId}/tickets`);
+    revalidatePath(`/e/${event.slug}`);
+    
+    redirectUrl = `/dashboard/events/${eventId}/tickets`;
+  } catch (dbError: any) {
+    console.error("Database Delete Error:", dbError);
+    return { error: dbError.message || String(dbError) };
+  }
+
+  if (redirectUrl) {
+    redirect(redirectUrl);
+  }
+}

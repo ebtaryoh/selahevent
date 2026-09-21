@@ -33,6 +33,10 @@ export const organizations = pgTable("organizations", {
   accentColor: text("accent_color").default("#c08a2e").notNull(),
   plan: text("plan").default("growth").notNull(),
   eventCadence: text("event_cadence").default("monthly").notNull(),
+  paymentGateway: text("payment_gateway").default("paystack").notNull(),
+  paymentGatewayMode: text("payment_gateway_mode").default("test").notNull(),
+  paystackPublicKey: text("paystack_public_key"),
+  paystackSecretKey: text("paystack_secret_key"),
   createdAt: createdAt(),
 });
 
@@ -109,6 +113,14 @@ export const events = pgTable(
       required: boolean;
     }[]>().default([]),
     brandColor: text("brand_color").default("#c08a2e").notNull(),
+    certificateThreshold: integer("certificate_threshold").default(0).notNull(),
+    commsPlan: jsonb("comms_plan").$type<{
+      id: string;
+      title: string;
+      audience: string;
+      status: "draft" | "scheduled" | "sent";
+      sendAt?: Date;
+    }[]>(),
     createdAt: createdAt(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
