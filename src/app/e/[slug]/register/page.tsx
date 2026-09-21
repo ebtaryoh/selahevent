@@ -55,6 +55,7 @@ export default async function RegisterPage({ params }: Params) {
           event={{
             title: event.title,
             slug: event.slug,
+            orgId: event.organizationId,
             city: event.city,
             venueName: event.venueName,
             venueAddress: event.venueAddress,

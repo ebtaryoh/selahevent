@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, X, ArrowRight, Loader2, CalendarDays, MapPin, Tag, UploadCloud, ImageIcon, ListTodo, Palette } from "lucide-react";
-import { createEvent } from "@/lib/actions";
+import { Plus, X, ArrowRight, Loader2, CalendarDays, MapPin, Tag, UploadCloud, ImageIcon, ListTodo, Palette, Copy } from "lucide-react";
+import { createEvent, createEventFromBlueprint, updateEvent } from "@/lib/actions";
+import { useRouter } from "next/navigation";
 
 export type CustomQuestion = {
   id: string;
@@ -12,9 +13,17 @@ export type CustomQuestion = {
   options?: string[];
 };
 
-export function CreateEventForm() {
+export function CreateEventForm({ blueprints = [], initialData }: { blueprints?: any[]; initialData?: any }) {
+  const router = useRouter();
   const [isPending, setIsPending] = useState(false);
-  const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>(initialData?.customQuestions || []);
+  const [selectedBlueprintId, setSelectedBlueprintId] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const isEditing = !!initialData;
+
+  const toDateTimeLocal = (d?: string | Date) => 
+    d ? new Date(new Date(d).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : undefined;
 
   function addQuestion() {
     setCustomQuestions([...customQuestions, { id: Math.random().toString(36).substring(7), label: "", type: "text", required: false }]);
@@ -31,20 +40,133 @@ export function CreateEventForm() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setIsPending(true);
+    setError(null);
     const formData = new FormData(e.currentTarget);
-    formData.append("customQuestions", JSON.stringify(customQuestions));
+    
+    // Override media files with the React state to support removals
+    formData.delete("media");
+    selectedFiles.forEach((file) => {
+      formData.append("media", file);
+    });
+
     try {
-      await createEvent(formData);
-    } catch (err) {
+      if (isEditing) {
+        // Update existing event
+        formData.append("customQuestions", JSON.stringify(customQuestions));
+        const res = await updateEvent(initialData.id, formData);
+        
+        if (res && res.error) {
+          throw new Error(res.error);
+        }
+      } else if (selectedBlueprintId) {
+        // Create from blueprint
+        const title = formData.get("title") as string;
+        const baseSlug = title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/(^-|-$)+/g, "");
+        const slug = `${baseSlug}-${Math.floor(Math.random() * 1000)}`;
+        
+        const res = await createEventFromBlueprint(selectedBlueprintId, {
+          title,
+          slug,
+          startsAt: new Date(formData.get("startsAt") as string),
+          endsAt: new Date(formData.get("endsAt") as string),
+          venueName: formData.get("venueName") as string,
+          city: formData.get("city") as string,
+        });
+        
+        if (res.error) {
+          throw new Error(res.error);
+        }
+        
+        if (res.slug) {
+          router.push(`/dashboard/events/${res.eventId}/command`);
+        }
+      } else {
+        // Create new from scratch
+        formData.append("customQuestions", JSON.stringify(customQuestions));
+        const res = await createEvent(formData);
+        
+        // createEvent redirects on success, so if it returns it's usually an error
+        if (res && res.error) {
+          throw new Error(res.error);
+        }
+      }
+    } catch (err: any) {
+      // Next.js redirect() throws NEXT_REDIRECT — this is not an error, ignore it
+      if (err?.message?.includes("NEXT_REDIRECT") || err?.digest?.startsWith("NEXT_REDIRECT")) {
+        return;
+      }
       console.error(err);
       setIsPending(false);
-      alert("Failed to create event. Please try again.");
+      setError(err.message || "Something went wrong. Please try again.");
     }
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8 max-w-2xl">
       <div className="space-y-6">
+        
+        {!isEditing && blueprints && blueprints.length > 0 && (
+          <div className="rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-[rgba(192,138,46,0.04)] p-6 shadow-sm">
+            <h2 className="font-display mb-2 flex items-center gap-2 text-lg font-semibold text-ink">
+              <Copy size={18} className="text-brass" /> Start from Blueprint
+            </h2>
+            <p className="mb-4 text-sm text-warm-600">
+              Save time by copying ticket tiers, custom questions, and sessions from a past event.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label
+                className={`relative flex cursor-pointer rounded-xl border p-4 transition-all ${
+                  selectedBlueprintId === ""
+                    ? "border-brass bg-brass/10 shadow-sm"
+                    : "border-[rgba(22,19,17,0.1)] bg-paper hover:border-brass/40"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="blueprint"
+                  value=""
+                  className="sr-only"
+                  checked={selectedBlueprintId === ""}
+                  onChange={() => setSelectedBlueprintId("")}
+                />
+                <div className="flex flex-col">
+                  <span className="font-semibold text-ink">Start from scratch</span>
+                  <span className="text-xs text-warm-500 mt-1">Empty canvas.</span>
+                </div>
+              </label>
+              
+              {blueprints.map(bp => (
+                <label
+                  key={bp.id}
+                  className={`relative flex cursor-pointer rounded-xl border p-4 transition-all ${
+                    selectedBlueprintId === bp.id
+                      ? "border-brass bg-brass/10 shadow-sm"
+                      : "border-[rgba(22,19,17,0.1)] bg-paper hover:border-brass/40"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="blueprint"
+                    value={bp.id}
+                    className="sr-only"
+                    checked={selectedBlueprintId === bp.id}
+                    onChange={() => setSelectedBlueprintId(bp.id)}
+                  />
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-ink">{bp.name}</span>
+                    <span className="text-xs text-warm-500 mt-1">
+                      {bp.includes.join(" • ")}
+                    </span>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Basic Details */}
         <div className="rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-paper p-6 shadow-sm">
           <h2 className="font-display mb-4 flex items-center gap-2 text-lg font-semibold text-ink">
@@ -61,6 +183,7 @@ export function CreateEventForm() {
                 name="title"
                 type="text"
                 required
+                defaultValue={initialData?.title}
                 placeholder="e.g. Annual Youth Retreat 2026"
                 className="input !w-full"
               />
@@ -74,6 +197,7 @@ export function CreateEventForm() {
                 id="eventType"
                 name="eventType"
                 required
+                defaultValue={initialData?.eventType}
                 className="input !w-full bg-parchment"
               >
                 <option value="conference">Conference</option>
@@ -92,6 +216,7 @@ export function CreateEventForm() {
                 name="description"
                 required
                 rows={4}
+                defaultValue={initialData?.description}
                 placeholder="Describe your event..."
                 className="input !w-full !rounded-[12px] !py-3 resize-none"
               />
@@ -115,6 +240,7 @@ export function CreateEventForm() {
                 name="startsAt"
                 type="datetime-local"
                 required
+                defaultValue={toDateTimeLocal(initialData?.startsAt)}
                 className="input !w-full"
               />
             </div>
@@ -127,6 +253,7 @@ export function CreateEventForm() {
                 name="endsAt"
                 type="datetime-local"
                 required
+                defaultValue={toDateTimeLocal(initialData?.endsAt)}
                 className="input !w-full"
               />
             </div>
@@ -134,7 +261,7 @@ export function CreateEventForm() {
         </div>
 
         {/* Branding */}
-        <div className="rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-paper p-6 shadow-sm">
+        <div className={`rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-paper p-6 shadow-sm transition-opacity duration-300 ${selectedBlueprintId ? 'opacity-50 pointer-events-none hidden' : ''}`}>
           <h2 className="font-display mb-4 flex items-center gap-2 text-lg font-semibold text-ink">
             <Palette size={18} className="text-brass" /> Branding
           </h2>
@@ -151,7 +278,7 @@ export function CreateEventForm() {
                 id="brandColor"
                 name="brandColor"
                 type="color"
-                defaultValue="#c08a2e"
+                defaultValue={initialData?.brandColor || "#c08a2e"}
                 className="h-10 w-14 cursor-pointer rounded border border-warm-200 bg-transparent p-1"
                 onChange={(e) => {
                   const span = e.target.nextElementSibling;
@@ -179,6 +306,7 @@ export function CreateEventForm() {
                 name="venueName"
                 type="text"
                 required
+                defaultValue={initialData?.venueName}
                 placeholder="e.g. Main Auditorium"
                 className="input !w-full"
               />
@@ -192,7 +320,8 @@ export function CreateEventForm() {
                 name="city"
                 type="text"
                 required
-                placeholder="e.g. Lagos"
+                defaultValue={initialData?.city}
+                placeholder="e.g. Lagos, Nigeria"
                 className="input !w-full"
               />
             </div>
@@ -200,7 +329,7 @@ export function CreateEventForm() {
         </div>
 
         {/* Custom Registration Questions */}
-        <div className="rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-paper p-6 shadow-sm">
+        <div className={`rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-paper p-6 shadow-sm transition-opacity duration-300 ${selectedBlueprintId ? 'opacity-50 pointer-events-none hidden' : ''}`}>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display flex items-center gap-2 text-lg font-semibold text-ink">
               <ListTodo size={18} className="text-brass" /> Custom Questions
@@ -315,13 +444,69 @@ export function CreateEventForm() {
                 multiple
                 accept="image/*,video/*"
                 className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                onChange={(e) => {
+                  if (e.target.files) {
+                    setSelectedFiles(Array.from(e.target.files));
+                  }
+                }}
               />
             </div>
+
+            {isEditing && initialData?.media && initialData.media.length > 0 && selectedFiles.length === 0 && (
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                {initialData.media.map((file: any, i: number) => (
+                  <div key={i} className="relative aspect-video overflow-hidden rounded-lg border border-warm-200">
+                    {file.type === "video" ? (
+                      <video src={file.url} className="h-full w-full object-cover" />
+                    ) : (
+                      <img src={file.url} alt="media" className="h-full w-full object-cover" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {selectedFiles.length > 0 && (
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                {selectedFiles.map((file, i) => (
+                  <div key={i} className="group relative aspect-video overflow-hidden rounded-lg border border-warm-200">
+                    {file.type.startsWith("video/") ? (
+                      <video src={URL.createObjectURL(file)} className="h-full w-full object-cover" />
+                    ) : (
+                      <img src={URL.createObjectURL(file)} alt="media" className="h-full w-full object-cover" />
+                    )}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        const newFiles = [...selectedFiles];
+                        newFiles.splice(i, 1);
+                        setSelectedFiles(newFiles);
+                        // Also clear the file input if empty
+                        if (newFiles.length === 0) {
+                          const input = document.getElementById('media') as HTMLInputElement;
+                          if (input) input.value = '';
+                        }
+                      }}
+                      className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-colors hover:bg-signal-red/80"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="flex justify-end pt-4">
+      <div className="flex flex-col gap-3 pt-4">
+        {error && (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-[var(--color-signal-red)]">
+            {error}
+          </div>
+        )}
+        <div className="flex justify-end">
         <button
           type="submit"
           disabled={isPending}
@@ -330,15 +515,16 @@ export function CreateEventForm() {
           {isPending ? (
             <>
               <Loader2 size={18} className="mr-2 animate-spin" />
-              Creating Event...
+              {isEditing ? "Saving Changes..." : "Creating Event..."}
             </>
           ) : (
             <>
-              Create Event
-              <ArrowRight size={18} strokeWidth={2.1} className="ml-2" />
+              {isEditing ? "Save Changes" : "Create Event"}
+              <ArrowRight size={18} className="ml-2" />
             </>
           )}
         </button>
+        </div>
       </div>
     </form>
   );

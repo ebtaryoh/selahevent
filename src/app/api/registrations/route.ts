@@ -7,6 +7,7 @@ import {
   payments,
   registrations,
   ticketTypes,
+  attendees,
 } from "@/db/schema";
 
 export const dynamic = "force-dynamic";
@@ -118,11 +119,45 @@ export async function POST(request: Request) {
   const amount = ticket?.price ?? 0;
   const requiresPayment = amount > 0;
 
+  const { getAttendeeSession } = await import("@/lib/attendee");
+  const session = await getAttendeeSession();
+  let attendeeId = session?.attendeeId ?? null;
+
   try {
+    const [attendee] = await db
+      .insert(attendees)
+      .values({
+        organizationId: event.organizationId,
+        email,
+        firstName,
+        lastName,
+        phone: String(payload.phone ?? "").trim(),
+        city: String(payload.city ?? "").trim(),
+        country: String(payload.country ?? event.country),
+      })
+      .onConflictDoUpdate({
+        target: [attendees.organizationId, attendees.email],
+        set: {
+          firstName,
+          lastName,
+          phone: String(payload.phone ?? "").trim(),
+          city: String(payload.city ?? "").trim(),
+          country: String(payload.country ?? event.country),
+        },
+      })
+      .returning();
+    
+    attendeeId = attendee.id;
+
+    // TODO: Ideally we should update the JWT here to include the attendeeId if it was null,
+    // but the Next.js App Router doesn't allow setting cookies directly in an API Route unless using NextResponse.
+    // We will do it below by adding to the response cookies.
+
     const [created] = await db
       .insert(registrations)
       .values({
         eventId: event.id,
+        attendeeId,
         ticketTypeId: ticket?.id ?? null,
         code,
         ticketCode,
@@ -135,7 +170,11 @@ export async function POST(request: Request) {
         church: String(payload.church ?? "").trim(),
         attendeeType:
           String(payload.attendeeType ?? "").trim() || "delegate",
-        status: requiresPayment ? "pending" : "confirmed",
+        status: ticket?.requiresApproval
+          ? "under_review"
+          : requiresPayment 
+            ? "pending" 
+            : "confirmed",
         accommodation: payload.accommodation === true,
         transport: payload.transport === true,
         dietary: String(payload.dietary ?? "").trim(),
@@ -172,7 +211,7 @@ export async function POST(request: Request) {
         .where(eq(ticketTypes.id, ticket.id));
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       ok: true,
       registration: {
         code: created.code,
@@ -196,14 +235,44 @@ export async function POST(request: Request) {
       duplicateLikely: Boolean(duplicate),
       payment: {
         required: requiresPayment,
-        status: requiresPayment
+        status: ticket?.requiresApproval
+          ? "under_review"
+          : requiresPayment
           ? "pending_gateway_not_connected"
           : "not_required",
-        message: requiresPayment
+        message: ticket?.requiresApproval
+          ? "This ticket requires approval. You will receive an email once it is approved."
+          : requiresPayment
           ? "This demo build does not process live charges. The registration has been saved with payment pending, and no card details were collected."
           : null,
       },
     });
+
+    if (session && !session.attendeeId && attendeeId) {
+      const { SignJWT } = await import("jose");
+      const JWT_SECRET = new TextEncoder().encode(
+        process.env.JWT_SECRET || "super-secret-attendee-key-change-in-prod"
+      );
+      const token = await new SignJWT({ 
+        email: session.email,
+        orgId: session.orgId,
+        attendeeId: attendeeId 
+      })
+        .setProtectedHeader({ alg: "HS256" })
+        .setIssuedAt()
+        .setExpirationTime("30d")
+        .sign(JWT_SECRET);
+        
+      response.cookies.set("attendee_token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 30 * 24 * 60 * 60,
+        path: "/",
+      });
+    }
+
+    return response;
   } catch (err) {
     console.error("[selah] registration failed:", err);
     return NextResponse.json(

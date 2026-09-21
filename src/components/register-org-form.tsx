@@ -7,17 +7,26 @@ import { GoogleIcon, AppleIcon, FacebookIcon, XIcon } from "@/components/social-
 
 export function RegisterOrgForm() {
   const [isPending, setIsPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setIsPending(true);
+    setError(null);
     const formData = new FormData(e.currentTarget);
     try {
-      await registerOrganization(formData);
-    } catch (err) {
-      console.error(err);
-      setIsPending(false);
-      alert("Failed to register organization. Please try again.");
+      const result = await registerOrganization(formData);
+      if (result?.error) {
+        setError(result.error);
+        setIsPending(false);
+      }
+      // On success the action redirects — no further action needed
+    } catch (err: any) {
+      // Next.js redirect throws — ignore it
+      if (!err?.message?.includes("NEXT_REDIRECT")) {
+        setError(err.message || "Failed to create workspace. Please try again.");
+        setIsPending(false);
+      }
     }
   }
 
@@ -55,7 +64,13 @@ export function RegisterOrgForm() {
         <h2 className="font-display mb-6 flex items-center gap-2 text-xl font-semibold text-ink">
           <Building size={20} className="text-brass" /> Organization Details
         </h2>
-        
+
+        {error && (
+          <div className="mb-4 p-3 text-sm text-[var(--color-signal-red)] bg-red-50 border border-red-200 rounded-md">
+            {error}
+          </div>
+        )}
+
         <div className="space-y-5">
           <div>
             <label htmlFor="name" className="mb-1.5 block text-sm font-medium text-ink">

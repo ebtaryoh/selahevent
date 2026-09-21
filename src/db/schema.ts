@@ -6,6 +6,7 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -134,6 +135,7 @@ export const ticketTypes = pgTable(
     sold: integer("sold").default(0).notNull(),
     benefits: jsonb("benefits").$type<string[]>(),
     badge: text("badge"),
+    requiresApproval: boolean("requires_approval").default(false).notNull(),
     isVisible: boolean("is_visible").default(true).notNull(),
     sortOrder: integer("sort_order").default(0).notNull(),
     createdAt: createdAt(),
@@ -188,6 +190,49 @@ export const sessions = pgTable(
 /* Registration & payments                                             */
 /* ------------------------------------------------------------------ */
 
+export const attendees = pgTable(
+  "attendees",
+  {
+    id: id(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    email: text("email").notNull(),
+    firstName: text("first_name").notNull(),
+    lastName: text("last_name").notNull(),
+    phone: text("phone").default("").notNull(),
+    city: text("city").default("").notNull(),
+    country: text("country").default("NG").notNull(),
+    church: text("church").default("").notNull(),
+    dietary: text("dietary").default("").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("attendees_org_idx").on(t.organizationId),
+    index("attendees_email_idx").on(t.email),
+    unique("org_email_unique").on(t.organizationId, t.email),
+  ]
+);
+
+export const otps = pgTable(
+  "otps",
+  {
+    id: id(),
+    email: text("email").notNull(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    code: text("code").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("otps_email_idx").on(t.email),
+  ]
+);
+
+/* ------------------------------------------------------------------ */
+
 export const registrations = pgTable(
   "registrations",
   {
@@ -195,6 +240,9 @@ export const registrations = pgTable(
     eventId: uuid("event_id")
       .notNull()
       .references(() => events.id, { onDelete: "cascade" }),
+    attendeeId: uuid("attendee_id").references(() => attendees.id, {
+      onDelete: "set null",
+    }),
     ticketTypeId: uuid("ticket_type_id").references(() => ticketTypes.id, {
       onDelete: "set null",
     }),
@@ -257,6 +305,12 @@ export const checkIns = pgTable(
     registrationId: uuid("registration_id")
       .notNull()
       .references(() => registrations.id, { onDelete: "cascade" }),
+    sessionId: uuid("session_id").references(() => sessions.id, {
+      onDelete: "set null",
+    }),
+    scannedBy: uuid("scanned_by").references(() => appUsers.id, {
+      onDelete: "set null",
+    }),
     method: text("method").default("qr").notNull(),
     staffName: text("staff_name").default("Command Center").notNull(),
     gate: text("gate").default("Main entrance").notNull(),
@@ -340,10 +394,12 @@ export const blueprints = pgTable(
     organizationId: uuid("organization_id")
       .notNull()
       .references(() => organizations.id, { onDelete: "cascade" }),
+    originalEventId: uuid("original_event_id").references(() => events.id, { onDelete: "set null" }),
     name: text("name").notNull(),
     description: text("description").default("").notNull(),
     category: text("category").default("Conference").notNull(),
     includes: jsonb("includes").$type<string[]>(),
+    structure: jsonb("structure").notNull().default({}),
     useCount: integer("use_count").default(0).notNull(),
     lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
     createdAt: createdAt(),

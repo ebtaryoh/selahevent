@@ -14,44 +14,16 @@ import {
 import Link from "next/link";
 import { SelahMark } from "@/components/logo";
 import { getOrganization } from "@/lib/data";
+import { db } from "@/db";
+import { events } from "@/db/schema";
+import { eq, desc } from "drizzle-orm";
 import { formatDate } from "@/lib/format";
 import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-const nav = [
-  {
-    label: "Overview",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    label: "Events",
-    href: "/dashboard#events",
-    icon: CalendarDays,
-  },
-  {
-    label: "Command Center",
-    href: "/dashboard/events/22222222-2222-4222-8222-222222222222/command",
-    icon: QrCode,
-    badge: "Live",
-  },
-  {
-    label: "Organization Memory",
-    href: "/dashboard/blueprints",
-    icon: Compass,
-  },
-  {
-    label: "People & teams",
-    href: "/dashboard#teams",
-    icon: Users,
-  },
-  {
-    label: "Analytics",
-    href: "/dashboard#analytics",
-    icon: BarChart3,
-  },
-];
+
+
 
 export default async function DashboardLayout({
   children,
@@ -60,8 +32,31 @@ export default async function DashboardLayout({
 }) {
   const org = await getOrganization();
   if (!org) {
-    redirect("/register");
+    redirect("/login");
   }
+
+  // Find the most recent published event for the command center link
+  const latestEvent = await db
+    .select({ id: events.id })
+    .from(events)
+    .where(eq(events.organizationId, org.id))
+    .orderBy(desc(events.startsAt))
+    .limit(1)
+    .then((r) => r[0] ?? null);
+
+  const commandHref = latestEvent
+    ? `/dashboard/events/${latestEvent.id}/command`
+    : "/dashboard/events";
+
+  const nav = [
+    { label: "Overview", href: "/dashboard", icon: LayoutDashboard },
+    { label: "Events", href: "/dashboard#events", icon: CalendarDays },
+    { label: "Command Center", href: commandHref, icon: QrCode, badge: "Live" },
+    { label: "Organization Memory", href: "/dashboard/blueprints", icon: Compass },
+    { label: "People & teams", href: "/dashboard/team", icon: Users },
+    { label: "Analytics", href: "/dashboard#analytics", icon: BarChart3 },
+  ];
+
 
   return (
     <div className="min-h-screen bg-parchment">
@@ -195,7 +190,7 @@ export default async function DashboardLayout({
           </div>
         </div>
         <Link
-          href="/dashboard/events/22222222-2222-4222-8222-222222222222/command"
+          href={commandHref}
           className="pill pill-live"
         >
           <QrCode size={12} /> Command

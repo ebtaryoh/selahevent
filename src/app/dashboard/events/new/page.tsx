@@ -1,12 +1,19 @@
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { CreateEventForm } from "@/components/create-event-form";
+import { getBlueprints, getOrganization } from "@/lib/data";
+import { notFound } from "next/navigation";
 
 export const metadata = {
   title: "Create Event | Selah",
 };
 
-export default function CreateEventPage() {
+export default async function CreateEventPage() {
+  const org = await getOrganization();
+  if (!org) notFound();
+
+  const blueprints = await getBlueprints(org.id);
+
   return (
     <div className="mx-auto max-w-4xl">
       <div className="mb-8">
@@ -25,7 +32,7 @@ export default function CreateEventPage() {
         </p>
       </div>
 
-      <CreateEventForm />
+      <CreateEventForm blueprints={blueprints} />
     </div>
   );
 }

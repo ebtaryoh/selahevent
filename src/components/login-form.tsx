@@ -1,114 +1,209 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, Loader2, Mail } from "lucide-react";
-import { loginOrganization } from "@/lib/actions";
-import { GoogleIcon, AppleIcon, FacebookIcon, XIcon } from "@/components/social-icons";
+import { ArrowRight, Loader2, Mail, KeyRound, RefreshCcw } from "lucide-react";
+import { loginOrganization, verifyOrgOTP } from "@/lib/actions";
 import Link from "next/link";
 
+type Step = "email" | "otp";
+
 export function LoginForm() {
+  const [step, setStep] = useState<Step>("email");
+  const [email, setEmail] = useState("");
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  /* ── Step 1: request OTP ─────────────────────────────────────── */
+  async function handleEmailSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setIsPending(true);
     setError(null);
+
     const formData = new FormData(e.currentTarget);
     try {
-      await loginOrganization(formData);
+      const result = await loginOrganization(formData);
+      if (result?.step === "otp") {
+        setStep("otp");
+      }
     } catch (err: any) {
-      console.error(err);
+      setError(err.message || "Failed to send code. Please try again.");
+    } finally {
       setIsPending(false);
-      setError(err.message || "Failed to sign in. Please try again.");
     }
   }
 
-  function handleOAuthClick(provider: string) {
-    alert(`${provider} login requires API keys to be configured in production.`);
+  /* ── Step 2: verify OTP ──────────────────────────────────────── */
+  async function handleOTPSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setIsPending(true);
+    setError(null);
+
+    const formData = new FormData(e.currentTarget);
+    formData.set("email", email);
+
+    try {
+      const result = await verifyOrgOTP(formData);
+      if (result?.error) {
+        setError(result.error);
+      }
+      // On success the action redirects — nothing more to do here
+    } catch (err: any) {
+      // Next.js redirect throws — ignore it
+      if (!err?.message?.includes("NEXT_REDIRECT")) {
+        setError(err.message || "Verification failed. Please try again.");
+      }
+    } finally {
+      setIsPending(false);
+    }
+  }
+
+  function handleBack() {
+    setStep("email");
+    setError(null);
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-md mx-auto w-full">
+    <div className="space-y-6 max-w-md mx-auto w-full">
       <div className="rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-paper p-6 sm:p-8 shadow-sm">
-        
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <button onClick={() => handleOAuthClick("Google")} type="button" className="btn btn-ghost !border border-[rgba(22,19,17,0.1)] !bg-white !px-4 !py-2.5 flex items-center justify-center gap-2 text-[0.875rem] font-medium text-ink shadow-sm hover:!bg-parchment transition-colors">
-            <GoogleIcon className="h-5 w-5" />
-            Google
-          </button>
-          <button onClick={() => handleOAuthClick("Apple")} type="button" className="btn btn-ghost !border border-[rgba(22,19,17,0.1)] !bg-white !px-4 !py-2.5 flex items-center justify-center gap-2 text-[0.875rem] font-medium text-ink shadow-sm hover:!bg-parchment transition-colors">
-            <AppleIcon className="h-5 w-5" />
-            Apple
-          </button>
-          <button onClick={() => handleOAuthClick("Facebook")} type="button" className="btn btn-ghost !border border-[rgba(22,19,17,0.1)] !bg-[#1877F2] !px-4 !py-2.5 flex items-center justify-center gap-2 text-[0.875rem] font-medium text-white shadow-sm hover:brightness-110 transition-all">
-            <FacebookIcon className="h-5 w-5" />
-            Facebook
-          </button>
-          <button onClick={() => handleOAuthClick("X")} type="button" className="btn btn-ghost !border border-[rgba(22,19,17,0.1)] !bg-black !px-4 !py-2.5 flex items-center justify-center gap-2 text-[0.875rem] font-medium text-white shadow-sm hover:bg-zinc-800 transition-colors">
-            <XIcon className="h-4 w-4" />
-            X (Twitter)
-          </button>
-        </div>
 
-        <div className="relative mb-8">
-          <div className="absolute inset-0 flex items-center" aria-hidden="true">
-            <div className="w-full border-t border-[rgba(22,19,17,0.1)]"></div>
-          </div>
-          <div className="relative flex justify-center text-sm font-medium leading-6">
-            <span className="bg-paper px-6 text-warm-500">Or continue with email</span>
-          </div>
-        </div>
-
-        <div className="space-y-5">
-          {error && (
-            <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md">
-              {error}
+        {step === "email" ? (
+          <>
+            {/* Email step */}
+            <div className="mb-6 text-center">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-brass-wash mb-4">
+                <Mail size={22} className="text-brass-deep" />
+              </div>
+              <h2 className="font-display text-xl font-semibold text-ink">Enter your workspace email</h2>
+              <p className="mt-1.5 text-[0.875rem] text-warm-500">
+                We'll send a one-time code to verify it's you.
+              </p>
             </div>
-          )}
-          
-          <div>
-            <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-ink flex items-center gap-1.5">
-              <Mail size={14} className="text-warm-400"/> Workspace Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              placeholder="hello@church.com"
-              className="input !w-full"
-            />
-          </div>
-        </div>
+
+            <form onSubmit={(e) => { setEmail((e.currentTarget.elements.namedItem("email") as HTMLInputElement).value); handleEmailSubmit(e); }} className="space-y-5">
+              {error && (
+                <div className="p-3 text-sm text-[var(--color-signal-red)] bg-red-50 border border-red-200 rounded-md">
+                  {error}
+                </div>
+              )}
+
+              <div>
+                <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-ink">
+                  Workspace Email
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  placeholder="hello@church.com"
+                  className="input !w-full"
+                  defaultValue={email}
+                  autoComplete="email"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isPending}
+                className="btn btn-primary !px-8 !py-3.5 w-full text-[1rem]"
+              >
+                {isPending ? (
+                  <>
+                    <Loader2 size={18} className="mr-2 animate-spin" />
+                    Sending code...
+                  </>
+                ) : (
+                  <>
+                    Continue
+                    <ArrowRight size={18} strokeWidth={2.1} className="ml-2" />
+                  </>
+                )}
+              </button>
+            </form>
+          </>
+        ) : (
+          <>
+            {/* OTP step */}
+            <div className="mb-6 text-center">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-brass-wash mb-4">
+                <KeyRound size={22} className="text-brass-deep" />
+              </div>
+              <h2 className="font-display text-xl font-semibold text-ink">Check your inbox</h2>
+              <p className="mt-1.5 text-[0.875rem] text-warm-500">
+                We sent a 6-digit code to{" "}
+                <span className="font-semibold text-ink">{email}</span>.{" "}
+                Enter it below to sign in.
+              </p>
+              {process.env.NODE_ENV !== "production" && (
+                <p className="mt-2 text-xs text-warm-400">
+                  Dev mode: check server console, or use <span className="font-mono font-semibold">000000</span> to skip.
+                </p>
+              )}
+            </div>
+
+            <form onSubmit={handleOTPSubmit} className="space-y-5">
+              {error && (
+                <div className="p-3 text-sm text-[var(--color-signal-red)] bg-red-50 border border-red-200 rounded-md">
+                  {error}
+                </div>
+              )}
+
+              <div>
+                <label htmlFor="code" className="mb-1.5 block text-sm font-medium text-ink">
+                  Verification Code
+                </label>
+                <input
+                  id="code"
+                  name="code"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]{6}"
+                  maxLength={6}
+                  required
+                  placeholder="000000"
+                  className="input !w-full text-center tracking-[0.5em] font-mono text-lg"
+                  autoComplete="one-time-code"
+                  autoFocus
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isPending}
+                className="btn btn-primary !px-8 !py-3.5 w-full text-[1rem]"
+              >
+                {isPending ? (
+                  <>
+                    <Loader2 size={18} className="mr-2 animate-spin" />
+                    Verifying...
+                  </>
+                ) : (
+                  <>
+                    Sign In to Workspace
+                    <ArrowRight size={18} strokeWidth={2.1} className="ml-2" />
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleBack}
+                className="flex items-center justify-center gap-1.5 w-full text-[0.8rem] font-medium text-warm-500 hover:text-ink transition-colors pt-1"
+              >
+                <RefreshCcw size={13} />
+                Use a different email or resend code
+              </button>
+            </form>
+          </>
+        )}
       </div>
 
-      <div className="flex flex-col gap-4 pt-2">
-        <button
-          type="submit"
-          disabled={isPending}
-          className="btn btn-primary !px-8 !py-3.5 w-full text-[1rem]"
-        >
-          {isPending ? (
-            <>
-              <Loader2 size={18} className="mr-2 animate-spin" />
-              Signing in...
-            </>
-          ) : (
-            <>
-              Sign In to Workspace
-              <ArrowRight size={18} strokeWidth={2.1} className="ml-2" />
-            </>
-          )}
-        </button>
-
-        <p className="text-center text-[0.875rem] text-warm-500">
-          Don't have a workspace?{" "}
-          <Link href="/register" className="font-semibold text-brass hover:text-brass-deep transition-colors">
-            Create one
-          </Link>
-        </p>
-      </div>
-    </form>
+      <p className="text-center text-[0.875rem] text-warm-500">
+        Don't have a workspace?{" "}
+        <Link href="/register" className="font-semibold text-brass hover:text-brass-deep transition-colors">
+          Create one
+        </Link>
+      </p>
+    </div>
   );
 }

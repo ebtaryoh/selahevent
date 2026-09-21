@@ -19,6 +19,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { cn, formatMoney, formatRange, formatTime } from "@/lib/format";
+import { requestAttendeeOTP, verifyAttendeeOTP, getAttendeeProfile } from "@/lib/attendee";
 
 export type TicketOption = {
   id: string;
@@ -34,6 +35,7 @@ export type TicketOption = {
 export type EventSummary = {
   title: string;
   slug: string;
+  orgId: string;
   city: string;
   venueName: string | null;
   venueAddress: string | null;
@@ -118,6 +120,13 @@ export function RegistrationForm({
   );
   
   const [customAnswers, setCustomAnswers] = useState<Record<string, string>>({});
+  
+  // OTP Flow States
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [otpMode, setOtpMode] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpError, setOtpError] = useState<string | null>(null);
 
   const selectedTicket = useMemo(
     () => tickets.find((t) => t.id === form.ticketTypeId) ?? tickets[0],
@@ -241,6 +250,46 @@ export function RegistrationForm({
 
   /* ---------------- Confirmation ---------------- */
 
+  const handleRequestOTP = async () => {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(form.email.trim())) {
+      setFieldErrors({ email: "Please enter a valid email address." });
+      return;
+    }
+    setOtpLoading(true);
+    const res = await requestAttendeeOTP(form.email, event.orgId);
+    setOtpLoading(false);
+    if (res.error) {
+      setFieldErrors({ email: res.error });
+    } else {
+      setOtpMode(true);
+    }
+  };
+
+  const handleVerifyOTP = async () => {
+    if (otpCode.length < 6) return;
+    setOtpLoading(true);
+    setOtpError(null);
+    const res = await verifyAttendeeOTP(form.email, event.orgId, otpCode);
+    if (res.error) {
+      setOtpError(res.error);
+      setOtpLoading(false);
+    } else {
+      setEmailVerified(true);
+      setOtpMode(false);
+      setOtpLoading(false);
+      
+      const profile = await getAttendeeProfile();
+      if (profile) {
+        setForm(prev => ({
+          ...prev,
+          firstName: profile.firstName || prev.firstName,
+          lastName: profile.lastName || prev.lastName,
+          phone: profile.phone || prev.phone,
+        }));
+      }
+    }
+  };
+
   if (confirmation) {
     return (
       <ConfirmationPanel
@@ -306,88 +355,156 @@ export function RegistrationForm({
                 subtitle="This is what appears on your ticket and badge."
               />
               <div className="mt-7 grid gap-5 sm:grid-cols-2">
-                <Field
-                  label="First name"
-                  required
-                  error={fieldErrors.firstName}
-                >
-                  <input
-                    className="input"
-                    value={form.firstName}
-                    autoComplete="given-name"
-                    onChange={(e) => update("firstName", e.target.value)}
-                    aria-invalid={Boolean(fieldErrors.firstName)}
-                    placeholder="Amara"
-                  />
-                </Field>
-                <Field label="Last name" required error={fieldErrors.lastName}>
-                  <input
-                    className="input"
-                    value={form.lastName}
-                    autoComplete="family-name"
-                    onChange={(e) => update("lastName", e.target.value)}
-                    aria-invalid={Boolean(fieldErrors.lastName)}
-                    placeholder="Eze"
-                  />
-                </Field>
-                <Field
-                  label="Email address"
-                  required
-                  error={fieldErrors.email}
-                  hint="Your digital ticket is sent here."
-                >
-                  <input
-                    className="input"
-                    type="email"
-                    value={form.email}
-                    autoComplete="email"
-                    onChange={(e) => update("email", e.target.value)}
-                    aria-invalid={Boolean(fieldErrors.email)}
-                    placeholder="you@example.com"
-                  />
-                </Field>
-                <Field label="Phone number" required error={fieldErrors.phone}>
-                  <input
-                    className="input"
-                    type="tel"
-                    value={form.phone}
-                    autoComplete="tel"
-                    onChange={(e) => update("phone", e.target.value)}
-                    aria-invalid={Boolean(fieldErrors.phone)}
-                    placeholder="+234 800 000 0000"
-                  />
-                </Field>
-                <Field label="City">
-                  <input
-                    className="input"
-                    value={form.city}
-                    autoComplete="address-level2"
-                    onChange={(e) => update("city", e.target.value)}
-                    placeholder="Lagos"
-                  />
-                </Field>
-                <Field label="Country">
-                  <select
-                    className="input"
-                    value={form.country}
-                    onChange={(e) => update("country", e.target.value)}
-                  >
-                    {[
-                      ["NG", "Nigeria"],
-                      ["GH", "Ghana"],
-                      ["KE", "Kenya"],
-                      ["ZA", "South Africa"],
-                      ["GB", "United Kingdom"],
-                      ["US", "United States"],
-                      ["CA", "Canada"],
-                      ["AU", "Australia"],
-                    ].map(([code, name]) => (
-                      <option key={code} value={code}>
-                        {name}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
+                {!emailVerified ? (
+                  <div className="col-span-1 sm:col-span-2 max-w-md">
+                    {!otpMode ? (
+                      <div className="space-y-4">
+                        <Field
+                          label="Email address"
+                          required
+                          error={fieldErrors.email}
+                          hint="Enter your email to continue."
+                        >
+                          <input
+                            className="input"
+                            type="email"
+                            value={form.email}
+                            autoComplete="email"
+                            onChange={(e) => update("email", e.target.value)}
+                            aria-invalid={Boolean(fieldErrors.email)}
+                            placeholder="you@example.com"
+                          />
+                        </Field>
+                        <button
+                          type="button"
+                          className="btn btn-primary w-full justify-center"
+                          onClick={handleRequestOTP}
+                          disabled={otpLoading}
+                        >
+                          {otpLoading ? <Loader2 className="animate-spin h-5 w-5" /> : "Continue"}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        <Field
+                          label="Verification Code"
+                          required
+                          error={otpError || ""}
+                          hint={`We sent a 6-digit code to ${form.email}`}
+                        >
+                          <input
+                            className="input text-center tracking-[0.5em] font-mono text-lg"
+                            type="text"
+                            maxLength={6}
+                            value={otpCode}
+                            onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+                            placeholder="000000"
+                          />
+                        </Field>
+                        <button
+                          type="button"
+                          className="btn btn-primary w-full justify-center"
+                          onClick={handleVerifyOTP}
+                          disabled={otpLoading || otpCode.length < 6}
+                        >
+                          {otpLoading ? <Loader2 className="animate-spin h-5 w-5" /> : "Verify Code"}
+                        </button>
+                        <div className="text-center pt-2">
+                          <button
+                            type="button"
+                            className="text-[0.8rem] font-medium text-[var(--color-brass)] hover:underline"
+                            onClick={() => setOtpMode(false)}
+                          >
+                            Use a different email
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <Field
+                      label="Email address"
+                      required
+                      hint="Verified"
+                    >
+                      <input
+                        className="input bg-[rgba(22,19,17,0.03)] text-warm-400 border-transparent shadow-none"
+                        type="email"
+                        value={form.email}
+                        readOnly
+                        disabled
+                      />
+                    </Field>
+                    <div className="hidden sm:block"></div>
+                    <Field
+                      label="First name"
+                      required
+                      error={fieldErrors.firstName}
+                    >
+                      <input
+                        className="input"
+                        value={form.firstName}
+                        autoComplete="given-name"
+                        onChange={(e) => update("firstName", e.target.value)}
+                        aria-invalid={Boolean(fieldErrors.firstName)}
+                        placeholder="Amara"
+                      />
+                    </Field>
+                    <Field label="Last name" required error={fieldErrors.lastName}>
+                      <input
+                        className="input"
+                        value={form.lastName}
+                        autoComplete="family-name"
+                        onChange={(e) => update("lastName", e.target.value)}
+                        aria-invalid={Boolean(fieldErrors.lastName)}
+                        placeholder="Eze"
+                      />
+                    </Field>
+                    <Field label="Phone number" required error={fieldErrors.phone}>
+                      <input
+                        className="input"
+                        type="tel"
+                        value={form.phone}
+                        autoComplete="tel"
+                        onChange={(e) => update("phone", e.target.value)}
+                        aria-invalid={Boolean(fieldErrors.phone)}
+                        placeholder="+234 800 000 0000"
+                      />
+                    </Field>
+                    <Field label="City">
+                      <input
+                        className="input"
+                        value={form.city}
+                        autoComplete="address-level2"
+                        onChange={(e) => update("city", e.target.value)}
+                        placeholder="Lagos"
+                      />
+                    </Field>
+                    <Field label="Country">
+                      <select
+                        className="input"
+                        value={form.country}
+                        onChange={(e) => update("country", e.target.value)}
+                      >
+                        {[
+                          ["NG", "Nigeria"],
+                          ["GH", "Ghana"],
+                          ["KE", "Kenya"],
+                          ["ZA", "South Africa"],
+                          ["GB", "United Kingdom"],
+                          ["US", "United States"],
+                          ["CA", "Canada"],
+                          ["AU", "Australia"],
+                        ].map(([code, name]) => (
+                          <option key={code} value={code}>
+                            {name}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                  </>
+                )}
               </div>
             </div>
           ) : null}
@@ -754,7 +871,11 @@ export function RegistrationForm({
           )}
 
           {step < 4 ? (
-            <button type="button" onClick={next} className="btn btn-primary">
+            <button 
+              type="button" 
+              onClick={next} 
+              className={cn("btn btn-primary", step === 1 && !emailVerified && "hidden")}
+            >
               Continue <ArrowRight size={16} />
             </button>
           ) : (
@@ -783,7 +904,7 @@ export function RegistrationForm({
         <div className="overflow-hidden rounded-[16px] border border-[rgba(22,19,17,0.11)] bg-cypress text-parchment">
           <div className="relative h-[168px] w-full overflow-hidden">
             <Image
-              src="/images/event-stage.jpg"
+              src={event.coverImage ?? "/images/event-stage.jpg"}
               alt=""
               aria-hidden="true"
               className="object-cover"

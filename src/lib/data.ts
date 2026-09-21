@@ -1,4 +1,4 @@
-import { cookies } from "next/headers";
+import { getOrgSession } from "./session";
 import { redirect } from "next/navigation";
 import { and, asc, count, desc, eq, sql, sum, or, ilike } from "drizzle-orm";
 import { db } from "@/db";
@@ -21,16 +21,18 @@ import { ensureSeed } from "@/lib/seed";
 
 export async function getOrganization() {
   await ensureSeed();
-  
-  const cookieStore = await cookies();
-  const orgId = cookieStore.get("selah_org_id")?.value;
-  
-  if (orgId) {
-    const org = await db.select().from(organizations).where(eq(organizations.id, orgId)).limit(1).then((r) => r[0] ?? null);
-    if (org) return org;
-  }
-  
-  return null;
+
+  const session = await getOrgSession();
+  if (!session) return null;
+
+  const org = await db
+    .select()
+    .from(organizations)
+    .where(eq(organizations.id, session.orgId))
+    .limit(1)
+    .then((r) => r[0] ?? null);
+
+  return org;
 }
 
 export async function getEventsForOrganization(orgId: string) {
@@ -125,24 +127,6 @@ export async function getTasks(orgId: string, eventId?: string) {
         .limit(24);
 }
 
-export async function getBlueprints(orgId: string) {
-  await ensureSeed();
-  return db
-    .select()
-    .from(blueprints)
-    .where(eq(blueprints.organizationId, orgId))
-    .orderBy(desc(blueprints.useCount));
-}
-
-export async function getAuditLogs(orgId: string, limit = 12) {
-  await ensureSeed();
-  return db
-    .select()
-    .from(auditLogs)
-    .where(eq(auditLogs.organizationId, orgId))
-    .orderBy(desc(auditLogs.createdAt))
-    .limit(limit);
-}
 
 export async function getCertificate(code: string) {
   await ensureSeed();
@@ -184,6 +168,7 @@ export async function getEventStats(eventId: string): Promise<EventStats> {
       registered: count(),
       revenue: sum(registrations.amount),
       accommodation: sql<number>`coalesce(sum(case when ${registrations.accommodation} then 1 else 0 end), 0)`,
+      transport: sql<number>`coalesce(sum(case when ${registrations.transport} then 1 else 0 end), 0)`,
     })
     .from(registrations)
     .where(eq(registrations.eventId, eventId));
@@ -230,7 +215,7 @@ export async function getEventStats(eventId: string): Promise<EventStats> {
     revenue: Number(regAgg?.revenue ?? 0),
     pendingPayments: Number(payAgg?.pending ?? 0),
     accommodation: Number(regAgg?.accommodation ?? 0),
-    transport: 0,
+    transport: Number(regAgg?.transport ?? 0),
     volunteerCount: Number(volAgg?.total ?? 0),
     confirmedVolunteers: Number(volConfirmed?.total ?? 0),
     openTasks: Number(taskAgg?.open ?? 0),
@@ -313,4 +298,64 @@ export async function getAllPublicEvents(filters?: { query?: string; city?: stri
     .innerJoin(organizations, eq(events.organizationId, organizations.id))
     .where(and(...conditions))
     .orderBy(asc(events.startsAt));
+}
+
+export async function getBlueprints(orgId: string) {
+  const allBlueprints = await db.query.blueprints.findMany({
+    where: eq(blueprints.organizationId, orgId),
+    orderBy: [desc(blueprints.createdAt)],
+  });
+
+  // Count real usage — events whose blueprintId matches this blueprint
+  const usageCounts = await db
+    .select({ blueprintId: events.blueprintId, total: count() })
+    .from(events)
+    .where(eq(events.organizationId, orgId))
+    .groupBy(events.blueprintId);
+
+  const usageMap = new Map(
+    usageCounts
+      .filter((r) => r.blueprintId != null)
+      .map((r) => [r.blueprintId!, Number(r.total)])
+  );
+
+  return allBlueprints.map((bp) => {
+    const s = bp.structure as any;
+    return {
+      id: bp.id,
+      name: bp.name,
+      description: bp.description,
+      category: s.eventType || "General",
+      useCount: usageMap.get(bp.id) ?? 0,
+      lastUsedAt: bp.createdAt,
+      includes: [
+        "Registration flow",
+        s.ticketTypes?.length ? `${s.ticketTypes.length} Ticket tiers` : null,
+        s.customQuestions?.length ? `${s.customQuestions.length} Custom questions` : null,
+        s.sessions?.length ? `${s.sessions.length} Sessions` : null,
+      ].filter(Boolean),
+    };
+  });
+}
+
+export async function getAuditLogs(orgId: string, limitCount = 8) {
+  return db
+    .select()
+    .from(auditLogs)
+    .where(eq(auditLogs.organizationId, orgId))
+    .orderBy(desc(auditLogs.createdAt))
+    .limit(limitCount);
+}
+
+/** Returns ticket type names + real sold/capacity counts for the dashboard distribution widget. */
+export async function getEventTicketDistribution(eventId: string) {
+  return db
+    .select({
+      name: ticketTypes.name,
+      sold: ticketTypes.sold,
+      capacity: ticketTypes.capacity,
+    })
+    .from(ticketTypes)
+    .where(eq(ticketTypes.eventId, eventId))
+    .orderBy(asc(ticketTypes.sortOrder));
 }

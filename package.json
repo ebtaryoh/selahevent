@@ -10,9 +10,10 @@
   },
   "dependencies": {
     "@vercel/blob": "^2.8.0",
-    "dotenv": "17.3.1",
+    "dotenv": "^17.3.1",
     "drizzle-orm": "0.45.2",
     "framer-motion": "^13.4.0",
+    "jose": "^6.2.12",
     "lucide-react": "^1.47.0",
     "next": "^16.3.5",
     "pg": "8.20.0",

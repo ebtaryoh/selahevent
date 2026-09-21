@@ -28,6 +28,7 @@ import {
   getTickets,
   getVolunteers,
 } from "@/lib/data";
+import { SaveBlueprintButton } from "./save-blueprint-button";
 import {
   formatDate,
   formatMoney,
@@ -128,6 +129,12 @@ export default async function EventManagePage({
                 >
                   <QrCode size={17} /> Open Command Center
                 </Link>
+                <Link
+                  href={`/dashboard/events/${event.id}/approvals`}
+                  className="btn btn-light"
+                >
+                  <ShieldCheck size={16} /> Approvals
+                </Link>
                 <Link href={`/e/${event.slug}`} className="btn btn-light">
                   <ArrowUpRight size={16} /> View public page
                 </Link>
@@ -137,9 +144,13 @@ export default async function EventManagePage({
                 >
                   <Share2 size={16} /> Test registration
                 </Link>
-                <button type="button" className="btn btn-light">
+                <Link
+                  href={`/dashboard/events/${event.id}/edit`}
+                  className="btn btn-light"
+                >
                   <Pencil size={16} /> Edit event
-                </button>
+                </Link>
+                <SaveBlueprintButton eventId={event.id} />
               </div>
             </div>
           </div>

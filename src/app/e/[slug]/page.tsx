@@ -430,11 +430,15 @@ export default async function EventPage({ params }: Params) {
                       preload="metadata"
                     />
                   ) : (
-                    <img
-                      src={item.url}
-                      alt={`Event media ${index + 1}`}
-                      className="object-cover w-full h-full transition-transform duration-700 hover:scale-105"
-                    />
+                    <div className="relative w-full h-full">
+                      <Image
+                        src={item.url}
+                        alt={`Event media ${index + 1}`}
+                        fill
+                        className="object-cover transition-transform duration-700 hover:scale-105"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      />
+                    </div>
                   )}
                 </div>
               ))}
@@ -688,7 +692,7 @@ export default async function EventPage({ params }: Params) {
       <section className="relative isolate overflow-hidden">
         <div className="absolute inset-0 -z-10">
           <Image
-            src="/images/event-stage.jpg"
+            src={event.coverImage ?? "/images/event-stage.jpg"}
             alt=""
             aria-hidden="true"
             className="object-cover"
