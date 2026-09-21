@@ -74,6 +74,65 @@ export async function getTickets(eventId: string) {
     .orderBy(asc(ticketTypes.sortOrder));
 }
 
+export async function getOrganizationMemoryStats(orgId: string) {
+  await ensureSeed();
+
+  const [blueprintAgg] = await db
+    .select({ total: count() })
+    .from(blueprints)
+    .where(eq(blueprints.organizationId, orgId));
+
+  const [speakerAgg] = await db
+    .select({ total: count() })
+    .from(speakers)
+    .where(eq(speakers.organizationId, orgId));
+
+  const allVols = await db
+    .select({ department: volunteers.department })
+    .from(volunteers)
+    .innerJoin(events, eq(volunteers.eventId, events.id))
+    .where(eq(events.organizationId, orgId));
+    
+  const uniqueDepartments = new Set(allVols.map((v) => v.department));
+
+  const allEvents = await db
+    .select({ commsPlan: events.commsPlan })
+    .from(events)
+    .where(eq(events.organizationId, orgId));
+    
+  const commsCount = allEvents.reduce((acc, ev) => {
+    if (ev.commsPlan && Array.isArray(ev.commsPlan)) {
+      return acc + ev.commsPlan.length;
+    }
+    return acc;
+  }, 0);
+
+  return {
+    savedBlueprints: Number(blueprintAgg?.total ?? 0),
+    savedSpeakers: Number(speakerAgg?.total ?? 0),
+    savedOperations: uniqueDepartments.size,
+    savedCommunications: commsCount,
+  };
+}
+
+export async function getRecentReuseActivity(orgId: string, limitCount = 5) {
+  return db
+    .select()
+    .from(auditLogs)
+    .where(
+      and(
+        eq(auditLogs.organizationId, orgId),
+        or(
+          ilike(auditLogs.action, "%reuse%"),
+          ilike(auditLogs.action, "%applied%"),
+          ilike(auditLogs.action, "%draft%")
+        )
+      )
+    )
+    .orderBy(desc(auditLogs.createdAt))
+    .limit(limitCount);
+}
+
 export async function getSpeakers(eventId: string) {
   await ensureSeed();
   return db.select().from(speakers).where(eq(speakers.eventId, eventId));

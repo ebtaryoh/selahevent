@@ -37,6 +37,11 @@ export const organizations = pgTable("organizations", {
   paymentGatewayMode: text("payment_gateway_mode").default("test").notNull(),
   paystackPublicKey: text("paystack_public_key"),
   paystackSecretKey: text("paystack_secret_key"),
+  retentionAttendeeHistoryMonths: integer("retention_attendee_history_months").default(24).notNull(),
+  retentionSensitiveDataDays: integer("retention_sensitive_data_days").default(90).notNull(),
+  retentionAutoSuggest: boolean("retention_auto_suggest").default(true).notNull(),
+  retentionMarketingUse: boolean("retention_marketing_use").default(false).notNull(),
+  lastPolicyReviewAt: timestamp("last_policy_review_at", { withTimezone: true }).defaultNow().notNull(),
   createdAt: createdAt(),
 });
 

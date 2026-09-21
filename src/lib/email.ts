@@ -4,7 +4,8 @@ import EventCreatedEmail from "@/emails/event-created-email";
 import TicketEmail from "@/emails/ticket-email";
 
 // Initialize Resend with the API key from environment variables
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Provide a dummy fallback so it doesn't throw during build or dev if missing
+const resend = new Resend(process.env.RESEND_API_KEY || "missing-key");
 
 const SENDER_EMAIL = "Selah <noreply@selah.com>";
 

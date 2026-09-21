@@ -15,67 +15,67 @@ import {
   getBlueprints,
   getEventsForOrganization,
   getOrganization,
+  getOrganizationMemoryStats,
+  getRecentReuseActivity,
 } from "@/lib/data";
 import { formatDate, formatNumber, relativeDays } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
-const memoryCategories = [
-  {
-    title: "Registration & forms",
-    count: 9,
-    items: [
-      "General conference form (14 fields)",
-      "Youth retreat form with guardian consent",
-      "Marriage seminar couple registration",
-      "Volunteer application form",
-      "Dietary & accessibility questions",
-    ],
-  },
-  {
-    title: "Speakers & content",
-    count: 18,
-    items: [
-      "Speaker profiles with bios and topics",
-      "Session structures by track",
-      "Worship set planning notes",
-      "Workshop facilitator guidelines",
-      "Session recordings index",
-    ],
-  },
-  {
-    title: "Operations",
-    count: 14,
-    items: [
-      "12 volunteer departments",
-      "Shift patterns & team-lead structure",
-      "6 transport routes with contacts",
-      "4 accommodation facilities",
-      "Check-in gate configuration",
-    ],
-  },
-  {
-    title: "Communication",
-    count: 11,
-    items: [
-      "T-30 to T+7 timeline (6 touches)",
-      "Registration confirmation email",
-      "Payment confirmation email",
-      "Event-day welcome message",
-      "Certificate-ready notification",
-    ],
-  },
-];
 
 export default async function BlueprintsPage() {
   const org = await getOrganization();
   if (!org) return null;
 
-  const [blueprints, events, audit] = await Promise.all([
+  const [blueprints, events, audit, stats, reuseActivity] = await Promise.all([
     getBlueprints(org.id),
     getEventsForOrganization(org.id),
     getAuditLogs(org.id, 8),
+    getOrganizationMemoryStats(org.id),
+    getRecentReuseActivity(org.id, 5),
   ]);
+
+  const memoryCategories = [
+    {
+      title: "Registration & forms",
+      count: stats.savedBlueprints,
+      items: [
+        "Event forms",
+        "Registration fields",
+        "Ticketing configurations",
+        "Custom questions",
+      ],
+    },
+    {
+      title: "Speakers & content",
+      count: stats.savedSpeakers,
+      items: [
+        "Speaker profiles with bios and topics",
+        "Session structures by track",
+        "Workshop facilitator guidelines",
+        "Session index",
+      ],
+    },
+    {
+      title: "Operations",
+      count: stats.savedOperations,
+      items: [
+        "Volunteer departments",
+        "Shift patterns & team-lead structure",
+        "Check-in gate configuration",
+      ],
+    },
+    {
+      title: "Communication",
+      count: stats.savedCommunications,
+      items: [
+        "Email timelines",
+        "Registration confirmation email",
+        "Payment confirmation email",
+        "Certificate-ready notification",
+      ],
+    },
+  ];
 
   return (
     <div className="space-y-12">
@@ -107,9 +107,9 @@ export default async function BlueprintsPage() {
 
         <div className="mt-10 grid gap-px overflow-hidden rounded-[15px] border border-[rgba(22,19,17,0.1)] bg-[rgba(22,19,17,0.1)] sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { label: "Saved blueprints", value: blueprints.length, note: "Across 5 event categories" },
-            { label: "Speaker profiles", value: 18, note: "Bios, topics, sessions" },
-            { label: "Communication templates", value: 11, note: "Email & SMS" },
+            { label: "Saved blueprints", value: blueprints.length, note: "Across categories" },
+            { label: "Speaker profiles", value: stats.savedSpeakers, note: "Bios, topics, sessions" },
+            { label: "Communication templates", value: stats.savedCommunications, note: "Email & SMS" },
             { label: "Events on record", value: events.length, note: "Full history retained" },
           ].map((item) => (
             <div key={item.label} className="bg-paper p-7">
@@ -257,35 +257,9 @@ export default async function BlueprintsPage() {
               <span className="pill pill-neutral">Last 90 days</span>
             </div>
             <ul>
-              {[
-                {
-                  what: "Annual Leadership Conference blueprint",
-                  detail: "Used to draft Kingdom Leadership Summit 2027",
-                  when: "2 weeks ago",
-                },
-                {
-                  what: "Speaker profile · Dr. Hannah Osei",
-                  detail: "Added to Kingdom Leadership Summit 2027",
-                  when: "3 weeks ago",
-                },
-                {
-                  what: "Communication timeline · T-30 → T+7",
-                  detail: "Applied to Kingdom Leadership Summit 2027",
-                  when: "1 month ago",
-                },
-                {
-                  what: "Youth Retreat registration form",
-                  detail: "Used to draft Annual Youth Retreat 2027",
-                  when: "1 month ago",
-                },
-                {
-                  what: "Certificate design · Attendance ≥ 80%",
-                  detail: "Reused without changes",
-                  when: "2 months ago",
-                },
-              ].map((row) => (
+              {reuseActivity.length > 0 ? reuseActivity.map((entry) => (
                 <li
-                  key={row.what}
+                  key={entry.id}
                   className="flex items-start gap-4 border-t border-[rgba(22,19,17,0.08)] px-7 py-4 first:border-t-0"
                 >
                   <Users
@@ -294,17 +268,21 @@ export default async function BlueprintsPage() {
                   />
                   <div className="flex-1">
                     <div className="text-[0.895rem] font-semibold text-ink">
-                      {row.what}
+                      {entry.action}
                     </div>
                     <div className="mt-1 text-[0.795rem] text-warm-500">
-                      {row.detail}
+                      {entry.detail}
                     </div>
                   </div>
                   <span className="shrink-0 text-[0.755rem] text-warm-400">
-                    {row.when}
+                    {relativeDays(entry.createdAt)}
                   </span>
                 </li>
-              ))}
+              )) : (
+                <li className="px-7 py-4 text-[0.895rem] text-warm-500">
+                  No recent reuse activity.
+                </li>
+              )}
             </ul>
           </div>
 
@@ -320,23 +298,23 @@ export default async function BlueprintsPage() {
               {[
                 {
                   title: "Attendee history",
-                  body: "Kept for 24 months after an attendee's last event, then removed automatically unless a longer period is required.",
-                  on: true,
+                  body: `Kept for ${org.retentionAttendeeHistoryMonths} months after an attendee's last event, then removed automatically unless a longer period is required.`,
+                  on: org.retentionAttendeeHistoryMonths > 0,
                 },
                 {
                   title: "Sensitive fields",
-                  body: "Emergency contacts, dietary and medical notes are purged 90 days after an event ends.",
-                  on: true,
+                  body: `Emergency contacts, dietary and medical notes are purged ${org.retentionSensitiveDataDays} days after an event ends.`,
+                  on: org.retentionSensitiveDataDays > 0,
                 },
                 {
                   title: "Blueprint auto-suggestion",
                   body: "Selah suggests reusing past configurations but never applies them without confirmation.",
-                  on: true,
+                  on: org.retentionAutoSuggest,
                 },
                 {
                   title: "Marketing use",
                   body: "Attendee details are never used for marketing by Selah. Disabled permanently.",
-                  on: true,
+                  on: org.retentionMarketingUse,
                 },
               ].map((row) => (
                 <div
@@ -361,7 +339,7 @@ export default async function BlueprintsPage() {
                 <p className="text-[0.805rem] leading-[1.7] text-warm-600">
                   Last policy review:{" "}
                   <strong className="font-semibold text-ink">
-                    {formatDate(new Date("2027-01-14T09:00:00Z"))}
+                    {formatDate(org.lastPolicyReviewAt ?? new Date("2027-01-14T09:00:00Z"))}
                   </strong>{" "}
                   · {formatNumber(0)} data export requests outstanding.
                 </p>
