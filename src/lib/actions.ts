@@ -46,10 +46,16 @@ async function generateUniqueSlug(base: string, maxAttempts = 5): Promise<string
 }
 
 /** Write a file to disk (local fallback for media uploads). */
-function writeFileToDisk(filepath: string, buffer: Buffer): void {
-  const dir = path.dirname(filepath);
-  fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(filepath, buffer);
+function writeFileToDisk(filepath: string, buffer: Buffer): boolean {
+  try {
+    const dir = path.dirname(filepath);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(filepath, buffer);
+    return true;
+  } catch (e) {
+    console.warn("[selah] Skipped local file write (likely on Vercel read-only filesystem):", e);
+    return false;
+  }
 }
 
 /** Insert an audit log entry — fire-and-forget (errors are non-fatal). */
@@ -120,14 +126,16 @@ export async function createEvent(formData: FormData) {
           console.error("Vercel Blob upload failed:", error);
           const buffer = Buffer.from(await file.arrayBuffer());
           const filepath = path.join(process.cwd(), "public", "uploads", filename);
-          writeFileToDisk(filepath, buffer);
-          mediaPaths.push({ type, url: `/uploads/${filename}` });
+          if (writeFileToDisk(filepath, buffer)) {
+            mediaPaths.push({ type, url: `/uploads/${filename}` });
+          }
         }
       } else {
         const buffer = Buffer.from(await file.arrayBuffer());
         const filepath = path.join(process.cwd(), "public", "uploads", filename);
-        writeFileToDisk(filepath, buffer);
-        mediaPaths.push({ type, url: `/uploads/${filename}` });
+        if (writeFileToDisk(filepath, buffer)) {
+          mediaPaths.push({ type, url: `/uploads/${filename}` });
+        }
       }
     }
 
@@ -277,14 +285,16 @@ export async function updateEvent(eventId: string, formData: FormData) {
           console.error("Vercel Blob upload failed:", error);
           const buffer = Buffer.from(await file.arrayBuffer());
           const filepath = path.join(process.cwd(), "public", "uploads", filename);
-          writeFileToDisk(filepath, buffer);
-          mediaPaths.unshift({ type, url: `/uploads/${filename}` });
+          if (writeFileToDisk(filepath, buffer)) {
+            mediaPaths.unshift({ type, url: `/uploads/${filename}` });
+          }
         }
       } else {
         const buffer = Buffer.from(await file.arrayBuffer());
         const filepath = path.join(process.cwd(), "public", "uploads", filename);
-        writeFileToDisk(filepath, buffer);
-        mediaPaths.unshift({ type, url: `/uploads/${filename}` });
+        if (writeFileToDisk(filepath, buffer)) {
+          mediaPaths.unshift({ type, url: `/uploads/${filename}` });
+        }
       }
     }
 
