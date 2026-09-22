@@ -28,6 +28,8 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
   const [focus, setFocus] = useState<{ x: number; y: number }>(
     existingCoverImage?.focus || { x: 50, y: 50 }
   );
+  
+  const existingVideoUrl = initialData?.media?.find((m: any) => m.type === "video")?.url;
 
   const isEditing = !!initialData;
 
@@ -604,6 +606,23 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
               initialFocus={isEditing ? initialData?.media?.[0]?.focus : undefined}
               onImageChange={(file) => setCoverImageFile(file)}
               onFocusChange={(f) => setFocus(f)}
+            />
+          </div>
+
+          <div className="mb-8">
+            <label htmlFor="videoUrl" className="mb-1.5 block text-sm font-medium text-ink">
+              Event Trailer (YouTube or Vimeo Link)
+            </label>
+            <p className="mb-4 text-sm text-warm-500">
+              Paste a link to your event's promo video. We'll automatically embed it beautifully on your event page.
+            </p>
+            <input
+              id="videoUrl"
+              name="videoUrl"
+              type="url"
+              defaultValue={existingVideoUrl}
+              placeholder="https://youtube.com/watch?v=..."
+              className="input !w-full"
             />
           </div>
 

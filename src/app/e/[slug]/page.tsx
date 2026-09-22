@@ -461,11 +461,11 @@ export default async function EventPage({ params }: Params) {
                   }`}
                 >
                   {item.type === "video" ? (
-                    <video 
+                    <iframe 
                       src={item.url} 
-                      controls 
-                      className="h-full w-full object-cover"
-                      preload="metadata"
+                      className="h-full w-full border-0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
                     />
                   ) : (
                     <div className="relative w-full h-full">

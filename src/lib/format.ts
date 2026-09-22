@@ -134,3 +134,40 @@ export function seededHue(seed: string) {
   }
   return Math.abs(hash) % 360;
 }
+
+/** Parses standard YouTube/Vimeo URLs into their embed equivalents */
+export function parseVideoEmbedUrl(url: string): string | null {
+  if (!url) return null;
+  
+  try {
+    const parsed = new URL(url);
+    
+    // YouTube
+    if (parsed.hostname.includes("youtube.com") || parsed.hostname.includes("youtu.be")) {
+      let videoId = "";
+      if (parsed.hostname.includes("youtu.be")) {
+        videoId = parsed.pathname.slice(1);
+      } else if (parsed.searchParams.has("v")) {
+        videoId = parsed.searchParams.get("v")!;
+      } else if (parsed.pathname.startsWith("/embed/")) {
+        return url; // Already an embed URL
+      }
+      
+      if (videoId) {
+        return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`;
+      }
+    }
+    
+    // Vimeo
+    if (parsed.hostname.includes("vimeo.com")) {
+      const match = parsed.pathname.match(/^\/(\d+)/);
+      if (match) {
+        return `https://player.vimeo.com/video/${match[1]}?color=c08a2e&title=0&byline=0&portrait=0`;
+      }
+    }
+  } catch (e) {
+    // Invalid URL
+  }
+  
+  return null;
+}

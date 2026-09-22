@@ -4,6 +4,7 @@ import fs from "fs";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { sendEmailOTP, sendEventCreatedNotification, sendTicketConfirmation } from "@/lib/email";
+import { parseVideoEmbedUrl } from "@/lib/format";
 import { redirect } from "next/navigation";
 import { eq, ilike, or, and } from "drizzle-orm";
 import { db } from "@/db";
@@ -145,6 +146,14 @@ export async function createEvent(formData: FormData) {
       if (parsedFocus) {
         mediaPaths[0].focus = parsedFocus;
       }
+    }
+  }
+
+  const videoUrlRaw = formData.get("videoUrl") as string;
+  if (videoUrlRaw) {
+    const embedUrl = parseVideoEmbedUrl(videoUrlRaw);
+    if (embedUrl) {
+      mediaPaths.push({ type: "video", url: embedUrl });
     }
   }
 
@@ -309,6 +318,19 @@ export async function updateEvent(eventId: string, formData: FormData) {
     if (mediaPaths.length > 0 && parsedFocus) {
       mediaPaths[0].focus = parsedFocus;
     }
+  }
+
+  const videoUrlRaw = formData.get("videoUrl") as string;
+  const embedUrl = videoUrlRaw ? parseVideoEmbedUrl(videoUrlRaw) : null;
+  
+  // Remove existing video URL if any
+  const existingVideoIndex = mediaPaths.findIndex(m => m.type === "video");
+  if (existingVideoIndex !== -1) {
+    mediaPaths.splice(existingVideoIndex, 1);
+  }
+  
+  if (embedUrl) {
+    mediaPaths.push({ type: "video", url: embedUrl });
   }
 
   const customQuestionsRaw = formData.get("customQuestions") as string;
