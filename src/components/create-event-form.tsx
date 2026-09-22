@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, X, ArrowRight, Loader2, CalendarDays, MapPin, Tag, UploadCloud, ImageIcon, ListTodo, Palette, Copy } from "lucide-react";
+import { Plus, X, ArrowRight, Loader2, CalendarDays, MapPin, Tag, UploadCloud, ImageIcon, ListTodo, Palette, Copy, ShieldCheck } from "lucide-react";
 import { createEvent, createEventFromBlueprint, updateEvent } from "@/lib/actions";
 import { useRouter } from "next/navigation";
+import { FocusImageUpload } from "./focus-image-upload";
 
 export type CustomQuestion = {
   id: string;
@@ -20,6 +21,14 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
   const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>(initialData?.customQuestions || []);
   const [selectedBlueprintId, setSelectedBlueprintId] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+  
+  // Extract existing focus point if editing
+  const existingCoverImage = initialData?.media?.[0];
+  const [focus, setFocus] = useState<{ x: number; y: number }>(
+    existingCoverImage?.focus || { x: 50, y: 50 }
+  );
+
   const isEditing = !!initialData;
 
   const toDateTimeLocal = (d?: string | Date) => 
@@ -45,9 +54,16 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
     
     // Override media files with the React state to support removals
     formData.delete("media");
+    if (coverImageFile) {
+      formData.append("media", coverImageFile);
+    }
     selectedFiles.forEach((file) => {
       formData.append("media", file);
     });
+
+    // Pass focus data
+    formData.append("coverImageFocusX", focus.x.toString());
+    formData.append("coverImageFocusY", focus.y.toString());
 
     try {
       if (isEditing) {
@@ -204,7 +220,38 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                 <option value="retreat">Retreat</option>
                 <option value="worship">Worship Night</option>
                 <option value="church_service">Church Service</option>
+                <option value="summit">Summit</option>
+                <option value="concert">Concert</option>
+                <option value="seminar">Seminar</option>
               </select>
+            </div>
+
+            <div>
+              <label htmlFor="theme" className="mb-1.5 block text-sm font-medium text-ink">
+                Theme <span className="text-warm-400 font-normal">(Optional)</span>
+              </label>
+              <input
+                id="theme"
+                name="theme"
+                type="text"
+                defaultValue={initialData?.theme}
+                placeholder="e.g. Arise and Shine"
+                className="input !w-full"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="tagline" className="mb-1.5 block text-sm font-medium text-ink">
+                Tagline <span className="text-warm-400 font-normal">(Optional)</span>
+              </label>
+              <input
+                id="tagline"
+                name="tagline"
+                type="text"
+                defaultValue={initialData?.tagline}
+                placeholder="e.g. A weekend of spiritual renewal"
+                className="input !w-full"
+              />
             </div>
 
             <div>
@@ -245,32 +292,75 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
             <CalendarDays size={18} className="text-brass" /> Date & Time
           </h2>
           
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-4">
             <div>
-              <label htmlFor="startsAt" className="mb-1.5 block text-sm font-medium text-ink">
-                Start Date & Time
+              <label htmlFor="timezone" className="mb-1.5 block text-sm font-medium text-ink">
+                Timezone
               </label>
-              <input
-                id="startsAt"
-                name="startsAt"
-                type="datetime-local"
+              <select
+                id="timezone"
+                name="timezone"
                 required
-                defaultValue={toDateTimeLocal(initialData?.startsAt)}
-                className="input !w-full"
-              />
+                defaultValue={initialData?.timezone || "Africa/Lagos"}
+                className="input !w-full bg-parchment"
+              >
+                <option value="Africa/Lagos">Africa/Lagos (WAT)</option>
+                <option value="Europe/London">Europe/London (GMT/BST)</option>
+                <option value="America/New_York">America/New_York (EST/EDT)</option>
+                <option value="UTC">UTC</option>
+              </select>
             </div>
-            <div>
-              <label htmlFor="endsAt" className="mb-1.5 block text-sm font-medium text-ink">
-                End Date & Time
-              </label>
-              <input
-                id="endsAt"
-                name="endsAt"
-                type="datetime-local"
-                required
-                defaultValue={toDateTimeLocal(initialData?.endsAt)}
-                className="input !w-full"
-              />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label htmlFor="startsAt" className="mb-1.5 block text-sm font-medium text-ink">
+                  Event Start Date & Time
+                </label>
+                <input
+                  id="startsAt"
+                  name="startsAt"
+                  type="datetime-local"
+                  required
+                  defaultValue={toDateTimeLocal(initialData?.startsAt)}
+                  className="input !w-full"
+                />
+              </div>
+              <div>
+                <label htmlFor="endsAt" className="mb-1.5 block text-sm font-medium text-ink">
+                  Event End Date & Time
+                </label>
+                <input
+                  id="endsAt"
+                  name="endsAt"
+                  type="datetime-local"
+                  required
+                  defaultValue={toDateTimeLocal(initialData?.endsAt)}
+                  className="input !w-full"
+                />
+              </div>
+              <div>
+                <label htmlFor="registrationOpensAt" className="mb-1.5 block text-sm font-medium text-ink">
+                  Registration Opens <span className="text-warm-400 font-normal">(Optional)</span>
+                </label>
+                <input
+                  id="registrationOpensAt"
+                  name="registrationOpensAt"
+                  type="datetime-local"
+                  defaultValue={toDateTimeLocal(initialData?.registrationOpensAt)}
+                  className="input !w-full"
+                />
+              </div>
+              <div>
+                <label htmlFor="registrationClosesAt" className="mb-1.5 block text-sm font-medium text-ink">
+                  Registration Closes <span className="text-warm-400 font-normal">(Optional)</span>
+                </label>
+                <input
+                  id="registrationClosesAt"
+                  name="registrationClosesAt"
+                  type="datetime-local"
+                  defaultValue={toDateTimeLocal(initialData?.registrationClosesAt)}
+                  className="input !w-full"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -311,35 +401,101 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
             <MapPin size={18} className="text-brass" /> Location
           </h2>
           
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <label htmlFor="venueName" className="mb-1.5 block text-sm font-medium text-ink">
-                Venue Name
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="mode" className="mb-1.5 block text-sm font-medium text-ink">
+                Event Mode
               </label>
-              <input
-                id="venueName"
-                name="venueName"
-                type="text"
+              <select
+                id="mode"
+                name="mode"
                 required
-                defaultValue={initialData?.venueName}
-                placeholder="e.g. Main Auditorium"
-                className="input !w-full"
-              />
+                defaultValue={initialData?.mode || "in_person"}
+                className="input !w-full bg-parchment"
+              >
+                <option value="in_person">In Person</option>
+                <option value="online">Online</option>
+                <option value="hybrid">Hybrid (In Person & Online)</option>
+              </select>
             </div>
-            <div className="sm:col-span-2">
-              <label htmlFor="city" className="mb-1.5 block text-sm font-medium text-ink">
-                City
-              </label>
-              <input
-                id="city"
-                name="city"
-                type="text"
-                required
-                defaultValue={initialData?.city}
-                placeholder="e.g. Lagos, Nigeria"
-                className="input !w-full"
-              />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="sm:col-span-2">
+                <label htmlFor="venueName" className="mb-1.5 block text-sm font-medium text-ink">
+                  Venue Name <span className="text-warm-400 font-normal">(if physical)</span>
+                </label>
+                <input
+                  id="venueName"
+                  name="venueName"
+                  type="text"
+                  defaultValue={initialData?.venueName}
+                  placeholder="e.g. Main Auditorium"
+                  className="input !w-full"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="venueAddress" className="mb-1.5 block text-sm font-medium text-ink">
+                  Venue Address <span className="text-warm-400 font-normal">(Optional)</span>
+                </label>
+                <input
+                  id="venueAddress"
+                  name="venueAddress"
+                  type="text"
+                  defaultValue={initialData?.venueAddress}
+                  placeholder="e.g. 123 Church Way"
+                  className="input !w-full"
+                />
+              </div>
+              <div>
+                <label htmlFor="city" className="mb-1.5 block text-sm font-medium text-ink">
+                  City
+                </label>
+                <input
+                  id="city"
+                  name="city"
+                  type="text"
+                  required
+                  defaultValue={initialData?.city}
+                  placeholder="e.g. Lagos"
+                  className="input !w-full"
+                />
+              </div>
+              <div>
+                <label htmlFor="country" className="mb-1.5 block text-sm font-medium text-ink">
+                  Country
+                </label>
+                <input
+                  id="country"
+                  name="country"
+                  type="text"
+                  required
+                  defaultValue={initialData?.country || "Nigeria"}
+                  placeholder="e.g. Nigeria"
+                  className="input !w-full"
+                />
+              </div>
             </div>
+          </div>
+        </div>
+
+        {/* Visibility */}
+        <div className="rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-paper p-6 shadow-sm">
+          <h2 className="font-display mb-4 flex items-center gap-2 text-lg font-semibold text-ink">
+            <ShieldCheck size={18} className="text-brass" /> Visibility
+          </h2>
+          <div>
+            <label htmlFor="visibility" className="mb-1.5 block text-sm font-medium text-ink">
+              Event Privacy
+            </label>
+            <select
+              id="visibility"
+              name="visibility"
+              required
+              defaultValue={initialData?.visibility || "public"}
+              className="input !w-full bg-parchment"
+            >
+              <option value="public">Public (Anyone can see and register)</option>
+              <option value="private">Private (Only accessible via direct link)</option>
+            </select>
           </div>
         </div>
 
@@ -436,21 +592,35 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
             <ImageIcon size={18} className="text-brass" /> Event Media
           </h2>
           
-          <div>
-            <label htmlFor="media" className="mb-1.5 block text-sm font-medium text-ink">
-              Upload Photos & Videos
+          <div className="mb-8">
+            <label className="mb-1.5 block text-sm font-medium text-ink">
+              Main Event Flyer (Cover Image)
             </label>
             <p className="mb-4 text-sm text-warm-500">
-              Showcase your event with high-quality promotional materials. You can select multiple files.
+              This is the primary image shown on event cards and headers. Use the focus tool to ensure it looks great in any aspect ratio.
+            </p>
+            <FocusImageUpload
+              initialImage={isEditing && initialData?.media?.[0]?.url ? initialData.media[0].url : undefined}
+              initialFocus={isEditing ? initialData?.media?.[0]?.focus : undefined}
+              onImageChange={(file) => setCoverImageFile(file)}
+              onFocusChange={(f) => setFocus(f)}
+            />
+          </div>
+
+          <hr className="my-8 border-t border-[rgba(22,19,17,0.08)]" />
+
+          <div>
+            <label htmlFor="media" className="mb-1.5 block text-sm font-medium text-ink">
+              Additional Photos & Videos (Gallery)
+            </label>
+            <p className="mb-4 text-sm text-warm-500">
+              Add more photos to showcase your event or past events.
             </p>
             
-            <div className="relative flex flex-col items-center justify-center rounded-[12px] border-2 border-dashed border-[rgba(22,19,17,0.15)] bg-parchment py-12 transition-colors hover:border-[var(--color-brass)] hover:bg-[rgba(192,138,46,0.05)]">
-              <UploadCloud size={40} className="mb-4 text-brass-light" />
+            <div className="relative flex flex-col items-center justify-center rounded-[12px] border-2 border-dashed border-[rgba(22,19,17,0.15)] bg-parchment py-8 transition-colors hover:border-[var(--color-brass)] hover:bg-[rgba(192,138,46,0.05)]">
+              <UploadCloud size={24} className="mb-2 text-brass-light" />
               <p className="mb-1 text-sm font-semibold text-ink">
-                Click to upload or drag and drop
-              </p>
-              <p className="text-xs text-warm-500">
-                SVG, PNG, JPG, or MP4 (max 20MB)
+                Click to upload additional media
               </p>
               <input
                 id="media"
@@ -461,15 +631,15 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                 className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                 onChange={(e) => {
                   if (e.target.files) {
-                    setSelectedFiles(Array.from(e.target.files));
+                    setSelectedFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
                   }
                 }}
               />
             </div>
 
-            {isEditing && initialData?.media && initialData.media.length > 0 && selectedFiles.length === 0 && (
+            {isEditing && initialData?.media && initialData.media.length > 1 && selectedFiles.length === 0 && (
               <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-                {initialData.media.map((file: any, i: number) => (
+                {initialData.media.slice(1).map((file: any, i: number) => (
                   <div key={i} className="relative aspect-video overflow-hidden rounded-lg border border-warm-200">
                     {file.type === "video" ? (
                       <video src={file.url} className="h-full w-full object-cover" />
@@ -493,17 +663,12 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                     <button
                       type="button"
                       onClick={(e) => {
-                        e.preventDefault();
-                        const newFiles = [...selectedFiles];
-                        newFiles.splice(i, 1);
-                        setSelectedFiles(newFiles);
-                        // Also clear the file input if empty
-                        if (newFiles.length === 0) {
-                          const input = document.getElementById('media') as HTMLInputElement;
-                          if (input) input.value = '';
-                        }
+                         e.preventDefault();
+                         const newFiles = [...selectedFiles];
+                         newFiles.splice(i, 1);
+                         setSelectedFiles(newFiles);
                       }}
-                      className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-colors hover:bg-signal-red/80"
+                      className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-colors hover:bg-signal-red/80 opacity-0 group-hover:opacity-100"
                     >
                       <X size={14} />
                     </button>

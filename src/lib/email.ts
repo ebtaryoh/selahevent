@@ -7,7 +7,7 @@ import TicketEmail from "@/emails/ticket-email";
 // Provide a dummy fallback so it doesn't throw during build or dev if missing
 const resend = new Resend(process.env.RESEND_API_KEY || "missing-key");
 
-const SENDER_EMAIL = "Selah <noreply@selah.com>";
+const SENDER_EMAIL = process.env.RESEND_FROM_EMAIL || "Selah <onboarding@resend.dev>";
 
 export async function sendEmailOTP(email: string, code: string) {
   if (!process.env.RESEND_API_KEY) {

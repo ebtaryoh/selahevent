@@ -10,7 +10,8 @@ import {
   Link,
   Hr,
   Column,
-  Row
+  Row,
+  Img
 } from "@react-email/components";
 import * as React from "react";
 
@@ -30,7 +31,10 @@ export const TicketEmail = ({
   ticketCode,
   startsAt,
   venueName,
-}: TicketEmailProps) => (
+}: TicketEmailProps) => {
+  const qrCodeUrl = `https://quickchart.io/qr?text=${encodeURIComponent(ticketCode)}&size=300&margin=1`;
+  
+  return (
   <Html>
     <Head />
     <Preview>Your ticket for {eventName}</Preview>
@@ -44,21 +48,25 @@ export const TicketEmail = ({
         <Section style={ticketContainer}>
           <Text style={ticketHeader}>{eventName}</Text>
           <Hr style={hr} />
+          
+          <Section style={qrSection}>
+            <Img src={qrCodeUrl} width="150" height="150" alt="Ticket QR Code" style={qrImage} />
+            <Text style={valueCode}>{ticketCode}</Text>
+          </Section>
+
+          <Hr style={hr} />
+
           <Row>
             <Column>
               <Text style={label}>TICKET TYPE</Text>
               <Text style={value}>{ticketName}</Text>
             </Column>
             <Column>
-              <Text style={label}>TICKET CODE</Text>
-              <Text style={valueCode}>{ticketCode}</Text>
-            </Column>
-          </Row>
-          <Row>
-            <Column>
               <Text style={label}>DATE & TIME</Text>
               <Text style={value}>{startsAt}</Text>
             </Column>
+          </Row>
+          <Row>
             <Column>
               <Text style={label}>LOCATION</Text>
               <Text style={value}>{venueName}</Text>
@@ -67,12 +75,13 @@ export const TicketEmail = ({
         </Section>
         
         <Text style={text}>
-          Please have your ticket code ready at check-in. We look forward to seeing you there!
+          Please have your ticket QR code ready at check-in. We look forward to seeing you there!
         </Text>
       </Container>
     </Body>
   </Html>
-);
+  );
+};
 
 export default TicketEmail;
 
@@ -140,14 +149,22 @@ const value = {
   fontSize: "14px",
   color: "#161311",
   fontWeight: "500",
-  margin: "0 0 16px",
+  textAlign: "left" as const,
 };
 
 const valueCode = {
-  fontSize: "16px",
-  color: "#161311",
-  fontWeight: "700",
-  letterSpacing: "1px",
-  margin: "0 0 16px",
+  ...value,
   fontFamily: "monospace",
+  fontSize: "16px",
+  letterSpacing: "1px",
+};
+
+const qrSection = {
+  textAlign: "center" as const,
+  padding: "20px 0",
+};
+
+const qrImage = {
+  margin: "0 auto 16px auto",
+  borderRadius: "8px",
 };

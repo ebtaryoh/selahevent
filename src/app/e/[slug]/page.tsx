@@ -78,6 +78,13 @@ export default async function EventPage({ params }: Params) {
   const totalSold = tickets.reduce((sum, t) => sum + t.sold, 0);
   const fillRate = percent(totalSold, event.capacity);
 
+  const isRegistrationUpcoming =
+    event.registrationOpensAt && new Date(event.registrationOpensAt) > new Date();
+
+  const isRegistrationClosed =
+    (event.registrationClosesAt && new Date(event.registrationClosesAt) < new Date()) ||
+    new Date(event.endsAt) < new Date();
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Event",
@@ -134,6 +141,11 @@ export default async function EventPage({ params }: Params) {
             alt=""
             aria-hidden="true"
             className="object-cover"
+            style={{
+              objectPosition: (event.media as any[])?.[0]?.focus 
+                ? `${(event.media as any[])[0].focus.x}% ${(event.media as any[])[0].focus.y}%` 
+                : "center"
+            }}
             priority
             fill
           />
@@ -163,9 +175,19 @@ export default async function EventPage({ params }: Params) {
           <div className="mt-8 grid gap-10 lg:grid-cols-[1.35fr_1fr] lg:items-end">
             <div>
               <div className="flex flex-wrap items-center gap-2.5">
-                <span className="pill border-[rgba(232,211,166,0.28)] bg-[rgba(232,211,166,0.12)] text-brass-light">
-                  Registration open
-                </span>
+                {isRegistrationClosed ? (
+                  <span className="pill border-[rgba(232,211,166,0.28)] bg-[rgba(232,211,166,0.12)] text-[rgba(232,211,166,0.8)]">
+                    Registration closed
+                  </span>
+                ) : isRegistrationUpcoming ? (
+                  <span className="pill border-[rgba(232,211,166,0.28)] bg-[rgba(232,211,166,0.12)] text-[rgba(232,211,166,0.8)]">
+                    Registration opens {formatDate(event.registrationOpensAt!)}
+                  </span>
+                ) : (
+                  <span className="pill border-[rgba(232,211,166,0.28)] bg-[rgba(232,211,166,0.12)] text-brass-light">
+                    Registration open
+                  </span>
+                )}
                 <span className="pill border-[rgba(247,243,236,0.18)] bg-[rgba(247,243,236,0.08)] text-[rgba(247,243,236,0.8)]">
                   <MapPin size={12} /> {event.city}, {event.country}
                 </span>
@@ -195,13 +217,29 @@ export default async function EventPage({ params }: Params) {
               </p>
 
               <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <Link
-                  href={`/e/${event.slug}/register`}
-                  className="btn btn-brass !px-7 !py-4 !text-[0.95rem]"
-                >
-                  Register now
-                  <ArrowUpRight size={17} strokeWidth={2.1} />
-                </Link>
+                {isRegistrationClosed ? (
+                  <button
+                    disabled
+                    className="btn btn-brass opacity-50 cursor-not-allowed !px-7 !py-4 !text-[0.95rem]"
+                  >
+                    Registration closed
+                  </button>
+                ) : isRegistrationUpcoming ? (
+                  <button
+                    disabled
+                    className="btn btn-brass opacity-50 cursor-not-allowed !px-7 !py-4 !text-[0.95rem]"
+                  >
+                    Opens {formatDate(event.registrationOpensAt!)}
+                  </button>
+                ) : (
+                  <Link
+                    href={`/e/${event.slug}/register`}
+                    className="btn btn-brass !px-7 !py-4 !text-[0.95rem]"
+                  >
+                    Register now
+                    <ArrowUpRight size={17} strokeWidth={2.1} />
+                  </Link>
+                )}
                 <a
                   href="#tickets"
                   className="btn btn-light !px-7 !py-4 !text-[0.95rem]"
@@ -600,13 +638,29 @@ export default async function EventPage({ params }: Params) {
                 Choose what fits.
               </h2>
             </div>
-            <Link
-              href={`/e/${event.slug}/register`}
-              className="btn btn-primary !px-7 !py-4"
-            >
-              Start registration
-              <ArrowUpRight size={17} strokeWidth={2.1} />
-            </Link>
+            {isRegistrationClosed ? (
+              <button
+                disabled
+                className="btn btn-primary opacity-50 cursor-not-allowed !px-7 !py-4"
+              >
+                Registration closed
+              </button>
+            ) : isRegistrationUpcoming ? (
+              <button
+                disabled
+                className="btn btn-primary opacity-50 cursor-not-allowed !px-7 !py-4"
+              >
+                Opens {formatDate(event.registrationOpensAt!)}
+              </button>
+            ) : (
+              <Link
+                href={`/e/${event.slug}/register`}
+                className="btn btn-primary !px-7 !py-4"
+              >
+                Start registration
+                <ArrowUpRight size={17} strokeWidth={2.1} />
+              </Link>
+            )}
           </div>
 
           <div className="mt-11 grid gap-6 lg:grid-cols-2">
@@ -729,13 +783,29 @@ export default async function EventPage({ params }: Params) {
             ticket immediately — no account, no app to download.
           </p>
           <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
-            <Link
-              href={`/e/${event.slug}/register`}
-              className="btn btn-brass !px-8 !py-4 !text-[0.98rem]"
-            >
-              Register for this event
-              <ArrowUpRight size={18} strokeWidth={2.1} />
-            </Link>
+            {isRegistrationClosed ? (
+              <button
+                disabled
+                className="btn btn-brass opacity-50 cursor-not-allowed !px-8 !py-4 !text-[0.98rem]"
+              >
+                Registration closed
+              </button>
+            ) : isRegistrationUpcoming ? (
+              <button
+                disabled
+                className="btn btn-brass opacity-50 cursor-not-allowed !px-8 !py-4 !text-[0.98rem]"
+              >
+                Opens {formatDate(event.registrationOpensAt!)}
+              </button>
+            ) : (
+              <Link
+                href={`/e/${event.slug}/register`}
+                className="btn btn-brass !px-8 !py-4 !text-[0.98rem]"
+              >
+                Register for this event
+                <ArrowUpRight size={18} strokeWidth={2.1} />
+              </Link>
+            )}
             <Link href="/" className="btn btn-light !px-8 !py-4 !text-[0.98rem]">
               Back to Selah
             </Link>

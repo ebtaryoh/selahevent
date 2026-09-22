@@ -195,6 +195,11 @@ export default async function DashboardPage() {
                               alt=""
                               aria-hidden="true"
                               className="object-cover"
+                              style={{
+                                objectPosition: (event.media as any[])?.[0]?.focus 
+                                  ? `${(event.media as any[])[0].focus.x}% ${(event.media as any[])[0].focus.y}%` 
+                                  : "center"
+                              }}
                               fill
                             />
                           </div>
@@ -466,9 +471,9 @@ export default async function DashboardPage() {
             title="What still needs doing."
             description="Tasks are tied to the event they belong to, with an owner and a due date."
           />
-          <button type="button" className="btn btn-ghost shrink-0">
+          <Link href="/dashboard/tasks/new" className="btn btn-ghost shrink-0">
             <Plus size={16} /> New task
-          </button>
+          </Link>
         </div>
 
         <div className="mt-9 grid gap-5 md:grid-cols-2 xl:grid-cols-4">

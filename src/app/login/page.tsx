@@ -4,15 +4,19 @@ import { LoginForm } from "@/components/login-form";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Reveal } from "@/components/ui";
+import { Suspense } from "react";
+import { getOrgSession } from "@/lib/session";
 
 export const metadata = {
   title: "Sign In | Selah",
 };
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const session = await getOrgSession();
+
   return (
     <div className="min-h-screen bg-parchment flex flex-col">
-      <SiteHeader />
+      <SiteHeader isSignedIn={!!session} />
       
       <main className="flex-1 flex flex-col justify-center py-24 sm:py-32 px-5 sm:px-8">
         <div className="mx-auto w-full max-w-[1240px]">
@@ -30,7 +34,9 @@ export default function LoginPage() {
           </div>
 
           <Reveal delay={0.2}>
-            <LoginForm />
+            <Suspense fallback={<div className="h-64 flex items-center justify-center">Loading...</div>}>
+              <LoginForm />
+            </Suspense>
           </Reveal>
           
           <div className="mt-8 text-center">

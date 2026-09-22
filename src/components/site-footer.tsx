@@ -80,7 +80,7 @@ export function SiteFooter() {
                 {col.items.map((item) => (
                   <li key={item}>
                     <Link
-                      href="/"
+                      href="#"
                       className="text-[0.9125rem] leading-relaxed text-[rgba(247,243,236,0.7)] transition-colors hover:text-brass-light"
                     >
                       {item}
@@ -100,10 +100,10 @@ export function SiteFooter() {
             product — all organisations, people and figures shown are fictional.
           </p>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-            <Link href="/" className="transition-colors hover:text-brass-light">
+            <Link href="#" className="transition-colors hover:text-brass-light">
               Privacy
             </Link>
-            <Link href="/" className="transition-colors hover:text-brass-light">
+            <Link href="#" className="transition-colors hover:text-brass-light">
               Terms
             </Link>
             <Link

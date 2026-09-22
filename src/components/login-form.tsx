@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ArrowRight, Loader2, Mail, KeyRound, RefreshCcw } from "lucide-react";
 import { loginOrganization, verifyOrgOTP } from "@/lib/actions";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 
 type Step = "email" | "otp";
 
@@ -12,6 +13,10 @@ export function LoginForm() {
   const [email, setEmail] = useState("");
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const searchParams = useSearchParams();
+  const nextUrl = searchParams.get("next") || searchParams.get("callbackUrl");
+  const googleAuthHref = nextUrl ? `/api/auth/google?next=${encodeURIComponent(nextUrl)}` : "/api/auth/google";
 
   /* ── Step 1: request OTP ─────────────────────────────────────── */
   async function handleEmailSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -81,7 +86,7 @@ export function LoginForm() {
 
             <div className="mb-6">
               <a 
-                href="/api/auth/google"
+                href={googleAuthHref}
                 className="btn !bg-white !text-ink !border-[rgba(22,19,17,0.15)] hover:!bg-warm-50 !w-full !px-8 !py-3.5 text-[1rem] flex items-center justify-center gap-3"
               >
                 <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">

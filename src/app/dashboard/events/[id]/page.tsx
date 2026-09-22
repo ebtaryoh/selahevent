@@ -30,8 +30,10 @@ import {
   getVolunteers,
   getOrganization,
   getSpeakers,
+  getEventRegistrationHistory,
 } from "@/lib/data";
 import { SaveBlueprintButton } from "./save-blueprint-button";
+import { RegistrationChart } from "@/components/registration-chart";
 import {
   formatDate,
   formatMoney,
@@ -57,7 +59,7 @@ export default async function EventManagePage({
   const event = await getEventById(id);
   if (!event) notFound();
 
-  const [stats, registrations, sessions, volunteers, tickets, org, eventSpeakers] =
+  const [stats, registrations, sessions, volunteers, tickets, org, eventSpeakers, registrationHistory] =
     await Promise.all([
       getEventStats(event.id),
       getRegistrations(event.id, 1000), // View all attendees in CRM
@@ -66,6 +68,7 @@ export default async function EventManagePage({
       getTickets(event.id),
       getOrganization(),
       getSpeakers(event.id),
+      getEventRegistrationHistory(event.id, 14),
     ]);
 
   if (!org) notFound();
@@ -138,7 +141,13 @@ export default async function EventManagePage({
                   href={`/dashboard/events/${event.id}/command`}
                   className="btn btn-brass"
                 >
-                  <QrCode size={17} /> Open Command Center
+                  <TriangleAlert size={17} /> Open Command Center
+                </Link>
+                <Link
+                  href={`/dashboard/events/${event.id}/scanner`}
+                  className="btn btn-brass"
+                >
+                  <QrCode size={17} /> Scan Tickets
                 </Link>
                 <Link
                   href={`/dashboard/events/${event.id}/approvals`}
@@ -231,6 +240,13 @@ export default async function EventManagePage({
             </div>
           </div>
         ))}
+      </section>
+
+      {/* Registration History Chart */}
+      <section className="overflow-hidden rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-paper p-8 shadow-sm">
+        <h3 className="font-display text-xl font-semibold text-ink">Registration History</h3>
+        <p className="text-sm text-warm-500 mb-6 mt-1">Registrations over the last 14 days.</p>
+        <RegistrationChart data={registrationHistory} />
       </section>
 
       {/* Readiness */}

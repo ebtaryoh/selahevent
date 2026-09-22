@@ -67,6 +67,7 @@ export function EventSearch() {
             <option value="Abuja">Abuja</option>
             <option value="Port Harcourt">Port Harcourt</option>
             <option value="Ibadan">Ibadan</option>
+            <option value="Ogun">Ogun</option>
           </select>
         </div>
 
@@ -79,10 +80,10 @@ export function EventSearch() {
             className="w-full appearance-none bg-transparent px-3 py-1 text-[0.95rem] text-ink focus:outline-none"
           >
             <option value="">All Categories</option>
-            <option value="Conference">Conference</option>
-            <option value="Retreat">Retreat</option>
-            <option value="Worship Night">Worship Night</option>
-            <option value="Seminar">Seminar</option>
+            <option value="conference">Conference</option>
+            <option value="retreat">Retreat</option>
+            <option value="worship">Worship</option>
+            <option value="seminar">Seminar</option>
           </select>
           
           {isPending && (

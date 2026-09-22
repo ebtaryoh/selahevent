@@ -13,7 +13,7 @@ const links = [
   { href: "#", label: "Pricing" },
 ];
 
-export function SiteHeader() {
+export function SiteHeader({ isSignedIn = false }: { isSignedIn?: boolean }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -58,13 +58,22 @@ export function SiteHeader() {
         </nav>
 
         <div className="hidden items-center gap-3 lg:flex">
-          <Link
-            href="/login"
-            className="text-[0.875rem] font-semibold text-ink transition-colors hover:text-[var(--color-brass-deep)]"
-          >
-            Sign in
-          </Link>
-          <Link href="/register" className="btn btn-primary !px-5 !py-3 !text-[0.85rem]">
+          {isSignedIn ? (
+            <Link
+              href="/dashboard"
+              className="text-[0.875rem] font-semibold text-ink transition-colors hover:text-[var(--color-brass-deep)]"
+            >
+              Dashboard
+            </Link>
+          ) : (
+            <Link
+              href="/login"
+              className="text-[0.875rem] font-semibold text-ink transition-colors hover:text-[var(--color-brass-deep)]"
+            >
+              Sign in
+            </Link>
+          )}
+          <Link href={isSignedIn ? "/dashboard/events/new" : "/register"} className="btn btn-primary !px-5 !py-3 !text-[0.85rem]">
             Host an Event
             <ArrowUpRight size={16} strokeWidth={2.2} />
           </Link>
@@ -104,19 +113,29 @@ export function SiteHeader() {
             </nav>
             <div className="mt-8 flex flex-col gap-3">
               <Link
-                href="/register"
+                href={isSignedIn ? "/dashboard/events/new" : "/register"}
                 onClick={() => setOpen(false)}
                 className="btn btn-primary w-full"
               >
                 Host an Event
               </Link>
-              <Link
-                href="/login"
-                onClick={() => setOpen(false)}
-                className="btn btn-ghost w-full"
-              >
-                Sign in
-              </Link>
+              {isSignedIn ? (
+                <Link
+                  href="/dashboard"
+                  onClick={() => setOpen(false)}
+                  className="btn btn-ghost w-full"
+                >
+                  Dashboard
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  onClick={() => setOpen(false)}
+                  className="btn btn-ghost w-full"
+                >
+                  Sign in
+                </Link>
+              )}
             </div>
           </motion.div>
         ) : null}

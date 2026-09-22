@@ -1,6 +1,6 @@
 import { getOrgSession } from "./session";
 import { redirect } from "next/navigation";
-import { and, asc, count, desc, eq, sql, sum, or, ilike } from "drizzle-orm";
+import { and, asc, count, desc, eq, sql, sum, or, ilike, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import {
   auditLogs,
@@ -195,6 +195,7 @@ export async function getCertificate(code: string) {
       certificate: certificates,
       registration: registrations,
       event: events,
+      organization: organizations,
     })
     .from(certificates)
     .innerJoin(
@@ -202,6 +203,7 @@ export async function getCertificate(code: string) {
       eq(certificates.registrationId, registrations.id)
     )
     .innerJoin(events, eq(certificates.eventId, events.id))
+    .innerJoin(organizations, eq(events.organizationId, organizations.id))
     .where(eq(certificates.verificationCode, code))
     .limit(1)
     .then((r) => r[0] ?? null);
@@ -363,7 +365,7 @@ export async function getAllPublicEvents(filters?: { query?: string; city?: stri
     conditions.push(eq(events.eventType, filters.category));
   }
 
-  return db
+  const results = await db
     .select({
       event: events,
       organization: organizations,
@@ -372,6 +374,27 @@ export async function getAllPublicEvents(filters?: { query?: string; city?: stri
     .innerJoin(organizations, eq(events.organizationId, organizations.id))
     .where(and(...conditions))
     .orderBy(asc(events.startsAt));
+    
+  if (results.length === 0) return [];
+  
+  const eventIds = results.map(r => r.event.id);
+  const tickets = await db
+    .select({ eventId: ticketTypes.eventId, price: ticketTypes.price })
+    .from(ticketTypes)
+    .where(inArray(ticketTypes.eventId, eventIds));
+    
+  const minPriceByEvent = new Map<string, number>();
+  for (const t of tickets) {
+    const currentMin = minPriceByEvent.get(t.eventId);
+    if (currentMin === undefined || t.price < currentMin) {
+      minPriceByEvent.set(t.eventId, t.price);
+    }
+  }
+  
+  return results.map(r => ({
+    ...r,
+    minPrice: minPriceByEvent.get(r.event.id) ?? 0
+  }));
 }
 
 export async function getBlueprints(orgId: string) {
@@ -432,4 +455,35 @@ export async function getEventTicketDistribution(eventId: string) {
     .from(ticketTypes)
     .where(eq(ticketTypes.eventId, eventId))
     .orderBy(asc(ticketTypes.sortOrder));
+}
+
+export async function getEventRegistrationHistory(eventId: string, days = 14) {
+  await ensureSeed();
+
+  const rawHistory = await db
+    .select({
+      date: sql<string>`DATE(${registrations.createdAt})::text`,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(registrations)
+    .where(eq(registrations.eventId, eventId))
+    .groupBy(sql`DATE(${registrations.createdAt})`)
+    .orderBy(sql`DATE(${registrations.createdAt})`);
+
+  // Fill in missing days
+  const history = [];
+  const now = new Date();
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split("T")[0]; // YYYY-MM-DD
+    
+    const found = rawHistory.find(h => h.date === dateStr);
+    history.push({
+      date: dateStr,
+      count: found ? found.count : 0
+    });
+  }
+
+  return history;
 }

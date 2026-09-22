@@ -45,7 +45,7 @@ async function runSeed() {
       .select({ id: events.id })
       .from(events)
       .limit(1);
-    // if (existing.length > 0) return;
+    if (existing.length > 0) return;
 
     // Partial seeds are healed by clearing the demo tenant (cascades to all
     // child rows) and re-inserting the full dataset.
@@ -251,16 +251,16 @@ async function runSeed() {
       {
         id: soarId,
         organizationId: mfmOrgId,
-        slug: "mfm-soar-conference-2027",
-        title: "MFM SOAR CONFERENCE 2027",
+        slug: "mfm-soar-conference-2026",
+        title: "MFM SOAR CONFERENCE 2026",
         theme: "Mounting up with Wings as Eagles",
         tagline: "An empowerment gathering for the youth to soar above limitations.",
         description: "The MFM Youth SOAR Conference is an annual gathering of youths from across the globe for a time of intense prayers, word explosion, and impartation.",
         eventType: "conference",
         status: "published",
         visibility: "public",
-        startsAt: new Date("2027-04-10T09:00:00Z"),
-        endsAt: new Date("2027-04-12T18:00:00Z"),
+        startsAt: new Date("2026-04-10T09:00:00Z"),
+        endsAt: new Date("2026-04-12T18:00:00Z"),
         timezone: "Africa/Lagos",
         venueName: "Prayer City",
         venueAddress: "Lagos-Ibadan Expressway",
@@ -269,8 +269,8 @@ async function runSeed() {
         capacity: 20000,
         coverImage: "/images/retreat-landscape.jpg",
         currency: "NGN",
-        registrationOpensAt: new Date("2027-01-01T00:00:00Z"),
-        registrationClosesAt: new Date("2027-04-09T23:59:00Z"),
+        registrationOpensAt: new Date("2026-01-01T00:00:00Z"),
+        registrationClosesAt: new Date("2026-04-09T23:59:00Z"),
         readiness: 85,
       },
       {

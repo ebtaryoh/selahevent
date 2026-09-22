@@ -3,7 +3,7 @@
 import fs from "fs";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { sendEmailOTP, sendEventCreatedNotification } from "@/lib/email";
+import { sendEmailOTP, sendEventCreatedNotification, sendTicketConfirmation } from "@/lib/email";
 import { redirect } from "next/navigation";
 import { eq, ilike, or, and } from "drizzle-orm";
 import { db } from "@/db";
@@ -76,6 +76,14 @@ export async function createEvent(formData: FormData) {
   const venueName = formData.get("venueName") as string;
   const city = formData.get("city") as string;
   const description = formData.get("description") as string;
+  const theme = formData.get("theme") as string;
+  const tagline = formData.get("tagline") as string;
+  const timezone = formData.get("timezone") as string;
+  const registrationOpensAt = formData.get("registrationOpensAt") as string;
+  const registrationClosesAt = formData.get("registrationClosesAt") as string;
+  const country = formData.get("country") as string;
+  const mode = formData.get("mode") as string;
+  const visibility = formData.get("visibility") as string;
 
   // Collision-safe slug
   const slug = await generateUniqueSlug(title);
@@ -91,7 +99,11 @@ export async function createEvent(formData: FormData) {
 
   // Handle Media Uploads
   const mediaFiles = formData.getAll("media") as File[];
-  const mediaPaths: { type: "image" | "video"; url: string }[] = [];
+  const mediaPaths: { type: "image" | "video"; url: string, focus?: {x: number, y: number} }[] = [];
+  
+  const focusX = formData.get("coverImageFocusX");
+  const focusY = formData.get("coverImageFocusY");
+  const parsedFocus = focusX && focusY ? { x: parseFloat(focusX as string), y: parseFloat(focusY as string) } : undefined;
   
   if (mediaFiles && mediaFiles.length > 0) {
     for (const file of mediaFiles) {
@@ -122,6 +134,9 @@ export async function createEvent(formData: FormData) {
     // Set the first uploaded image as the cover image
     if (mediaPaths.length > 0 && mediaPaths[0].type === "image") {
       coverImage = mediaPaths[0].url;
+      if (parsedFocus) {
+        mediaPaths[0].focus = parsedFocus;
+      }
     }
   }
 
@@ -144,11 +159,18 @@ export async function createEvent(formData: FormData) {
         organizationId: org.id,
         slug,
         title,
+        theme,
+        tagline,
         eventType,
+        timezone: timezone || "Africa/Lagos",
         startsAt: new Date(startsAt),
         endsAt: new Date(endsAt),
+        registrationOpensAt: registrationOpensAt ? new Date(registrationOpensAt) : null,
+        registrationClosesAt: registrationClosesAt ? new Date(registrationClosesAt) : null,
         venueName,
         city,
+        country: country || "Nigeria",
+        mode: mode || "in_person",
         description,
         capacity: formData.get("capacity") ? parseInt(formData.get("capacity") as string, 10) : 0,
         coverImage,
@@ -156,7 +178,7 @@ export async function createEvent(formData: FormData) {
         customQuestions,
         brandColor: (formData.get("brandColor") as string) || "#c08a2e",
         status: "published",
-        visibility: "public",
+        visibility: visibility || "public",
         readiness: 100, // Fully ready for demo
       })
       .returning();
@@ -213,15 +235,28 @@ export async function updateEvent(eventId: string, formData: FormData) {
   const endsAt = formData.get("endsAt") as string;
   const venueName = formData.get("venueName") as string;
   const city = formData.get("city") as string;
+  
+  const theme = formData.get("theme") as string;
+  const tagline = formData.get("tagline") as string;
+  const timezone = formData.get("timezone") as string;
+  const registrationOpensAt = formData.get("registrationOpensAt") as string;
+  const registrationClosesAt = formData.get("registrationClosesAt") as string;
+  const country = formData.get("country") as string;
+  const mode = formData.get("mode") as string;
+  const visibility = formData.get("visibility") as string;
 
   if (!title || !eventType || !startsAt || !endsAt || !city) {
     return { error: "Missing required fields" };
   }
 
   let coverImage = existingEvent.coverImage;
-  const mediaPaths: { type: "image" | "video"; url: string }[] = Array.isArray(existingEvent.media) 
+  const mediaPaths: { type: "image" | "video"; url: string, focus?: {x: number, y: number} }[] = Array.isArray(existingEvent.media) 
     ? (existingEvent.media as any) 
     : [];
+
+  const focusX = formData.get("coverImageFocusX");
+  const focusY = formData.get("coverImageFocusY");
+  const parsedFocus = focusX && focusY ? { x: parseFloat(focusX as string), y: parseFloat(focusY as string) } : undefined;
 
   const mediaFiles = formData.getAll("media") as File[];
   let hasNewMedia = false;
@@ -255,6 +290,14 @@ export async function updateEvent(eventId: string, formData: FormData) {
 
     if (hasNewMedia && mediaPaths.length > 0 && mediaPaths[0].type === "image") {
       coverImage = mediaPaths[0].url;
+      if (parsedFocus) {
+        mediaPaths[0].focus = parsedFocus;
+      }
+    }
+  } else {
+    // If no new media was uploaded, preserve the old media and possibly update its focus
+    if (mediaPaths.length > 0 && parsedFocus) {
+      mediaPaths[0].focus = parsedFocus;
     }
   }
 
@@ -274,17 +317,25 @@ export async function updateEvent(eventId: string, formData: FormData) {
       .update(events)
       .set({
         title,
+        theme,
+        tagline,
         eventType,
+        timezone: timezone || "Africa/Lagos",
         startsAt: new Date(startsAt),
         endsAt: new Date(endsAt),
+        registrationOpensAt: registrationOpensAt ? new Date(registrationOpensAt) : null,
+        registrationClosesAt: registrationClosesAt ? new Date(registrationClosesAt) : null,
         venueName,
         city,
+        country: country || "Nigeria",
+        mode: mode || "in_person",
         description,
         capacity: formData.get("capacity") ? parseInt(formData.get("capacity") as string, 10) : 0,
         coverImage,
         media: mediaPaths,
         customQuestions,
         brandColor: (formData.get("brandColor") as string) || existingEvent.brandColor,
+        visibility: visibility || "public",
         updatedAt: new Date(),
       })
       .where(eq(events.id, eventId));
@@ -449,6 +500,31 @@ export async function registerAttendee(formData: FormData) {
   const eventSlug = formData.get("eventSlug") as string;
   const ticketTypeId = formData.get("ticketTypeId") as string;
   
+  const [event] = await db
+    .select()
+    .from(events)
+    .where(eq(events.id, eventId))
+    .limit(1);
+    
+  if (!event) {
+    throw new Error("Event not found");
+  }
+  
+  const isRegistrationUpcoming =
+    event.registrationOpensAt && new Date(event.registrationOpensAt) > new Date();
+
+  if (isRegistrationUpcoming) {
+    throw new Error("Registration has not opened for this event yet.");
+  }
+  
+  const isRegistrationClosed =
+    (event.registrationClosesAt && new Date(event.registrationClosesAt) < new Date()) ||
+    new Date(event.endsAt) < new Date();
+    
+  if (isRegistrationClosed) {
+    throw new Error("Registration is closed for this event.");
+  }
+  
   const firstName = formData.get("firstName") as string;
   const lastName = formData.get("lastName") as string;
   const email = formData.get("email") as string;
@@ -499,6 +575,16 @@ export async function registerAttendee(formData: FormData) {
       customAnswers,
     })
     .returning();
+
+  // Send the ticket confirmation email (non-blocking)
+  void sendTicketConfirmation(newRegistration.email, {
+    attendeeName: `${newRegistration.firstName} ${newRegistration.lastName}`,
+    eventName: event.title,
+    ticketName: ticket.name,
+    ticketCode: newRegistration.ticketCode,
+    startsAt: event.startsAt.toISOString(),
+    venueName: event.venueName,
+  });
 
   // Redirect to success page with the registration ID
   redirect(`/e/${eventSlug}/register/success?id=${newRegistration.id}`);

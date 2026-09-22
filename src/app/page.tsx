@@ -7,6 +7,8 @@ import { Reveal, SectionHead } from "@/components/ui";
 import { Sparkles } from "lucide-react";
 import { getAllPublicEvents } from "@/lib/data";
 import { EventSearch } from "@/components/event-search";
+import { formatMoney } from "@/lib/format";
+import { getOrgSession } from "@/lib/session";
 
 type SearchParams = {
   query?: string;
@@ -21,10 +23,11 @@ export default async function HomePage({
 }) {
   const params = await searchParams;
   const publicEvents = await getAllPublicEvents(params);
+  const session = await getOrgSession();
 
   return (
     <div className="min-h-screen bg-parchment">
-      <SiteHeader />
+      <SiteHeader isSignedIn={!!session} />
 
       {/* Hero Section */}
       <section className="relative isolate overflow-hidden pt-[72px]">
@@ -81,7 +84,7 @@ export default async function HomePage({
                 Browse Events
                 <ArrowRight size={17} strokeWidth={2.1} className="ml-2" />
               </a>
-              <Link href="/register" className="btn btn-light !px-8 !py-4 !text-[1rem]">
+              <Link href={session ? "/dashboard/events/new" : "/register"} className="btn btn-light !px-8 !py-4 !text-[1rem]">
                 List Your Event
               </Link>
             </div>
@@ -112,7 +115,7 @@ export default async function HomePage({
             </Reveal>
           ) : (
             <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {publicEvents.map(({ event, organization }, i) => (
+              {publicEvents.map(({ event, organization, minPrice }, i) => (
                 <Reveal key={event.id} delay={0.1 * i}>
                   <Link
                     href={`/e/${event.slug}`}
@@ -126,6 +129,11 @@ export default async function HomePage({
                           fill
                           sizes="(max-width: 768px) 100vw, 50vw"
                           className="object-cover transition-transform duration-700 group-hover:scale-105"
+                          style={{
+                            objectPosition: (event.media as any[])?.[0]?.focus 
+                              ? `${(event.media as any[])[0].focus.x}% ${(event.media as any[])[0].focus.y}%` 
+                              : "center"
+                          }}
                         />
                       )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
@@ -137,8 +145,11 @@ export default async function HomePage({
                     </div>
 
                     <div className="flex flex-1 flex-col p-6 relative">
-                      <div className="mb-2 flex items-center gap-2 text-[0.75rem] font-semibold text-brass uppercase tracking-wide">
+                      <div className="mb-2 flex items-center justify-between gap-2 text-[0.75rem] font-semibold text-brass uppercase tracking-wide">
                         <span>{organization.name}</span>
+                        <span className="rounded bg-[var(--color-brass-deep)]/10 px-2 py-0.5 text-[var(--color-brass-deep)]">
+                          {minPrice === 0 ? "Free" : `From ${formatMoney(minPrice, event.currency)}`}
+                        </span>
                       </div>
                       
                       <h3 className="font-display mb-3 text-[1.35rem] leading-[1.25] font-semibold text-ink transition-colors duration-300 group-hover:text-[var(--color-brass-deep)]">

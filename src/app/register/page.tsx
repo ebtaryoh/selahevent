@@ -4,15 +4,18 @@ import { RegisterOrgForm } from "@/components/register-org-form";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Reveal } from "@/components/ui";
+import { getOrgSession } from "@/lib/session";
 
 export const metadata = {
   title: "Register Your Organization | Selah",
 };
 
-export default function RegisterPage() {
+export default async function RegisterPage() {
+  const session = await getOrgSession();
+
   return (
     <div className="min-h-screen bg-parchment flex flex-col">
-      <SiteHeader />
+      <SiteHeader isSignedIn={!!session} />
       
       <main className="flex-1 flex flex-col justify-center py-24 sm:py-32 px-5 sm:px-8">
         <div className="mx-auto w-full max-w-[1240px]">

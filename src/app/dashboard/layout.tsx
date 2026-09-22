@@ -74,19 +74,25 @@ export default async function DashboardLayout({
         </div>
 
         <div className="px-5 pt-6">
-          <button
-            type="button"
+          <Link
+            href="/dashboard/settings"
             className="flex w-full items-center gap-3 rounded-[11px] border border-[rgba(22,19,17,0.11)] bg-parchment px-3.5 py-3 text-left transition-colors hover:border-[rgba(192,138,46,0.5)]"
           >
             <span
-              className="flex h-8 w-8 items-center justify-center rounded-[8px] text-[0.72rem] font-bold text-white"
+              className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-[8px] text-[0.72rem] font-bold text-white"
               style={{ background: org?.primaryColor ?? "#0e2a22" }}
             >
-              {(org?.name ?? "Grace Fellowship")
-                .split(" ")
-                .map((w) => w[0])
-                .join("")
-                .slice(0, 2)}
+              {org?.logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={org.logoUrl} alt={org.name} className="h-full w-full object-cover" />
+              ) : (
+                (org?.name ?? "Grace Fellowship")
+                  .split(" ")
+                  .map((w) => w[0])
+                  .join("")
+                  .slice(0, 2)
+                  .toUpperCase()
+              )}
             </span>
             <span className="min-w-0 flex-1">
               <span className="block truncate text-[0.8125rem] font-semibold text-ink">
@@ -97,11 +103,11 @@ export default async function DashboardLayout({
                 {org?.currency ?? "NGN"}
               </span>
             </span>
-            <ChevronRight size={15} className="text-warm-400" />
-          </button>
+            <ChevronRight size={15} className="shrink-0 text-warm-400" />
+          </Link>
         </div>
 
-        <nav className="mt-6 flex-1 px-4" aria-label="Dashboard">
+        <nav className="mt-6 flex-1 overflow-y-auto px-4" aria-label="Dashboard">
           <div className="eyebrow px-3 pb-3 text-[0.525rem] text-warm-300">
             Workspace
           </div>
@@ -147,7 +153,7 @@ export default async function DashboardLayout({
             </li>
             <li>
               <Link
-                href="/"
+                href="/dashboard/settings"
                 className="group flex items-center gap-3 rounded-[9px] px-3 py-2.5 text-[0.845rem] font-medium text-warm-600 transition-colors hover:bg-[rgba(192,138,46,0.1)] hover:text-ink"
               >
                 <Settings2
@@ -161,20 +167,36 @@ export default async function DashboardLayout({
           </ul>
         </nav>
 
-        <div className="border-t border-[rgba(22,19,17,0.09)] p-4">
-          <div className="flex items-center gap-3 rounded-[11px] bg-parchment px-3.5 py-3">
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-cypress text-[0.72rem] font-semibold text-brass-light">
-              AN
-            </span>
+        <div className="border-t border-[rgba(22,19,17,0.09)] p-4 shrink-0">
+          <Link
+            href="/dashboard/settings"
+            className="group flex items-center gap-3 rounded-[11px] bg-parchment px-3.5 py-3 transition-colors hover:bg-[rgba(192,138,46,0.05)]"
+          >
+            {org?.avatar ? (
+              <img
+                src={org.avatar}
+                alt={org.name || "Organization"}
+                className="h-9 w-9 shrink-0 rounded-full object-cover"
+              />
+            ) : (
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cypress text-[0.72rem] font-semibold text-brass-light group-hover:bg-opacity-90">
+                {(org?.name ?? "Admin")
+                  .split(" ")
+                  .map((w) => w[0])
+                  .join("")
+                  .slice(0, 2)
+                  .toUpperCase()}
+              </span>
+            )}
             <div className="min-w-0 flex-1">
               <div className="truncate text-[0.795rem] font-semibold text-ink">
-                Adaeze Nwosu
+                {org?.name ?? "Admin"}
               </div>
               <div className="truncate text-[0.695rem] text-warm-400">
-                Organization Owner
+                {org?.email ?? "Organization Admin"}
               </div>
             </div>
-          </div>
+          </Link>
         </div>
       </aside>
 

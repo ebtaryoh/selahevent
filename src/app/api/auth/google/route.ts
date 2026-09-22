@@ -11,8 +11,10 @@ export async function GET(req: Request) {
     );
   }
 
-  // Determine the callback URL based on the incoming request to support both local and prod
   const url = new URL(req.url);
+  const nextUrl = url.searchParams.get("next") || "/dashboard";
+
+  // Determine the callback URL based on the incoming request to support both local and prod
   const redirectUri = `${url.protocol}//${url.host}/api/auth/google/callback`;
 
   // Generate a random state string for CSRF protection
@@ -27,11 +29,20 @@ export async function GET(req: Request) {
     path: "/",
   });
 
+  // Store the next URL to redirect to after successful login
+  cookieStore.set("google_oauth_next", nextUrl, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 60 * 10, // 10 minutes
+    path: "/",
+  });
+
   const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
   authUrl.searchParams.set("client_id", clientId);
   authUrl.searchParams.set("redirect_uri", redirectUri);
   authUrl.searchParams.set("response_type", "code");
-  authUrl.searchParams.set("scope", "https://www.googleapis.com/auth/userinfo.email");
+  // Request both email and profile to get the user's name
+  authUrl.searchParams.set("scope", "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile");
   authUrl.searchParams.set("access_type", "online");
   authUrl.searchParams.set("state", state);
 

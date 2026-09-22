@@ -11,9 +11,11 @@
   "dependencies": {
     "@react-email/components": "^1.0.12",
     "@vercel/blob": "^2.8.0",
+    "date-fns": "^4.4.0",
     "dotenv": "^17.3.1",
     "drizzle-orm": "0.45.2",
     "framer-motion": "^13.4.0",
+    "html5-qrcode": "^2.3.8",
     "jose": "^6.2.12",
     "lucide-react": "^1.47.0",
     "next": "^16.3.5",
@@ -21,6 +23,7 @@
     "qrcode.react": "^4.2.0",
     "react": "19.2.6",
     "react-dom": "19.2.6",
+    "recharts": "^3.10.1",
     "resend": "^6.28.1"
   },
   "devDependencies": {

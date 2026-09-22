@@ -69,7 +69,7 @@ export default async function VerifyPage({
                 <p className="mx-auto mt-4 max-w-[32rem] text-[1.025rem] leading-[1.72] text-[rgba(247,243,236,0.82)]">
                   This certificate was issued by{" "}
                   <strong className="font-semibold text-brass-light">
-                    Grace Fellowship
+                    {result.organization.name}
                   </strong>{" "}
                   and is recorded in the issuing organisation&apos;s register.
                 </p>

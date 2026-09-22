@@ -23,32 +23,43 @@ function getSecret(): Uint8Array {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  // Only gate dashboard routes
-  if (!pathname.startsWith("/dashboard")) {
-    return NextResponse.next();
-  }
-
   const token = request.cookies.get(COOKIE_NAME)?.value;
 
-  if (!token) {
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("from", pathname);
-    return NextResponse.redirect(loginUrl);
+  // Protect dashboard routes
+  if (pathname.startsWith("/dashboard")) {
+    if (!token) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("from", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    try {
+      await jwtVerify(token, getSecret());
+      return NextResponse.next();
+    } catch {
+      // Token is expired, tampered, or invalid
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("from", pathname);
+      const response = NextResponse.redirect(loginUrl);
+      // Clear the bad cookie
+      response.cookies.delete(COOKIE_NAME);
+      return response;
+    }
   }
 
-  try {
-    await jwtVerify(token, getSecret());
-    return NextResponse.next();
-  } catch {
-    // Token is expired, tampered, or invalid
-    const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("from", pathname);
-    const response = NextResponse.redirect(loginUrl);
-    // Clear the bad cookie
-    response.cookies.delete(COOKIE_NAME);
-    return response;
+  // Redirect signed-in users away from auth pages
+  if (pathname === "/login" || pathname === "/register") {
+    if (token) {
+      try {
+        await jwtVerify(token, getSecret());
+        return NextResponse.redirect(new URL("/dashboard", request.url));
+      } catch {
+        // Token is invalid, let them see the auth page
+      }
+    }
   }
+
+  return NextResponse.next();
 }
 
 export const config = {

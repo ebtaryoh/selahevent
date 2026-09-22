@@ -34,10 +34,10 @@ export function RegisterOrgForm() {
     <form onSubmit={handleSubmit} className="space-y-6 max-w-md mx-auto w-full">
       <div className="rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-paper p-6 sm:p-8 shadow-sm">
         <div className="grid grid-cols-2 gap-3 mb-6">
-          <button type="button" className="btn btn-ghost !border border-[rgba(22,19,17,0.1)] !bg-white !px-4 !py-2.5 flex items-center justify-center gap-2 text-[0.875rem] font-medium text-ink shadow-sm hover:!bg-parchment transition-colors">
+          <a href="/api/auth/google" className="btn btn-ghost !border border-[rgba(22,19,17,0.1)] !bg-white !px-4 !py-2.5 flex items-center justify-center gap-2 text-[0.875rem] font-medium text-ink shadow-sm hover:!bg-parchment transition-colors">
             <GoogleIcon className="h-5 w-5" />
             Google
-          </button>
+          </a>
           <button type="button" className="btn btn-ghost !border border-[rgba(22,19,17,0.1)] !bg-white !px-4 !py-2.5 flex items-center justify-center gap-2 text-[0.875rem] font-medium text-ink shadow-sm hover:!bg-parchment transition-colors">
             <AppleIcon className="h-5 w-5" />
             Apple
