@@ -4,6 +4,7 @@ import Image from "next/image";
 import {
   ArrowLeft,
   ArrowRight,
+  CalendarDays,
   CalendarPlus,
   Check,
   CheckCircle2,
@@ -906,14 +907,18 @@ export function RegistrationForm({
       {/* Summary rail */}
       <aside className="space-y-6">
         <div className="overflow-hidden rounded-[16px] border border-[rgba(22,19,17,0.11)] bg-cypress text-parchment">
-          <div className="relative h-[168px] w-full overflow-hidden">
-            <Image
-              src={event.coverImage ?? "/images/event-stage.jpg"}
-              alt=""
-              aria-hidden="true"
-              className="object-cover"
-              fill
-            />
+          <div className="relative h-[168px] w-full overflow-hidden bg-cypress/10 flex items-center justify-center">
+            {event.coverImage ? (
+              <Image
+                src={event.coverImage}
+                alt=""
+                aria-hidden="true"
+                className="object-cover"
+                fill
+              />
+            ) : (
+              <CalendarDays size={40} className="text-parchment/40" />
+            )}
             <div
               className="-mt-[168px] h-[168px] w-full"
               style={{

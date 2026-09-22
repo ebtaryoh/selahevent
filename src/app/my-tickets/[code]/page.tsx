@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { SelahMark } from "@/components/logo";
 import { formatDate, formatTime } from "@/lib/format";
 import Image from "next/image";
+import { CalendarDays } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "My Ticket | Selah",
@@ -46,18 +47,22 @@ export default async function TicketViewPage({
 
       <div className="w-full max-w-md overflow-hidden rounded-[24px] bg-white shadow-sm border border-[rgba(22,19,17,0.1)]">
         {/* Header Image */}
-        <div className="relative h-48 w-full bg-cypress">
-          <Image
-            src={event.coverImage || "/images/event-stage.jpg"}
-            alt={event.title}
-            fill
-            className="object-cover opacity-80"
-            style={{
-              objectPosition: (event.media as any[])?.[0]?.focus 
-                ? `${(event.media as any[])[0].focus.x}% ${(event.media as any[])[0].focus.y}%` 
-                : "center"
-            }}
-          />
+        <div className="relative h-48 w-full overflow-hidden bg-warm-200 flex items-center justify-center">
+          {event.coverImage ? (
+            <Image
+              src={event.coverImage}
+              alt={event.title}
+              fill
+              className="object-cover opacity-80"
+              style={{
+                objectPosition: (event.media as any[])?.[0]?.focus 
+                  ? `${(event.media as any[])[0].focus.x}% ${(event.media as any[])[0].focus.y}%` 
+                  : "center"
+              }}
+            />
+          ) : (
+            <CalendarDays size={48} className="text-warm-400 opacity-30" />
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-cypress/90 to-transparent" />
           <div className="absolute bottom-6 left-6 right-6">
             <h1 className="font-display text-2xl font-semibold text-parchment line-clamp-2">

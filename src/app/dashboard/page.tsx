@@ -187,21 +187,23 @@ export default async function DashboardPage() {
                     <tr key={event.id}>
                       <td>
                         <div className="flex items-center gap-3.5">
-                          <div className="h-11 w-11 shrink-0 overflow-hidden rounded-[9px]">
-                            <Image
-                              src={
-                                event.coverImage ?? "/images/event-stage.jpg"
-                              }
-                              alt=""
-                              aria-hidden="true"
-                              className="object-cover"
-                              style={{
-                                objectPosition: (event.media as any[])?.[0]?.focus 
-                                  ? `${(event.media as any[])[0].focus.x}% ${(event.media as any[])[0].focus.y}%` 
-                                  : "center"
-                              }}
-                              fill
-                            />
+                          <div className="h-11 w-11 shrink-0 overflow-hidden rounded-[9px] bg-warm-200 flex items-center justify-center">
+                            {event.coverImage ? (
+                              <Image
+                                src={event.coverImage}
+                                alt=""
+                                aria-hidden="true"
+                                className="object-cover"
+                                style={{
+                                  objectPosition: (event.media as any[])?.[0]?.focus 
+                                    ? `${(event.media as any[])[0].focus.x}% ${(event.media as any[])[0].focus.y}%` 
+                                    : "center"
+                                }}
+                                fill
+                              />
+                            ) : (
+                              <CalendarDays size={18} className="text-warm-400 opacity-50" />
+                            )}
                           </div>
                           <div className="min-w-0">
                             <div className="truncate font-semibold text-ink">

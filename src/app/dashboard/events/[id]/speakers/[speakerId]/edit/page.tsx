@@ -8,20 +8,20 @@ import { getOrganization } from "@/lib/data";
 export default async function EditSpeakerPage({
   params,
 }: {
-  params: { id: string; speakerId: string };
+  params: Promise<{ id: string; speakerId: string }>;
 }) {
   const org = await getOrganization();
   if (!org) return notFound();
 
   const event = await db.query.events.findFirst({
-    where: eq(events.id, params.id),
+    where: eq(events.id, (await params).id),
   });
 
   if (!event || event.organizationId !== org.id) return notFound();
 
   const speaker = await db.query.speakers.findFirst({
     where: and(
-      eq(speakers.id, params.speakerId),
+      eq(speakers.id, (await params).speakerId),
       eq(speakers.eventId, event.id)
     ),
   });

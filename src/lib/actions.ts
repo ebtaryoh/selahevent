@@ -95,14 +95,7 @@ export async function createEvent(formData: FormData) {
   // Collision-safe slug
   const slug = await generateUniqueSlug(title);
 
-  // Randomly assign one of our premium images
-  // Pick a random default cover image from the public folder
-  const images = [
-    "/images/event-stage.jpg",
-    "/images/hero-auditorium.jpg",
-    "/images/retreat-landscape.jpg",
-  ];
-  let coverImage = images[Math.floor(Math.random() * images.length)];
+  let coverImage: string | null = null;
 
   // Handle Media Uploads
   const mediaFiles = formData.getAll("media") as File[];

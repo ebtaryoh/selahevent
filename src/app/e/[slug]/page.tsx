@@ -136,19 +136,25 @@ export default async function EventPage({ params }: Params) {
       {/* ------------- Hero ------------- */}
       <section className="relative isolate overflow-hidden pt-[72px]">
         <div className="absolute inset-0 -z-10">
-          <Image
-            src={event.coverImage ?? "/images/event-stage.jpg"}
-            alt=""
-            aria-hidden="true"
-            className="object-cover"
-            style={{
-              objectPosition: (event.media as any[])?.[0]?.focus 
-                ? `${(event.media as any[])[0].focus.x}% ${(event.media as any[])[0].focus.y}%` 
-                : "center"
-            }}
-            priority
-            fill
-          />
+          {event.coverImage ? (
+            <Image
+              src={event.coverImage}
+              alt=""
+              aria-hidden="true"
+              className="object-cover"
+              style={{
+                objectPosition: (event.media as any[])?.[0]?.focus 
+                  ? `${(event.media as any[])[0].focus.x}% ${(event.media as any[])[0].focus.y}%` 
+                  : "center"
+              }}
+              priority
+              fill
+            />
+          ) : (
+            <div className="absolute inset-0 bg-cypress text-brass-light flex items-center justify-end opacity-10">
+              <CalendarDays size={400} className="-mr-20" />
+            </div>
+          )}
           <div
             className="absolute inset-0"
             style={{
@@ -758,13 +764,19 @@ export default async function EventPage({ params }: Params) {
       {/* ------------- Final CTA ------------- */}
       <section className="relative isolate overflow-hidden">
         <div className="absolute inset-0 -z-10">
-          <Image
-            src={event.coverImage ?? "/images/event-stage.jpg"}
-            alt=""
-            aria-hidden="true"
-            className="object-cover"
-            fill
-          />
+          {event.coverImage ? (
+            <Image
+              src={event.coverImage}
+              alt=""
+              aria-hidden="true"
+              className="object-cover"
+              fill
+            />
+          ) : (
+            <div className="absolute inset-0 bg-cypress text-brass-light flex items-center justify-end opacity-10">
+              <CalendarDays size={400} className="-mr-20" />
+            </div>
+          )}
           <div
             className="absolute inset-0"
             style={{

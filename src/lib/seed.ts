@@ -35,8 +35,7 @@ const hcEventId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 let seedPromise: Promise<void> | null = null;
 
 export function ensureSeed(): Promise<void> {
-  seedPromise ??= runSeed();
-  return seedPromise;
+  return Promise.resolve();
 }
 
 async function runSeed() {

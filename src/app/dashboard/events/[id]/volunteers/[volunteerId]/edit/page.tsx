@@ -8,20 +8,20 @@ import { getOrganization } from "@/lib/data";
 export default async function EditVolunteerPage({
   params,
 }: {
-  params: { id: string; volunteerId: string };
+  params: Promise<{ id: string; volunteerId: string }>;
 }) {
   const org = await getOrganization();
   if (!org) return notFound();
 
   const event = await db.query.events.findFirst({
-    where: eq(events.id, params.id),
+    where: eq(events.id, (await params).id),
   });
 
   if (!event || event.organizationId !== org.id) return notFound();
 
   const volunteer = await db.query.volunteers.findFirst({
     where: and(
-      eq(volunteers.id, params.volunteerId),
+      eq(volunteers.id, (await params).volunteerId),
       eq(volunteers.eventId, event.id)
     ),
   });

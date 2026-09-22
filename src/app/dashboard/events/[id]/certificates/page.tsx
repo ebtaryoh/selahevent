@@ -8,13 +8,13 @@ import { CertificateForm } from "@/components/certificate-form";
 export default async function CertificatesPage({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
   const org = await getOrganization();
   if (!org) return notFound();
 
   const event = await db.query.events.findFirst({
-    where: eq(events.id, params.id),
+    where: eq(events.id, (await params).id),
   });
 
   if (!event || event.organizationId !== org.id) return notFound();

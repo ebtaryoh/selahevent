@@ -86,13 +86,24 @@ export default async function EventManagePage({
 
         <div className="mt-6 overflow-hidden rounded-[17px] border border-[rgba(22,19,17,0.1)] bg-cypress text-parchment">
           <div className="relative">
-            <Image
-              src={event.coverImage ?? "/images/event-stage.jpg"}
-              alt=""
-              aria-hidden="true"
-              className="opacity-45 object-cover"
-              fill
-            />
+            {event.coverImage ? (
+              <Image
+                src={event.coverImage}
+                alt=""
+                aria-hidden="true"
+                className="opacity-45 object-cover"
+                style={{
+                  objectPosition: (event.media as any[])?.[0]?.focus 
+                    ? `${(event.media as any[])[0].focus.x}% ${(event.media as any[])[0].focus.y}%` 
+                    : "center"
+                }}
+                fill
+              />
+            ) : (
+              <div className="absolute inset-0 bg-cypress text-brass-light flex items-center justify-end opacity-20">
+                <CalendarDays size={120} className="-mr-10" />
+              </div>
+            )}
             <div
               className="absolute inset-0"
               style={{

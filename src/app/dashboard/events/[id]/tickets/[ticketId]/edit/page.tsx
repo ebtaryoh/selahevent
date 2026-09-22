@@ -8,20 +8,20 @@ import { getOrganization } from "@/lib/data";
 export default async function EditTicketPage({
   params,
 }: {
-  params: { id: string; ticketId: string };
+  params: Promise<{ id: string; ticketId: string }>;
 }) {
   const org = await getOrganization();
   if (!org) return notFound();
 
   const event = await db.query.events.findFirst({
-    where: eq(events.id, params.id),
+    where: eq(events.id, (await params).id),
   });
 
   if (!event || event.organizationId !== org.id) return notFound();
 
   const ticket = await db.query.ticketTypes.findFirst({
     where: and(
-      eq(ticketTypes.id, params.ticketId),
+      eq(ticketTypes.id, (await params).ticketId),
       eq(ticketTypes.eventId, event.id)
     ),
   });
