@@ -753,6 +753,29 @@ export default async function EventPage({ params }: Params) {
                         </span>
                       </div>
                     )}
+                    
+                    <div className="mt-6">
+                      {isRegistrationClosed ? (
+                        <button disabled className="btn w-full bg-[rgba(22,19,17,0.05)] text-warm-500 opacity-50 cursor-not-allowed">
+                          Registration closed
+                        </button>
+                      ) : isRegistrationUpcoming ? (
+                        <button disabled className="btn w-full bg-[rgba(22,19,17,0.05)] text-warm-500 opacity-50 cursor-not-allowed">
+                          Opens soon
+                        </button>
+                      ) : remaining === 0 && ticket.capacity > 0 ? (
+                        <button disabled className="btn w-full bg-[rgba(22,19,17,0.05)] text-warm-500 opacity-50 cursor-not-allowed">
+                          Sold out
+                        </button>
+                      ) : (
+                        <Link 
+                          href={`/e/${event.slug}/register?ticket=${ticket.id}`} 
+                          className="btn w-full bg-[rgba(22,19,17,0.05)] text-ink hover:bg-[rgba(22,19,17,0.08)]"
+                        >
+                          Select this ticket
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 </article>
               );

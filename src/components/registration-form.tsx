@@ -17,7 +17,7 @@ import {
   Ticket,
 } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { cn, formatMoney, formatRange, formatTime } from "@/lib/format";
 import { requestAttendeeOTP, verifyAttendeeOTP, getAttendeeProfile } from "@/lib/attendee";
@@ -99,9 +99,11 @@ const STEPS = [
 export function RegistrationForm({
   event,
   tickets,
+  initialTicketId,
 }: {
   event: EventSummary;
   tickets: TicketOption[];
+  initialTicketId?: string;
 }) {
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
@@ -119,8 +121,14 @@ export function RegistrationForm({
   }>(null);
 
   const [form, setForm] = useState<FormState>(() =>
-    initial(tickets[0]?.id ?? "")
+    initial(initialTicketId || tickets[0]?.id || "")
   );
+
+  useEffect(() => {
+    if (initialTicketId) {
+      setForm((prev) => ({ ...prev, ticketTypeId: initialTicketId }));
+    }
+  }, [initialTicketId]);
   
   const [customAnswers, setCustomAnswers] = useState<Record<string, string>>({});
   
@@ -146,10 +154,12 @@ export function RegistrationForm({
     });
   };
 
-  const validateStep = () => {
+  const validateStep = (isSubmit = false) => {
     const errors: Record<string, string> = {};
 
-    if (step === 1) {
+    // Always validate step 1 fields if we are trying to proceed from step 1, 
+    // or if we are on step 3, or if we are submitting.
+    if (step === 1 || step === 3 || isSubmit) {
       if (form.firstName.trim().length < 2)
         errors.firstName = "Please enter your first name.";
       if (form.lastName.trim().length < 2)
@@ -160,7 +170,7 @@ export function RegistrationForm({
         errors.phone = "Please enter a phone number we can reach you on.";
     }
 
-    if (step === 3) {
+    if (step === 3 || isSubmit) {
       if (form.emergencyName.trim().length < 2)
         errors.emergencyName = "An emergency contact is required for this event.";
       if (form.emergencyPhone.trim().length < 7)
@@ -176,13 +186,31 @@ export function RegistrationForm({
     }
 
     setFieldErrors(errors);
-    return Object.keys(errors).length === 0;
+    
+    if (Object.keys(errors).length > 0) {
+      // If we are validating for submit or step 3 and there are step 1 errors, jump back to step 1
+      if ((isSubmit || step === 3) && (errors.firstName || errors.lastName || errors.email || errors.phone)) {
+        setStep(1);
+        setError("Please complete your personal details before continuing.");
+      }
+      return false;
+    }
+    
+    return true;
   };
 
   const next = () => {
     if (!validateStep()) return;
     setError(null);
-    setStep((s) => Math.min(4, s + 1));
+    setStep((s) => {
+      // If they are on step 2, but somehow skipped step 1 validation, validateStep will catch it now?
+      // Wait, if step is 2, validateStep currently doesn't check step 1. 
+      // Let's explicitly check step 1 fields before allowing them to go to step 3.
+      if (s === 2) {
+        if (form.firstName.trim().length < 2 || !form.email) return 1;
+      }
+      return Math.min(4, s + 1);
+    });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -193,6 +221,11 @@ export function RegistrationForm({
   };
 
   const submit = async () => {
+    if (!validateStep(true)) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    
     setSubmitting(true);
     setError(null);
     try {
@@ -227,6 +260,11 @@ export function RegistrationForm({
             ? data.error
             : "Something went wrong while saving your registration."
         );
+        return;
+      }
+
+      if (data.payment?.checkoutUrl) {
+        window.location.href = data.payment.checkoutUrl;
         return;
       }
 
@@ -525,8 +563,18 @@ export function RegistrationForm({
                   {tickets.map((ticket) => {
                     const active = ticket.id === form.ticketTypeId;
                     return (
-                      <label
+                      <div
                         key={ticket.id}
+                        role="radio"
+                        aria-checked={active}
+                        tabIndex={0}
+                        onClick={() => update("ticketTypeId", ticket.id)}
+                        onKeyDown={(e) => {
+                           if (e.key === 'Enter' || e.key === ' ') {
+                             e.preventDefault();
+                             update("ticketTypeId", ticket.id);
+                           }
+                        }}
                         className={cn(
                           "flex cursor-pointer items-start gap-4 rounded-[13px] border p-5 transition-colors",
                           active
@@ -534,13 +582,6 @@ export function RegistrationForm({
                             : "border-[rgba(22,19,17,0.13)] bg-paper hover:border-[rgba(192,138,46,0.5)]"
                         )}
                       >
-                        <input
-                          type="radio"
-                          name="ticketType"
-                          className="sr-only"
-                          checked={active}
-                          onChange={() => update("ticketTypeId", ticket.id)}
-                        />
                         <span
                           className={cn(
                             "mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2",
@@ -581,7 +622,7 @@ export function RegistrationForm({
                             ? "Free"
                             : formatMoney(ticket.price, ticket.currency)}
                         </span>
-                      </label>
+                      </div>
                     );
                   })}
                 </div>
@@ -968,12 +1009,15 @@ export function RegistrationForm({
                     )}
               </div>
             </div>
-            <Link
-              href={`/e/${event.slug}#tickets`}
-              className="text-[0.795rem] font-semibold text-[var(--color-brass-deep)] underline underline-offset-4"
-            >
-              Change
-            </Link>
+            {step !== 2 && (
+              <button
+                type="button"
+                onClick={() => setStep(2)}
+                className="text-[0.795rem] font-semibold text-[var(--color-brass-deep)] underline underline-offset-4"
+              >
+                Change
+              </button>
+            )}
           </div>
 
           {selectedTicket?.benefits?.length ? (

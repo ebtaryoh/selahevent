@@ -16,6 +16,7 @@ export const pool =
   globalForDb.__arenaNextJsPostgresqlPool ??
   new Pool({
     connectionString: databaseUrl,
+    max: process.env.NODE_ENV === "production" ? 10 : 1, // Prevent EMAXCONNSESSION on Neon free tier during dev
   });
 
 if (process.env.NODE_ENV !== "production") {

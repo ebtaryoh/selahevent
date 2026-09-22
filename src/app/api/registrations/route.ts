@@ -80,6 +80,13 @@ export async function POST(request: Request) {
     );
   }
 
+  const organization = await db
+    .select()
+    .from(organizations)
+    .where(eq(organizations.id, event.organizationId))
+    .limit(1)
+    .then((r) => r[0]);
+
   const ticketIdRaw = payload.ticketTypeId;
   const ticket =
     typeof ticketIdRaw === "string" && ticketIdRaw
@@ -120,6 +127,56 @@ export async function POST(request: Request) {
   const amount = ticket?.price ?? 0;
   const requiresPayment = amount > 0;
 
+  let paystackReference = requiresPayment ? `PAYSTACK_${randomToken(10)}` : `FREE_${randomToken(10)}`;
+  let checkoutUrl: string | null = null;
+  
+  // INITIALIZE PAYSTACK TRANSACTION
+  if (requiresPayment) {
+    // If the organization hasn't provided a secret key, we could fallback to env vars, 
+    // but for now let's assume they must have one.
+    const secretKey = organization?.paystackSecretKey || process.env.PAYSTACK_SECRET_KEY;
+    
+    if (!secretKey) {
+       return NextResponse.json(
+        { ok: false, error: "Payment gateway is not configured for this organization." },
+        { status: 500 }
+      );
+    }
+    
+    // Amount in kobo/cents
+    const amountInKobo = Math.round(amount * 100);
+    
+    const paystackRes = await fetch("https://api.paystack.co/transaction/initialize", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${secretKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: email,
+        amount: amountInKobo,
+        reference: paystackReference,
+        metadata: {
+          eventId: event.id,
+          ticketTypeId: ticket?.id ?? null,
+        }
+      }),
+    });
+    
+    const paystackData = await paystackRes.json();
+    
+    if (!paystackRes.ok || !paystackData.status) {
+      console.error("Paystack initialization failed:", paystackData);
+      return NextResponse.json(
+        { ok: false, error: "Could not initialize payment. Please try again." },
+        { status: 500 }
+      );
+    }
+    
+    checkoutUrl = paystackData.data.authorization_url;
+    paystackReference = paystackData.data.reference; // usually same as what we passed, but let's be safe
+  }
+
   const { getAttendeeSession } = await import("@/lib/attendee");
   const session = await getAttendeeSession();
   let attendeeId = session?.attendeeId ?? null;
@@ -147,7 +204,7 @@ export async function POST(request: Request) {
         },
       })
       .returning();
-    
+      
     attendeeId = attendee.id;
 
     // TODO: Ideally we should update the JWT here to include the attendeeId if it was null,
@@ -197,9 +254,7 @@ export async function POST(request: Request) {
       amount,
       currency: event.currency,
       gateway: "paystack",
-      gatewayReference: requiresPayment
-        ? `PENDING_${randomToken(10)}`
-        : `FREE_${randomToken(10)}`,
+      gatewayReference: paystackReference,
       status: requiresPayment ? "pending" : "paid",
       verified: !requiresPayment,
       paidAt: requiresPayment ? null : new Date(),
@@ -212,22 +267,25 @@ export async function POST(request: Request) {
         .where(eq(ticketTypes.id, ticket.id));
     }
 
-    // Send ticket confirmation email
-    void sendTicketConfirmation(created.email, {
-      attendeeName: created.firstName,
-      eventName: event.title,
-      ticketName: ticket?.name || "General Admission",
-      ticketCode: created.ticketCode,
-      startsAt: new Date(event.startsAt).toLocaleString("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-        hour: "numeric",
-        minute: "numeric",
-      }),
-      venueName: event.venueName || event.city || "Virtual Event",
-    });
+    // Only send ticket confirmation email immediately if it's FREE or UNDER REVIEW.
+    // Paid tickets will receive the email when the webhook fires.
+    if (!requiresPayment || ticket?.requiresApproval) {
+      void sendTicketConfirmation(created.email, {
+        attendeeName: created.firstName,
+        eventName: event.title,
+        ticketName: ticket?.name || "General Admission",
+        ticketCode: created.ticketCode,
+        startsAt: new Date(event.startsAt).toLocaleString("en-US", {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          hour: "numeric",
+          minute: "numeric",
+        }),
+        venueName: event.venueName || event.city || "Virtual Event",
+      });
+    }
 
     const response = NextResponse.json({
       ok: true,
@@ -253,15 +311,14 @@ export async function POST(request: Request) {
       duplicateLikely: Boolean(duplicate),
       payment: {
         required: requiresPayment,
+        checkoutUrl,
         status: ticket?.requiresApproval
           ? "under_review"
           : requiresPayment
-          ? "pending_gateway_not_connected"
+          ? "pending"
           : "not_required",
         message: ticket?.requiresApproval
           ? "This ticket requires approval. You will receive an email once it is approved."
-          : requiresPayment
-          ? "This demo build does not process live charges. The registration has been saved with payment pending, and no card details were collected."
           : null,
       },
     });

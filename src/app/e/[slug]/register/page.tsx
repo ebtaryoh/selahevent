@@ -5,7 +5,10 @@ import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
-type Params = { params: Promise<{ slug: string }> };
+type Params = { 
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
@@ -18,13 +21,16 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
-export default async function RegisterPage({ params }: Params) {
+export default async function RegisterPage({ params, searchParams }: Params) {
   const { slug } = await params;
   const event = await getEventBySlug(slug);
   
   if (!event) {
     notFound();
   }
+
+  const search = await searchParams;
+  const initialTicketId = typeof search.ticket === 'string' ? search.ticket : undefined;
 
   const rawTickets = await getTickets(event.id);
   
@@ -97,7 +103,8 @@ export default async function RegisterPage({ params }: Params) {
               coverImage: event.coverImage,
               customQuestions: event.customQuestions,
             }}
-            tickets={tickets} 
+            tickets={tickets}
+            initialTicketId={initialTicketId}
           />
         )}
       </div>
