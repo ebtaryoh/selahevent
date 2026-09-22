@@ -172,9 +172,9 @@ export default async function DashboardLayout({
             href="/dashboard/settings"
             className="group flex items-center gap-3 rounded-[11px] bg-parchment px-3.5 py-3 transition-colors hover:bg-[rgba(192,138,46,0.05)]"
           >
-            {org?.avatar ? (
+            {org?.logoUrl ? (
               <img
-                src={org.avatar}
+                src={org.logoUrl}
                 alt={org.name || "Organization"}
                 className="h-9 w-9 shrink-0 rounded-full object-cover"
               />

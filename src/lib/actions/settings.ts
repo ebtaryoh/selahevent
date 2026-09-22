@@ -37,26 +37,26 @@ export async function updateOrganizationSettings(orgId: string, formData: FormDa
   const accentColor = formData.get("accentColor") as string;
   const orgType = formData.get("orgType") as string;
   
-  let avatar = sessionOrg.avatar;
+  let logoUrl = sessionOrg.logoUrl;
   const avatarFile = formData.get("avatar") as File | null;
   if (avatarFile && avatarFile.size > 0) {
     const filename = `${Date.now()}-avatar-${avatarFile.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
     if (process.env.BLOB_READ_WRITE_TOKEN) {
       try {
         const blob = await put(filename, avatarFile, { access: "public", multipart: true });
-        avatar = blob.url;
+        logoUrl = blob.url;
       } catch (error) {
         console.error("Vercel Blob upload failed:", error);
         const buffer = Buffer.from(await avatarFile.arrayBuffer());
         const filepath = path.join(process.cwd(), "public", "uploads", filename);
         writeFileToDisk(filepath, buffer);
-        avatar = `/uploads/${filename}`;
+        logoUrl = `/uploads/${filename}`;
       }
     } else {
       const buffer = Buffer.from(await avatarFile.arrayBuffer());
       const filepath = path.join(process.cwd(), "public", "uploads", filename);
       writeFileToDisk(filepath, buffer);
-      avatar = `/uploads/${filename}`;
+      logoUrl = `/uploads/${filename}`;
     }
   }
 
@@ -78,7 +78,7 @@ export async function updateOrganizationSettings(orgId: string, formData: FormDa
         primaryColor,
         accentColor,
         orgType,
-        avatar,
+        logoUrl,
       })
       .where(eq(organizations.id, orgId));
 

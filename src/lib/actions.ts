@@ -593,7 +593,7 @@ export async function registerAttendee(formData: FormData) {
     ticketName: ticket.name,
     ticketCode: newRegistration.ticketCode,
     startsAt: event.startsAt.toISOString(),
-    venueName: event.venueName,
+    venueName: event.venueName || "TBD",
   });
 
   // Redirect to success page with the registration ID
