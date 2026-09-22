@@ -60,7 +60,7 @@ export function FocusImageUpload({
         <p className="mb-1 text-sm font-semibold text-ink">
           Click to upload event flyer
         </p>
-        <p className="text-xs text-warm-500">SVG, PNG, JPG (max 20MB)</p>
+        <p className="text-xs text-warm-500">SVG, PNG, JPG (max 4MB)</p>
         <input
           type="file"
           accept="image/*"
@@ -68,6 +68,11 @@ export function FocusImageUpload({
           onChange={(e) => {
             const selected = e.target.files?.[0];
             if (selected) {
+              if (selected.size > 4 * 1024 * 1024) {
+                alert("File size exceeds 4MB limit. Please select a smaller image.");
+                e.target.value = ""; // Reset input
+                return;
+              }
               setFile(selected);
               onImageChange(selected);
               onFocusChange({ x: 50, y: 50 }); // Reset focus on new image
