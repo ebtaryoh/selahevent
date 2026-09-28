@@ -59,8 +59,8 @@ export default async function DashboardLayout({
 
 
   return (
-    <div className="min-h-screen bg-parchment">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[252px] flex-col border-r border-[rgba(22,19,17,0.09)] bg-paper lg:flex">
+    <div className="page-shell min-h-screen">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[268px] flex-col border-r border-[rgba(22,19,17,0.09)] bg-paper/95 shadow-[12px_0_40px_-34px_rgba(14,42,34,0.55)] backdrop-blur lg:flex">
         <div className="flex items-center gap-3 border-b border-[rgba(22,19,17,0.09)] px-6 py-6">
           <SelahMark className="h-9 w-9" />
           <div>
@@ -219,7 +219,7 @@ export default async function DashboardLayout({
         </Link>
       </div>
 
-      <div className="lg:pl-[252px]">
+      <div className="lg:pl-[268px]">
         <header className="hidden items-center justify-between gap-6 border-b border-[rgba(22,19,17,0.09)] bg-parchment px-8 py-5 lg:flex">
           <div className="flex items-center gap-3">
             <div className="relative">

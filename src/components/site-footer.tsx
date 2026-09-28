@@ -36,7 +36,7 @@ const columns: { title: string; items: string[] }[] = [
 
 export function SiteFooter() {
   return (
-    <footer className="relative overflow-hidden bg-cypress text-parchment">
+    <footer className="relative overflow-hidden border-t border-[rgba(232,211,166,0.18)] bg-cypress text-parchment">
       <div className="grain pointer-events-none absolute inset-0 opacity-60" />
       <div className="relative mx-auto w-full max-w-[1240px] px-5 pt-20 pb-12 sm:px-8">
         <div className="grid gap-12 lg:grid-cols-[1.45fr_1fr_1fr_1fr]">

@@ -51,6 +51,10 @@ export async function POST(req: Request) {
     }
 
     // Find the organization to get the secret key
+    if (!paymentRecord.eventId) {
+      return NextResponse.json({ error: "Payment event missing" }, { status: 422 });
+    }
+
     const eventRecord = await db
       .select()
       .from(events)
@@ -96,6 +100,10 @@ export async function POST(req: Request) {
         paidAt: new Date(),
       })
       .where(eq(payments.id, paymentRecord.id));
+
+    if (!paymentRecord.registrationId) {
+      return NextResponse.json({ error: "Payment registration missing" }, { status: 422 });
+    }
 
     const [updatedRegistration] = await db
       .update(registrations)

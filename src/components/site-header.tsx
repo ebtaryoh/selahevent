@@ -8,9 +8,9 @@ import { SelahWordmark } from "@/components/logo";
 import { cn } from "@/lib/format";
 
 const links = [
-  { href: "/", label: "Discover Events" },
-  { href: "#", label: "For Churches" },
-  { href: "#", label: "Pricing" },
+  { href: "/", label: "Discover" },
+  { href: "/#how-it-works", label: "How it works" },
+  { href: "/my-tickets", label: "My tickets" },
 ];
 
 export function SiteHeader({ isSignedIn = false }: { isSignedIn?: boolean }) {

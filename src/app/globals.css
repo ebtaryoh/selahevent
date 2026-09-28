@@ -128,6 +128,56 @@ body {
   *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
 }
 
+/* ---------- Selah editorial system ---------- */
+.page-shell {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(232, 211, 166, 0.26), transparent 28rem),
+    var(--color-parchment);
+}
+
+.section-shell {
+  width: min(100% - 2.5rem, 1240px);
+  margin-inline: auto;
+}
+
+.section-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--color-brass-deep);
+}
+
+.section-kicker::before {
+  content: "";
+  width: 2.25rem;
+  height: 1px;
+  background: var(--color-brass);
+}
+
+.surface-raised {
+  background: color-mix(in srgb, var(--color-paper) 94%, var(--color-brass-wash));
+  border: 1px solid rgba(22, 19, 17, 0.1);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+}
+
+.prose-copy { max-width: 68ch; line-height: 1.75; color: var(--color-warm-600); }
+
+@media (max-width: 639px) {
+  .section-shell { width: min(100% - 2rem, 1240px); }
+  .btn { min-height: 2.9rem; }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root { color-scheme: dark; }
+}
+
+.dark-surface {
+  background: linear-gradient(135deg, var(--color-cypress-deep), var(--color-cypress));
+  color: var(--color-parchment);
+}
+
 .hairline {
   border-color: rgba(22, 19, 17, 0.12);
 }
