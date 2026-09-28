@@ -36,7 +36,7 @@ export function SiteHeader({ isSignedIn = false }: { isSignedIn?: boolean }) {
       className={cn(
         "fixed inset-x-0 top-0 z-50 transition-[background-color,box-shadow,backdrop-filter] duration-300",
         scrolled
-          ? "border-b border-[rgba(22,19,17,0.09)] bg-[rgba(247,243,236,0.88)] backdrop-blur-xl"
+          ? "border-b border-white/10 bg-black/70 backdrop-blur-xl"
           : "border-b border-transparent"
       )}
     >

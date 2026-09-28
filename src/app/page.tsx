@@ -44,14 +44,14 @@ export default async function HomePage({
             className="absolute inset-0"
             style={{
               background:
-                "linear-gradient(100deg, rgba(9,32,25,0.96) 0%, rgba(9,32,25,0.9) 32%, rgba(9,32,25,0.68) 56%, rgba(9,32,25,0.42) 100%)",
+                "linear-gradient(100deg, rgba(5,5,5,0.98) 0%, rgba(9,9,9,0.92) 34%, rgba(9,9,9,0.68) 62%, rgba(9,9,9,0.3) 100%)",
             }}
           />
           <div
             className="absolute inset-x-0 bottom-0 h-40"
             style={{
               background:
-                "linear-gradient(180deg, rgba(247,243,236,0) 0%, var(--color-parchment) 100%)",
+                "linear-gradient(180deg, rgba(9,9,9,0) 0%, var(--color-parchment) 100%)",
             }}
           />
         </div>
