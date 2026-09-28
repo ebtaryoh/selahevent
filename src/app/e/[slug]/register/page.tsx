@@ -56,7 +56,7 @@ export default async function RegisterPage({ params, searchParams }: Params) {
 
   return (
     <div 
-      className="min-h-screen bg-[var(--color-parchment)] pt-20 pb-20"
+      className="min-h-screen bg-parchment pb-20"
       style={event.brandColor ? {
         '--color-brass': event.brandColor,
         '--color-brass-deep': `color-mix(in srgb, ${event.brandColor}, black 20%)`,
@@ -64,7 +64,13 @@ export default async function RegisterPage({ params, searchParams }: Params) {
         '--color-brass-wash': `color-mix(in srgb, ${event.brandColor}, white 85%)`,
       } as React.CSSProperties : undefined}
     >
-      <div className="container mx-auto px-6 max-w-6xl">
+      <div className="mx-auto max-w-6xl px-5 pt-24 sm:px-8 sm:pt-28">
+        <div className="mb-10 flex items-center justify-between gap-4">
+          <a href={`/e/${event.slug}`} className="eyebrow text-warm-500 transition-colors hover:text-cypress">
+            ← Back to event
+          </a>
+          <span className="eyebrow text-warm-400">Secure registration</span>
+        </div>
         {isRegistrationClosed ? (
           <div className="mx-auto max-w-lg rounded-2xl border border-[rgba(22,19,17,0.1)] bg-paper p-10 text-center shadow-sm">
             <h1 className="font-display text-2xl font-semibold text-ink">Registration is closed</h1>
