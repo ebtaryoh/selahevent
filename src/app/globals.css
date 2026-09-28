@@ -1,26 +1,26 @@
 @import "tailwindcss";
 
 @theme {
-  --color-parchment: #f7f3ec;
-  --color-parchment-deep: #efe8dd;
-  --color-paper: #fffdf8;
-  --color-ink: #161311;
-  --color-ink-soft: #3a342e;
+  --color-parchment: #090909;
+  --color-parchment-deep: #111111;
+  --color-paper: #121212;
+  --color-ink: #f4f0e7;
+  --color-ink-soft: #d1cbc0;
 
-  --color-cypress: #0e2a22;
-  --color-cypress-deep: #092019;
-  --color-cypress-mid: #163a30;
-  --color-cypress-soft: #2c4a40;
+  --color-cypress: #d6ad63;
+  --color-cypress-deep: #a77a32;
+  --color-cypress-mid: #ead09c;
+  --color-cypress-soft: #8e6a35;
 
-  --color-brass: #c08a2e;
-  --color-brass-deep: #9a6c1f;
-  --color-brass-light: #e8d3a6;
-  --color-brass-wash: #f4e9d2;
+  --color-brass: #d6ad63;
+  --color-brass-deep: #bd8d43;
+  --color-brass-light: #f4e6c4;
+  --color-brass-wash: #302719;
 
-  --color-warm-600: #554e45;
-  --color-warm-500: #6b6257;
-  --color-warm-400: #8c8478;
-  --color-warm-300: #b6ada0;
+  --color-warm-600: #b9b1a4;
+  --color-warm-500: #958d81;
+  --color-warm-400: #716b62;
+  --color-warm-300: #4d4943;
 
   --color-signal-green: #2f6b4f;
   --color-signal-amber: #b8791c;
@@ -34,7 +34,7 @@
 }
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 html {
@@ -44,6 +44,7 @@ html {
 
 body {
   background-color: var(--color-parchment);
+  background-image: radial-gradient(circle at 78% -12%, rgba(189, 141, 67, 0.14), transparent 34rem), radial-gradient(circle at 2% 60%, rgba(86, 65, 31, 0.12), transparent 32rem);
   color: var(--color-ink);
   font-family: var(--font-sans);
   font-synthesis-weight: none;
@@ -101,10 +102,11 @@ body {
 }
 
 .card {
-  background-color: var(--color-paper);
-  border: 1px solid rgba(22, 19, 17, 0.09);
-  border-radius: 14px;
-  box-shadow: var(--shadow-soft);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025));
+  border: 1px solid rgba(214, 173, 99, 0.18);
+  border-radius: 16px;
+  box-shadow: 0 22px 60px -34px rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(18px);
 }
 
 .hairline {
