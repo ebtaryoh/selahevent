@@ -1,12 +1,9 @@
-import "dotenv/config";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 
 const databaseUrl = process.env.DATABASE_URL;
 
-if (!databaseUrl) {
-  throw new Error("DATABASE_URL is required");
-}
+export const hasDatabaseUrl = Boolean(databaseUrl);
 
 const globalForDb = globalThis as typeof globalThis & {
   __arenaNextJsPostgresqlPool?: Pool;
@@ -15,7 +12,7 @@ const globalForDb = globalThis as typeof globalThis & {
 export const pool =
   globalForDb.__arenaNextJsPostgresqlPool ??
   new Pool({
-    connectionString: databaseUrl,
+    connectionString: databaseUrl ?? "postgresql://localhost:5432/selah",
     max: process.env.NODE_ENV === "production" ? 10 : 1, // Prevent EMAXCONNSESSION on Neon free tier during dev
   });
 

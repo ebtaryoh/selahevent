@@ -6,6 +6,7 @@ import { SiteHeader } from "@/components/site-header";
 import { Reveal, SectionHead } from "@/components/ui";
 import { Sparkles } from "lucide-react";
 import { getAllPublicEvents } from "@/lib/data";
+import { hasDatabaseUrl } from "@/db";
 import { EventSearch } from "@/components/event-search";
 import { formatMoney } from "@/lib/format";
 import { getOrgSession } from "@/lib/session";
@@ -22,7 +23,7 @@ export default async function HomePage({
   searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
-  const publicEvents = await getAllPublicEvents(params);
+  const publicEvents = hasDatabaseUrl ? await getAllPublicEvents(params) : [];
   const session = await getOrgSession();
 
   return (
