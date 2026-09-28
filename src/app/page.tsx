@@ -98,12 +98,13 @@ export default async function HomePage({
           
           <EventSearch />
 
-          <div className="mt-20">
+          <div className="mt-20 flex flex-col gap-6 border-b border-[rgba(22,19,17,0.1)] pb-8 sm:flex-row sm:items-end sm:justify-between">
             <SectionHead
               eyebrow="Upcoming Events"
               title="Find your next spiritual gathering."
               description="Explore partnered ministries and upcoming Christian events to grow in your faith journey."
             />
+            <span className="eyebrow shrink-0 text-[0.58rem] text-warm-400">Curated for your journey</span>
           </div>
 
           {publicEvents.length === 0 ? (
@@ -119,7 +120,7 @@ export default async function HomePage({
                 <Reveal key={event.id} delay={0.1 * i}>
                   <Link
                     href={`/e/${event.slug}`}
-                    className="group flex h-full flex-col overflow-hidden rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-paper transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-[rgba(192,138,46,0.12)] hover:border-[rgba(192,138,46,0.3)]"
+                    className="card-interactive group flex h-full flex-col overflow-hidden rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-paper"
                   >
                     <div className="relative aspect-[16/10] w-full overflow-hidden bg-parchment-deep">
                       {event.coverImage && (

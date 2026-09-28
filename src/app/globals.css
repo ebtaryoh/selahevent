@@ -107,6 +107,21 @@ body {
   box-shadow: var(--shadow-soft);
 }
 
+.card-interactive {
+  transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.card-interactive:hover {
+  border-color: rgba(192, 138, 46, 0.34);
+  box-shadow: var(--shadow-lift);
+  transform: translateY(-3px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+}
+
 .hairline {
   border-color: rgba(22, 19, 17, 0.12);
 }

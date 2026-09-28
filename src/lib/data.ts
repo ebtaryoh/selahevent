@@ -338,7 +338,7 @@ export async function getOrganizationHeadline() {
   };
 }
 
-export async function getAllPublicEvents(filters?: { query?: string; city?: string; category?: string }) {
+async function getAllPublicEventsFromDatabase(filters?: { query?: string; city?: string; category?: string }) {
   await ensureSeed();
   
   const conditions = [
@@ -395,6 +395,15 @@ export async function getAllPublicEvents(filters?: { query?: string; city?: stri
     ...r,
     minPrice: minPriceByEvent.get(r.event.id) ?? 0
   }));
+}
+
+export async function getAllPublicEvents(filters?: { query?: string; city?: string; category?: string }) {
+  try {
+    return await getAllPublicEventsFromDatabase(filters);
+  } catch (error) {
+    console.error("[v0] Public event query unavailable:", error);
+    return [];
+  }
 }
 
 export async function getBlueprints(orgId: string) {

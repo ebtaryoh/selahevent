@@ -264,7 +264,7 @@ export default async function DashboardLayout({
           </div>
         </header>
 
-        <main className="px-5 py-8 sm:px-8 lg:px-10 lg:py-10">{children}</main>
+        <main className="min-h-[calc(100vh-73px)] px-5 py-8 sm:px-8 lg:px-10 lg:py-10">{children}</main>
       </div>
     </div>
   );
