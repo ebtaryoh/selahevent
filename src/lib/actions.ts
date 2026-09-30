@@ -211,7 +211,7 @@ export async function createEvent(formData: FormData) {
 
     // Send email notification (non-blocking)
     if (org.email) {
-      void sendEventCreatedNotification(org.email, newEvent.title, newEvent.id);
+      await sendEventCreatedNotification(org.email, newEvent.title, newEvent.id);
     }
 
     redirectUrl = `/dashboard/events/${newEvent.id}`;
@@ -602,7 +602,7 @@ export async function registerAttendee(formData: FormData) {
     .returning();
 
   // Send the ticket confirmation email (non-blocking)
-  void sendTicketConfirmation(newRegistration.email, {
+  await sendTicketConfirmation(newRegistration.email, {
     attendeeName: `${newRegistration.firstName} ${newRegistration.lastName}`,
     eventName: event.title,
     ticketName: ticket.name,
@@ -843,7 +843,7 @@ export async function createEventFromBlueprint(blueprintId: string, overrides: {
   
   // Send email notification (non-blocking)
   if (org.email) {
-    void sendEventCreatedNotification(org.email, newEvent.title, newEvent.id);
+    await sendEventCreatedNotification(org.email, newEvent.title, newEvent.id);
   }
 
   return { success: true, eventId: newEvent.id, slug: newEvent.slug };

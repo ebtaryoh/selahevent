@@ -133,7 +133,7 @@ export async function POST(req: Request) {
         if (ticket) ticketName = ticket.name;
       }
       
-      void sendTicketConfirmation(updatedRegistration.email, {
+      await sendTicketConfirmation(updatedRegistration.email, {
         attendeeName: updatedRegistration.firstName,
         eventName: eventRecord.title,
         ticketName: ticketName,

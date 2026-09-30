@@ -271,7 +271,7 @@ export async function POST(request: Request) {
     // Only send ticket confirmation email immediately if it's FREE or UNDER REVIEW.
     // Paid tickets will receive the email when the webhook fires.
     if (!requiresPayment || ticket?.requiresApproval) {
-      void sendTicketConfirmation(created.email, {
+      await sendTicketConfirmation(created.email, {
         attendeeName: created.firstName,
         eventName: event.title,
         ticketName: ticket?.name || "General Admission",
