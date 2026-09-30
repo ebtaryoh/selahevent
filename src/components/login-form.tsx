@@ -80,7 +80,7 @@ export function LoginForm() {
               </div>
               <h2 className="font-display text-xl font-semibold text-ink">Enter your workspace email</h2>
               <p className="mt-1.5 text-[0.875rem] text-warm-500">
-                We'll send a one-time code to verify it's you.
+                We&apos;ll send a one-time code to verify it&apos;s you.
               </p>
             </div>
 
@@ -226,7 +226,7 @@ export function LoginForm() {
       </div>
 
       <p className="text-center text-[0.875rem] text-warm-500">
-        Don't have a workspace?{" "}
+        Don&apos;t have a workspace?{" "}
         <Link href="/register" className="font-semibold text-brass hover:text-brass-deep transition-colors">
           Create one
         </Link>

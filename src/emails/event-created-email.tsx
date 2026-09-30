@@ -20,7 +20,7 @@ interface EventCreatedEmailProps {
 export const EventCreatedEmail = ({ eventName, eventUrl }: EventCreatedEmailProps) => (
   <Html>
     <Head />
-    <Preview>Your event '{eventName}' is live!</Preview>
+    <Preview>Your event &apos;{eventName}&apos; is live!</Preview>
     <Body style={main}>
       <Container style={container}>
         <Heading style={h1}>Event Published</Heading>

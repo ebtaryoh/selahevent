@@ -40,7 +40,7 @@ export const TicketEmail = ({
     <Preview>Your ticket for {eventName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={h1}>You're in!</Heading>
+        <Heading style={h1}>You&apos;re in!</Heading>
         <Text style={text}>
           Hi {attendeeName}, your registration for <strong>{eventName}</strong> is confirmed.
         </Text>

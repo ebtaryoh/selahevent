@@ -16,7 +16,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing signature" }, { status: 400 });
     }
 
-    let payload: any;
+    let payload: {
+      event: string;
+      data: {
+        reference: string;
+        [key: string]: unknown;
+      };
+    };
     try {
       payload = JSON.parse(rawBody);
     } catch (err) {
@@ -50,11 +56,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: true });
     }
 
+    if (!paymentRecord.eventId) {
+      return NextResponse.json({ error: "Payment missing event association" }, { status: 400 });
+    }
+
     // Find the organization to get the secret key
     const eventRecord = await db
       .select()
       .from(events)
-      .where(eq(events.id, paymentRecord.eventId))
+      .where(eq(events.id, paymentRecord.eventId as string))
       .limit(1)
       .then((r) => r[0]);
       
@@ -97,13 +107,17 @@ export async function POST(req: Request) {
       })
       .where(eq(payments.id, paymentRecord.id));
 
-    const [updatedRegistration] = await db
-      .update(registrations)
-      .set({
-        status: "confirmed",
-      })
-      .where(eq(registrations.id, paymentRecord.registrationId))
-      .returning();
+    let updatedRegistration;
+    if (paymentRecord.registrationId) {
+      const result = await db
+        .update(registrations)
+        .set({
+          status: "confirmed",
+        })
+        .where(eq(registrations.id, paymentRecord.registrationId as string))
+        .returning();
+      updatedRegistration = result[0];
+    }
 
     // Send confirmation email
     if (updatedRegistration) {

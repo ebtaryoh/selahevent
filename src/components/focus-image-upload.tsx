@@ -24,6 +24,7 @@ export function FocusImageUpload({
   useEffect(() => {
     if (file) {
       const url = URL.createObjectURL(file);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPreviewUrl(url);
       return () => URL.revokeObjectURL(url);
     }

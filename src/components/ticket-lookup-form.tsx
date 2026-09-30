@@ -35,7 +35,7 @@ export function TicketLookupForm() {
       <div className="rounded-[12px] bg-green-50 p-6 text-center text-green-900 border border-green-100">
         <h3 className="font-semibold mb-2">Check your inbox</h3>
         <p className="text-sm">
-          If there are any tickets associated with <strong>{email}</strong>, we've just sent you an email with magic links to access them.
+          If there are any tickets associated with <strong>{email}</strong>, we&apos;ve just sent you an email with magic links to access them.
         </p>
       </div>
     );

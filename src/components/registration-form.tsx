@@ -126,6 +126,7 @@ export function RegistrationForm({
 
   useEffect(() => {
     if (initialTicketId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm((prev) => ({ ...prev, ticketTypeId: initialTicketId }));
     }
   }, [initialTicketId]);
