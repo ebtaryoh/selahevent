@@ -18,7 +18,6 @@ import {
   ticketTypes,
   volunteers,
 } from "@/db/schema";
-import { ensureSeed } from "@/lib/seed";
 
 export type AppRole = "owner" | "admin" | "event_manager" | "checkin_staff" | "finance" | "volunteer_coordinator" | "viewer";
 
@@ -33,7 +32,6 @@ const ROLE_PERMISSIONS: Record<AppRole, Set<string>> = {
 };
 
 export async function getCurrentUser() {
-  await ensureSeed();
   const session = await getOrgSession();
   if (!session?.userId) return null;
   const user = await db.query.appUsers.findFirst({
@@ -51,7 +49,6 @@ export async function requirePermission(permission: string) {
 }
 
 export async function getOrganization() {
-  await ensureSeed();
 
   const session = await getOrgSession();
   if (!session) return null;
