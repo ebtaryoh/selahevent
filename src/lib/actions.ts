@@ -1040,7 +1040,16 @@ export async function resolvePaymentCapacityReview(registrationId: string, event
       });
       if (!ticket) throw new Error("TICKET_NOT_FOUND");
 
-      if (ticket.capacity > 0 && ticket.sold >= ticket.capacity) {
+      const activeReservations = await tx.execute(sql`
+        SELECT COUNT(*)::int AS count
+        FROM ticket_reservations
+        WHERE ticket_type_id = ${registration.ticketTypeId}
+          AND status = 'reserved'
+          AND expires_at > NOW()
+      `);
+      const reservedCount = Number((activeReservations.rows[0] as { count: number | string }).count);
+
+      if (ticket.capacity > 0 && ticket.sold + reservedCount >= ticket.capacity) {
         throw new Error("TICKET_CAPACITY");
       }
 
@@ -1063,13 +1072,34 @@ export async function resolvePaymentCapacityReview(registrationId: string, event
       }
 
       await tx.update(ticketTypes)
-        .set({ sold: sql.raw('"sold" + 1') })
+        .set({ sold: sql`${ticketTypes.sold} + 1` })
         .where(eq(ticketTypes.id, ticket.id));
 
       await tx.update(registrations)
         .set({ status: "confirmed" })
         .where(eq(registrations.id, registrationId));
     });
+
+    const confirmedRegistration = await db.query.registrations.findFirst({
+      where: and(eq(registrations.id, registrationId), eq(registrations.eventId, eventId)),
+    });
+
+    if (confirmedRegistration) {
+      const confirmedTicket = confirmedRegistration.ticketTypeId
+        ? await db.query.ticketTypes.findFirst({ where: eq(ticketTypes.id, confirmedRegistration.ticketTypeId) })
+        : null;
+
+      await sendTicketConfirmation(confirmedRegistration.email, {
+        attendeeName: confirmedRegistration.firstName,
+        eventName: event.id,
+        ticketName: confirmedTicket?.name || "General Admission",
+        ticketCode: confirmedRegistration.ticketCode,
+        startsAt: new Date().toLocaleString("en-US", {
+          weekday: "short", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "numeric",
+        }),
+        venueName: org.name,
+      });
+    }
 
     revalidatePath(`/dashboard/events/${eventId}`);
     revalidatePath(`/dashboard/events/${eventId}/command`);
