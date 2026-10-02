@@ -23,11 +23,21 @@ export function Reveal({
   return (
     <MotionTag
       className={className}
-      initial={{ opacity: 0, y: reduce ? 0 : y }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-60px" }}
+      initial={{
+        opacity: 0,
+        y: reduce ? 0 : y,
+        scale: reduce ? 1 : 0.985,
+        filter: reduce ? "blur(0px)" : "blur(5px)",
+      }}
+      whileInView={{
+        opacity: 1,
+        y: 0,
+        scale: 1,
+        filter: "blur(0px)",
+      }}
+      viewport={{ once: true, margin: "-72px" }}
       transition={{
-        duration: reduce ? 0.01 : 0.58,
+        duration: reduce ? 0.01 : 0.62,
         delay: reduce ? 0 : delay,
         ease: [0.22, 1, 0.36, 1],
       }}
@@ -110,7 +120,11 @@ export function SectionHead({
   tone?: "dark" | "light";
 }) {
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-48px" }}
+      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       className={cn(
         "max-w-3xl",
         align === "center" && "mx-auto text-center",
@@ -168,7 +182,7 @@ export function SectionHead({
           {description}
         </div>
       ) : null}
-    </div>
+    </motion.div>
   );
 }
 
@@ -222,12 +236,15 @@ export function ProgressBar({
   value: number;
   tone?: "brass" | "green" | "red";
 }) {
+  const reduce = useReducedMotion();
   const color =
     tone === "green"
       ? "var(--color-signal-green)"
       : tone === "red"
         ? "var(--color-signal-red)"
         : "var(--color-brass)";
+  const target = Math.max(2, Math.min(100, value));
+
   return (
     <div
       className="h-[6px] w-full overflow-hidden rounded-full"
@@ -237,10 +254,13 @@ export function ProgressBar({
       aria-valuemin={0}
       aria-valuemax={100}
     >
-      <div
-        className="h-full rounded-full transition-[width] duration-700 ease-out"
+      <motion.div
+        initial={{ width: reduce ? `${target}%` : 0 }}
+        whileInView={{ width: `${target}%` }}
+        viewport={{ once: true, margin: "-40px" }}
+        transition={{ duration: reduce ? 0.01 : 0.9, ease: [0.22, 1, 0.36, 1] }}
+        className="h-full rounded-full"
         style={{
-          width: `${Math.max(2, Math.min(100, value))}%`,
           background: `linear-gradient(90deg, ${color}, var(--color-brass-light))`,
         }}
       />
@@ -269,4 +289,3 @@ export function Field({
     </div>
   );
 }
-
