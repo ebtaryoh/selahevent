@@ -28,6 +28,8 @@ import { put } from "@vercel/blob";
 import path from "path";
 import { ensureSeed } from "./seed";
 import { hashOtp, normalizeOtpEmail } from "./otp";
+import { headers } from "next/headers";
+import { enforceRateLimit, getClientAddressFromHeaders, rateLimitHeaders } from "./rate-limit";
 import { MAX_MEDIA_FILES, mediaFilename, validateMediaFile } from "./media";
 
 /* ------------------------------------------------------------------ */
@@ -407,6 +409,12 @@ for (const file of mediaFiles) {
 export async function registerOrganization(formData: FormData) {
   await ensureSeed();
 
+  const headerStore = await headers();
+  const registrationLimit = await enforceRateLimit("org-registration-ip", getClientAddressFromHeaders(headerStore), 5, 600);
+  if (!registrationLimit.allowed) {
+    return { error: "Too many workspace registration attempts. Please try again later.", rateLimit: rateLimitHeaders(registrationLimit) };
+  }
+
   const name = (formData.get("name") as string).trim();
   const email = (formData.get("email") as string).toLowerCase().trim();
   const phone = (formData.get("phone") as string).trim();
@@ -471,6 +479,12 @@ export async function registerOrganization(formData: FormData) {
 export async function loginOrganization(formData: FormData) {
   await ensureSeed();
 
+  const headerStore = await headers();
+  const ipLimit = await enforceRateLimit("org-login-ip", getClientAddressFromHeaders(headerStore), 10, 600);
+  if (!ipLimit.allowed) {
+    return { error: "Too many login attempts. Please try again later.", rateLimit: rateLimitHeaders(ipLimit) };
+  }
+
   const email = normalizeOtpEmail((formData.get("email") as string));
 
   const recentOtp = await db.query.otps.findFirst({
@@ -489,7 +503,7 @@ export async function loginOrganization(formData: FormData) {
     .limit(1);
 
   if (!org) {
-    throw new Error("No organization found with this email. Check the address or register a new workspace.");
+    return { error: "We could not sign you in with those details. Please check the email or register a new workspace." };
   }
 
   // Generate 6-digit OTP
@@ -518,6 +532,12 @@ export async function loginOrganization(formData: FormData) {
  * Step 2 of org login — verify the OTP code and create a signed session.
  */
 export async function verifyOrgOTP(formData: FormData) {
+  const headerStore = await headers();
+  const ipLimit = await enforceRateLimit("org-otp-verify-ip", getClientAddressFromHeaders(headerStore), 10, 600);
+  if (!ipLimit.allowed) {
+    return { error: "Too many verification attempts. Please try again later.", rateLimit: rateLimitHeaders(ipLimit) };
+  }
+
   const email = normalizeOtpEmail((formData.get("email") as string));
   const code = (formData.get("code") as string).trim();
 
