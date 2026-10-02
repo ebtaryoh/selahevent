@@ -6,3 +6,5 @@ CREATE TABLE IF NOT EXISTS "rate_limit_buckets" (
 
 CREATE INDEX IF NOT EXISTS "rate_limit_buckets_window_idx"
   ON "rate_limit_buckets" ("window_start");
+
+-- Buckets are garbage-collected separately; active windows are sufficient for enforcement.
