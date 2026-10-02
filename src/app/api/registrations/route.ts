@@ -21,6 +21,11 @@ function makeCode(prefix: string) {
 }
 
 export async function POST(request: Request) {
+  const contentLength = Number(request.headers.get("content-length") || "0");
+  if (contentLength > 128 * 1024) {
+    return NextResponse.json({ ok: false, error: "Registration submission is too large." }, { status: 413 });
+  }
+
   const clientAddress = getClientAddress(request);
   const abuseLimit = await enforceRateLimit("registration-ip", clientAddress, 30, 60);
   if (!abuseLimit.allowed) {
@@ -98,6 +103,14 @@ export async function POST(request: Request) {
     }
   }
 
+  const emailEventRate = await enforceRateLimit("registration-email-event", event.id + ":" + email, 5, 600);
+  if (!emailEventRate.allowed) {
+    return NextResponse.json(
+      { ok: false, error: "Too many registration attempts for this email address. Please try again later." },
+      { status: 429, headers: rateLimitHeaders(emailEventRate) },
+    );
+  }
+
   const eventRate = await enforceRateLimit("registration-event", event.id, 120, 60);
   if (!eventRate.allowed) {
     return NextResponse.json(
@@ -107,11 +120,18 @@ export async function POST(request: Request) {
   }
 
   const duplicate = await db
-    .select({ id: registrations.id })
+    .select({ id: registrations.id, status: registrations.status })
     .from(registrations)
     .where(and(eq(registrations.eventId, event.id), eq(registrations.email, email)))
     .limit(1)
     .then(r => r[0]);
+
+  if (duplicate && !["cancelled", "failed"].includes(duplicate.status)) {
+    return NextResponse.json(
+      { ok: false, error: "This email already has a registration for this event." },
+      { status: 409 },
+    );
+  }
 
   const amount = ticket?.price ?? 0;
   const requiresPayment = amount > 0;
@@ -186,7 +206,16 @@ export async function POST(request: Request) {
         emergencyPhone: String(payload.emergencyPhone ?? "").trim(),
         amount,
         source: "event_page",
-        customAnswers: (payload.customAnswers as Record<string, string>) ?? {},
+        customAnswers: (() => {
+          const raw = payload.customAnswers;
+          if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+          const entries = Object.entries(raw as Record<string, unknown>).slice(0, 30);
+          return Object.fromEntries(
+            entries
+              .filter(([, value]) => typeof value === "string")
+              .map(([key, value]) => [key.slice(0, 100), String(value).slice(0, 2000)]),
+          );
+        })(),
         idempotencyKey: idempotencyKey || null,
       }).returning();
 
@@ -270,6 +299,7 @@ export async function POST(request: Request) {
       }
 
       const paystackRes = await fetch("https://api.paystack.co/transaction/initialize", {
+        signal: AbortSignal.timeout(15000),
         method: "POST",
         headers: {
           Authorization: "Bearer " + secretKey,
