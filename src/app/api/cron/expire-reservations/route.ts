@@ -1,4 +1,4 @@
-import { and, eq, lt } from "drizzle-orm";
+import { and, eq, lt, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { payments, registrations, ticketReservations } from "@/db/schema";
@@ -48,6 +48,7 @@ export async function GET(request: Request) {
           ));
       }
 
+      await tx.execute(sql`DELETE FROM rate_limit_buckets WHERE window_start < NOW() - INTERVAL '24 hours'`);
       return registrationIds.length;
     });
 
