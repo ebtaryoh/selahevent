@@ -69,7 +69,7 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Manrope:wght@300..800&display=swap"
         />
       </head>
-      <body>{children}</body>
+      <body><a href="#main-content" className="skip-link">Skip to content</a>{children}</body>
     </html>
   );
 }
