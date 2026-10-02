@@ -118,7 +118,9 @@ export async function POST(request: Request) {
   let attendeeId = session?.attendeeId ?? null;
 
   try {
-    const result = await db.transaction(async tx => {
+    let result;
+    try {
+      result = await db.transaction(async tx => {
       if (ticket) {
         await tx.execute(sql`SELECT id FROM ticket_types WHERE id = \${ticket.id} FOR UPDATE`);
 
@@ -211,7 +213,40 @@ export async function POST(request: Request) {
       }
 
       return { created, payment };
-    });
+      });
+    } catch (error) {
+      const pgError = error as { code?: string };
+      if (idempotencyKey && pgError.code === "23505") {
+        const existingByKey = await db
+          .select({
+            id: registrations.id,
+            code: registrations.code,
+            ticketCode: registrations.ticketCode,
+            status: registrations.status,
+            amount: registrations.amount,
+            ticketTypeId: registrations.ticketTypeId,
+          })
+          .from(registrations)
+          .where(
+            and(
+              eq(registrations.eventId, event.id),
+              eq(registrations.idempotencyKey, idempotencyKey),
+            ),
+          )
+          .limit(1)
+          .then(r => r[0]);
+
+        if (existingByKey) {
+          return NextResponse.json({
+            ok: true,
+            reused: true,
+            registration: existingByKey,
+          });
+        }
+      }
+
+      throw error;
+    }
 
     let checkoutUrl: string | null = null;
 
