@@ -100,10 +100,13 @@ export async function POST(req: Request) {
       let shouldSendConfirmation = false;
 
       await db.transaction(async tx => {
-        await tx
+        const updatedPayment = await tx
           .update(payments)
           .set({ status: "paid", verified: true, paidAt: new Date() })
-          .where(eq(payments.id, paymentRecord.id));
+          .where(and(eq(payments.id, paymentRecord.id), eq(payments.status, "pending")))
+          .returning({ id: payments.id });
+
+        if (updatedPayment.length === 0) return;
 
         if (!paymentRecord.registrationId) return;
 
