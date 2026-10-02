@@ -8,6 +8,8 @@ import { SignJWT, jwtVerify } from "jose";
 import { sendEmailOTP } from "@/lib/email";
 import { randomInt } from "crypto";
 import { hashOtp, normalizeOtpEmail } from "@/lib/otp";
+import { headers } from "next/headers";
+import { enforceRateLimit, getClientAddress, rateLimitHeaders } from "@/lib/rate-limit";
 
 function getAttendeeJwtSecret(): Uint8Array {
   const secret = process.env.ATTENDEE_JWT_SECRET;
@@ -22,9 +24,21 @@ function getAttendeeJwtSecret(): Uint8Array {
 
 export async function requestAttendeeOTP(email: string, orgId: string) {
   try {
+    const headerStore = await headers();
+    const clientAddress = getClientAddress(new Request("http://localhost", { headers: headerStore }));
+    const ipLimit = await enforceRateLimit("attendee-otp-ip", clientAddress, 5, 600);
+    if (!ipLimit.allowed) {
+      return { error: "Too many OTP requests. Please try again later.", rateLimit: rateLimitHeaders(ipLimit) };
+    }
+
+    const cleanEmail = normalizeOtpEmail(email);
+    const emailLimit = await enforceRateLimit("attendee-otp-email", cleanEmail + ":" + orgId, 3, 600);
+    if (!emailLimit.allowed) {
+      return { error: "Too many OTP requests for this email. Please try again later.", rateLimit: rateLimitHeaders(emailLimit) };
+    }
+
     // Generate a 6-digit OTP
     const code = randomInt(100000, 1000000).toString();
-    const cleanEmail = normalizeOtpEmail(email);
     const recentOtp = await db.query.otps.findFirst({
       where: and(
         eq(otps.email, cleanEmail),
