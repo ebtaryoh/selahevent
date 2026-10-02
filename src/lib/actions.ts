@@ -686,7 +686,12 @@ export async function checkInAttendee(registrationId: string, eventId: string) {
   if (!actor) throw new Error("Forbidden");
   if (!org) throw new Error("Unauthorized");
 
-  // Check if they are already checked in
+  // Lock the registration before checking/inserting to prevent concurrent double check-in.
+  const existingRegistrationLock = await db.execute(
+    sql.raw("SELECT id FROM registrations WHERE id = '" + registrationId + "' FOR UPDATE")
+  );
+  void existingRegistrationLock;
+
   const [existingCheckIn] = await db
     .select()
     .from(checkIns)
