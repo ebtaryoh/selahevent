@@ -136,7 +136,7 @@ export default async function HomePage({
               ["05", "Remember", "Keep what worked and reuse it next time.", CheckCircle2],
             ].map(([step, title, body, Icon], i) => (
               <Reveal key={step as string} delay={i * 0.05}>
-                <div className="group h-full bg-paper p-6 transition-colors duration-300 hover:bg-brass-wash sm:p-7">
+                <div className="group motion-lift h-full bg-paper p-6 transition-colors duration-300 hover:bg-brass-wash sm:p-7">
                   <span className="tnum font-display text-[1.05rem] font-semibold text-brass-deep">{step as string}</span>
                   <div className="mt-10">
                     <Icon size={19} className="text-warm-300 transition-colors group-hover:text-brass-deep" />
@@ -162,7 +162,7 @@ export default async function HomePage({
             />
           </Reveal>
           <Reveal delay={0.12} y={28}>
-            <div className="rounded-[24px] border border-brass-light/15 bg-white/[0.05] p-3 shadow-2xl">
+            <div className="motion-sheen rounded-[24px] border border-brass-light/15 bg-white/[0.05] p-3 shadow-2xl">
               <div className="rounded-[18px] bg-paper p-6 text-ink sm:p-8">
                 <div className="flex items-center justify-between gap-4 border-b border-black/[0.08] pb-5">
                   <div>
@@ -215,7 +215,7 @@ export default async function HomePage({
                 <Reveal key={event.id} delay={0.1 * i}>
                   <Link
                     href={`/e/${event.slug}`}
-                    className="group flex h-full flex-col overflow-hidden rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-paper transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-[rgba(192,138,46,0.12)] hover:border-[rgba(192,138,46,0.3)]"
+                    className="group motion-lift flex h-full flex-col overflow-hidden rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-paper transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-[rgba(192,138,46,0.12)] hover:border-[rgba(192,138,46,0.3)]"
                   >
                     <div className="relative aspect-[16/10] w-full overflow-hidden bg-parchment-deep">
                       {event.coverImage && (
