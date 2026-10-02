@@ -62,7 +62,7 @@ export const appUsers = pgTable(
     lastActiveAt: timestamp("last_active_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
-  (t) => [index("app_users_org_idx").on(t.organizationId)]
+  (t) => [index("app_users_org_idx").on(t.organizationId), unique("app_users_org_email_unique").on(t.organizationId, t.email)]
 );
 
 /* ------------------------------------------------------------------ */
@@ -155,6 +155,29 @@ export const ticketTypes = pgTable(
   (t) => [index("ticket_types_event_idx").on(t.eventId)]
 );
 
+export const ticketReservations = pgTable(
+  "ticket_reservations",
+  {
+    id: id(),
+    ticketTypeId: uuid("ticket_type_id")
+      .notNull()
+      .references(() => ticketTypes.id, { onDelete: "cascade" }),
+    eventId: uuid("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    registrationId: uuid("registration_id"),
+    status: text("status").default("reserved").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("ticket_reservations_ticket_idx").on(t.ticketTypeId),
+    index("ticket_reservations_event_idx").on(t.eventId),
+    index("ticket_reservations_registration_idx").on(t.registrationId),
+    index("ticket_reservations_active_idx").on(t.ticketTypeId, t.status, t.expiresAt),
+  ]
+);
+
 export const speakers = pgTable(
   "speakers",
   {
@@ -235,6 +258,7 @@ export const otps = pgTable(
       .notNull()
       .references(() => organizations.id, { onDelete: "cascade" }),
     code: text("code").notNull(),
+    attempts: integer("attempts").default(0).notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     createdAt: createdAt(),
   },
@@ -277,11 +301,13 @@ export const registrations = pgTable(
     amount: integer("amount").default(0).notNull(),
     source: text("source").default("event_page").notNull(),
     customAnswers: jsonb("custom_answers").$type<Record<string, string>>().default({}),
+    idempotencyKey: text("idempotency_key"),
     createdAt: createdAt(),
   },
   (t) => [
     index("registrations_event_idx").on(t.eventId),
     index("registrations_email_idx").on(t.email),
+    unique("registrations_event_idempotency_unique").on(t.eventId, t.idempotencyKey),
   ]
 );
 
@@ -298,9 +324,10 @@ export const payments = pgTable(
     amount: integer("amount").notNull(),
     currency: text("currency").default("NGN").notNull(),
     gateway: text("gateway").default("paystack").notNull(),
-    gatewayReference: text("gateway_reference").default("").notNull(),
+    gatewayReference: text("gateway_reference").default("").notNull().unique(),
     status: text("status").default("pending").notNull(),
     verified: boolean("verified").default(false).notNull(),
+    checkoutUrl: text("checkout_url"),
     paidAt: timestamp("paid_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
@@ -333,6 +360,7 @@ export const checkIns = pgTable(
   (t) => [
     index("check_ins_event_idx").on(t.eventId),
     index("check_ins_registration_idx").on(t.registrationId),
+    unique("check_ins_registration_unique").on(t.registrationId),
   ]
 );
 
@@ -363,6 +391,9 @@ export const volunteers = pgTable(
   "volunteers",
   {
     id: id(),
+    organizationId: uuid("organization_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
     eventId: uuid("event_id")
       .notNull()
       .references(() => events.id, { onDelete: "cascade" }),

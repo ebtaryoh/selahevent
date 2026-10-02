@@ -3,8 +3,22 @@ import { db } from "@/db";
 import { registrations, events, ticketTypes } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { sendTicketConfirmation } from "@/lib/email";
+import { enforceRateLimit, getClientAddress, rateLimitHeaders } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
+  const contentLength = Number(req.headers.get("content-length") || "0");
+  if (contentLength > 16 * 1024) {
+    return NextResponse.json({ success: false, error: "Request is too large." }, { status: 413 });
+  }
+
+  const limit = await enforceRateLimit("my-tickets-ip", getClientAddress(req), 5, 600);
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { success: false, error: "Too many ticket lookup requests. Please try again later." },
+      { status: 429, headers: rateLimitHeaders(limit) },
+    );
+  }
+
   try {
     const { email } = await req.json();
 
@@ -12,7 +26,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
 
-    const cleanEmail = email.toLowerCase().trim();
+    const cleanEmail = String(email).toLowerCase().trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(cleanEmail) || cleanEmail.length > 254) {
+      return NextResponse.json({ success: true });
+    }
+    const emailLimit = await enforceRateLimit("my-tickets-email", cleanEmail, 3, 600);
+    if (!emailLimit.allowed) {
+      return NextResponse.json(
+        { success: false, error: "Too many ticket lookup requests for this email. Please try again later." },
+        { status: 429, headers: rateLimitHeaders(emailLimit) },
+      );
+    }
 
     // Fetch all registrations for this email
     const userRegistrations = await db

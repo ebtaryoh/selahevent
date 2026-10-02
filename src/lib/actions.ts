@@ -1,29 +1,36 @@
 "use server";
 
 import fs from "fs";
+import { randomInt } from "crypto";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { sendEmailOTP, sendEventCreatedNotification, sendTicketConfirmation } from "@/lib/email";
 import { parseVideoEmbedUrl } from "@/lib/format";
 import { redirect } from "next/navigation";
-import { eq, ilike, or, and } from "drizzle-orm";
+import { eq, ilike, or, and, gt, lt, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   auditLogs,
   events,
   organizations,
+  appUsers,
   otps,
   registrations,
   sessions,
   ticketTypes,
   checkIns,
   blueprints,
+  ticketReservations,
 } from "@/db/schema";
-import { getOrganization } from "./data";
+import { getOrganization, requirePermission } from "./data";
 import { createOrgSession } from "./session";
 import { put } from "@vercel/blob";
 import path from "path";
 import { ensureSeed } from "./seed";
+import { hashOtp, normalizeOtpEmail } from "./otp";
+import { headers } from "next/headers";
+import { enforceRateLimit, getClientAddressFromHeaders, rateLimitHeaders } from "./rate-limit";
+import { MAX_MEDIA_FILES, mediaFilename, validateMediaFile } from "./media";
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                              */
@@ -37,7 +44,7 @@ async function generateUniqueSlug(base: string, maxAttempts = 5): Promise<string
     .replace(/(^-|-$)+/g, "");
 
   for (let i = 0; i < maxAttempts; i++) {
-    const suffix = Math.floor(Math.random() * 9000 + 1000); // 4-digit suffix
+    const suffix = randomInt(1000, 10000); // 4-digit cryptographic suffix
     const slug = `${baseSlug}-${suffix}`;
     const existing = await db.select({ id: events.id }).from(events).where(eq(events.slug, slug)).limit(1);
     if (existing.length === 0) return slug;
@@ -71,7 +78,9 @@ async function logAudit(orgId: string, actor: string, action: string, entity: st
 export async function createEvent(formData: FormData) {
   await ensureSeed();
   
+  const actor = await requirePermission("events.write");
   const org = await getOrganization();
+  if (!actor) return { error: "You do not have permission to create events." };
   if (!org) {
     throw new Error("Organization not found");
   }
@@ -106,11 +115,18 @@ export async function createEvent(formData: FormData) {
   const parsedFocus = focusX && focusY ? { x: parseFloat(focusX as string), y: parseFloat(focusY as string) } : undefined;
   
   if (mediaFiles && mediaFiles.length > 0) {
-    for (const file of mediaFiles) {
+        if (mediaFiles.length > MAX_MEDIA_FILES) return { error: "You can upload a maximum of 8 media files per event." };
+for (const file of mediaFiles) {
       if (file.size === 0) continue;
 
-      const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+      const mediaError = validateMediaFile(file);
+      if (mediaError) return { error: mediaError };
+      const filename = mediaFilename(file);
       const type = file.type.startsWith("video/") ? "video" : "image";
+
+      if (!process.env.BLOB_READ_WRITE_TOKEN && process.env.NODE_ENV === "production") {
+        return { error: "Media uploads are temporarily unavailable. Please configure storage and try again." };
+      }
 
       if (process.env.BLOB_READ_WRITE_TOKEN) {
         try {
@@ -118,6 +134,9 @@ export async function createEvent(formData: FormData) {
           mediaPaths.push({ type, url: blob.url });
         } catch (error) {
           console.error("Vercel Blob upload failed:", error);
+          if (process.env.NODE_ENV === "production") {
+            return { error: "Media upload failed. Please try again." };
+          }
           const buffer = Buffer.from(await file.arrayBuffer());
           const filepath = path.join(process.cwd(), "public", "uploads", filename);
           if (writeFileToDisk(filepath, buffer)) {
@@ -227,7 +246,9 @@ export async function createEvent(formData: FormData) {
 
 export async function updateEvent(eventId: string, formData: FormData) {
   await ensureSeed();
+  const actor = await requirePermission("events.write");
   const org = await getOrganization();
+  if (!actor) return { error: "You do not have permission to edit events." };
   if (!org) return { error: "Organization not found" };
 
   const existingEvent = await db.query.events.findFirst({
@@ -272,11 +293,14 @@ export async function updateEvent(eventId: string, formData: FormData) {
   let hasNewMedia = false;
   
   if (mediaFiles && mediaFiles.length > 0) {
-    for (const file of mediaFiles) {
+        if (mediaFiles.length > MAX_MEDIA_FILES) return { error: "You can upload a maximum of 8 media files per event." };
+for (const file of mediaFiles) {
       if (file.size === 0) continue;
       hasNewMedia = true;
 
-      const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+      const mediaError = validateMediaFile(file);
+      if (mediaError) return { error: mediaError };
+      const filename = mediaFilename(file);
       const type = file.type.startsWith("video/") ? "video" : "image";
 
       if (process.env.BLOB_READ_WRITE_TOKEN) {
@@ -363,7 +387,7 @@ export async function updateEvent(eventId: string, formData: FormData) {
         visibility: visibility || "public",
         updatedAt: new Date(),
       })
-      .where(eq(events.id, eventId));
+      .where(and(eq(events.id, eventId), eq(events.organizationId, org.id)));
 
     revalidatePath("/");
     revalidatePath("/dashboard");
@@ -384,6 +408,12 @@ export async function updateEvent(eventId: string, formData: FormData) {
 
 export async function registerOrganization(formData: FormData) {
   await ensureSeed();
+
+  const headerStore = await headers();
+  const registrationLimit = await enforceRateLimit("org-registration-ip", getClientAddressFromHeaders(headerStore), 5, 600);
+  if (!registrationLimit.allowed) {
+    return { error: "Too many workspace registration attempts. Please try again later.", rateLimit: rateLimitHeaders(registrationLimit) };
+  }
 
   const name = (formData.get("name") as string).trim();
   const email = (formData.get("email") as string).toLowerCase().trim();
@@ -407,7 +437,7 @@ export async function registerOrganization(formData: FormData) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)+/g, "");
-  let orgSlug = `${baseSlug}-${Math.floor(Math.random() * 9000 + 1000)}`;
+  let orgSlug = `${baseSlug}-${randomInt(1000, 10000)}`;
   const slugExists = await db.select({ id: organizations.id }).from(organizations).where(eq(organizations.slug, orgSlug)).limit(1);
   if (slugExists.length > 0) orgSlug = `${baseSlug}-${Date.now()}`;
 
@@ -425,8 +455,16 @@ export async function registerOrganization(formData: FormData) {
     })
     .returning();
 
-  // Create a signed session immediately (no OTP needed for new registration)
-  await createOrgSession(newOrg.id);
+  const [ownerUser] = await db.insert(appUsers).values({
+    organizationId: newOrg.id,
+    name,
+    email,
+    role: "owner",
+    status: "active",
+  }).returning();
+
+  // Create a user-bound session immediately for the new workspace.
+  await createOrgSession(newOrg.id, ownerUser.id);
 
   revalidatePath("/");
   revalidatePath("/dashboard");
@@ -441,7 +479,21 @@ export async function registerOrganization(formData: FormData) {
 export async function loginOrganization(formData: FormData) {
   await ensureSeed();
 
-  const email = (formData.get("email") as string).toLowerCase().trim();
+  const headerStore = await headers();
+  const ipLimit = await enforceRateLimit("org-login-ip", getClientAddressFromHeaders(headerStore), 10, 600);
+  if (!ipLimit.allowed) {
+    return { error: "Too many login attempts. Please try again later.", rateLimit: rateLimitHeaders(ipLimit) };
+  }
+
+  const email = normalizeOtpEmail((formData.get("email") as string));
+
+  const recentOtp = await db.query.otps.findFirst({
+    where: and(
+      eq(otps.email, email),
+      gt(otps.createdAt, new Date(Date.now() - 60 * 1000)),
+    ),
+  });
+  if (recentOtp) return { error: "Please wait a minute before requesting another code." };
 
   // Find the org by email
   const [org] = await db
@@ -451,14 +503,15 @@ export async function loginOrganization(formData: FormData) {
     .limit(1);
 
   if (!org) {
-    throw new Error("No organization found with this email. Check the address or register a new workspace.");
+    return { error: "We could not sign you in with those details. Please check the email or register a new workspace." };
   }
 
   // Generate 6-digit OTP
-  const code = Math.floor(100_000 + Math.random() * 900_000).toString();
+  const code = randomInt(100_000, 1_000_000).toString();
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-  await db.insert(otps).values({ email, organizationId: org.id, code, expiresAt });
+  await db.delete(otps).where(and(eq(otps.email, email), eq(otps.organizationId, org.id)));
+  await db.insert(otps).values({ email, organizationId: org.id, code: hashOtp(code), expiresAt });
 
   // In production: send via email provider using EMAIL_PROVIDER_API_KEY.
   // In dev: print to console so you can copy it.
@@ -479,31 +532,15 @@ export async function loginOrganization(formData: FormData) {
  * Step 2 of org login — verify the OTP code and create a signed session.
  */
 export async function verifyOrgOTP(formData: FormData) {
-  const email = (formData.get("email") as string).toLowerCase().trim();
-  const code = (formData.get("code") as string).trim();
-
-  // Dev bypass: master code "000000" in non-production
-  const isMasterCode = process.env.NODE_ENV !== "production" && code === "000000";
-
-  if (!isMasterCode) {
-    const otpRecord = await db.query.otps.findFirst({
-      where: and(eq(otps.email, email), eq(otps.code, code)),
-      orderBy: (otps, { desc }) => [desc(otps.createdAt)],
-    });
-
-    if (!otpRecord) {
-      return { error: "Invalid code. Please check the code we sent and try again." };
-    }
-
-    if (new Date() > otpRecord.expiresAt) {
-      return { error: "This code has expired. Please request a new one." };
-    }
-
-    // Consume all OTPs for this email
-    await db.delete(otps).where(eq(otps.email, email));
+  const headerStore = await headers();
+  const ipLimit = await enforceRateLimit("org-otp-verify-ip", getClientAddressFromHeaders(headerStore), 10, 600);
+  if (!ipLimit.allowed) {
+    return { error: "Too many verification attempts. Please try again later.", rateLimit: rateLimitHeaders(ipLimit) };
   }
 
-  // Find the org
+  const email = normalizeOtpEmail((formData.get("email") as string));
+  const code = (formData.get("code") as string).trim();
+
   const [org] = await db
     .select()
     .from(organizations)
@@ -514,110 +551,61 @@ export async function verifyOrgOTP(formData: FormData) {
     return { error: "Organization not found." };
   }
 
-  await createOrgSession(org.id);
+  const otpRecord = await db.query.otps.findFirst({
+    where: and(
+      eq(otps.email, email),
+      eq(otps.organizationId, org.id),
+    ),
+    orderBy: (otps, { desc }) => [desc(otps.createdAt)],
+  });
+
+  if (!otpRecord) return { error: "Invalid code. Please check the code we sent and try again." };
+  if (new Date() > otpRecord.expiresAt) return { error: "This code has expired. Please request a new one." };
+  if (otpRecord.attempts >= 5) return { error: "Too many incorrect attempts. Please request a new code." };
+
+  const codeHash = hashOtp(code);
+  if (otpRecord.code !== codeHash) {
+    await db.update(otps)
+      .set({ attempts: sql`${otps.attempts} + 1` })
+      .where(and(eq(otps.id, otpRecord.id), lt(otps.attempts, 5)));
+    return { error: "Invalid code. Please check the code we sent and try again." };
+  }
+
+  const [consumedOtp] = await db.delete(otps)
+    .where(and(eq(otps.id, otpRecord.id), eq(otps.code, codeHash), lt(otps.attempts, 5)))
+    .returning({ id: otps.id });
+  if (!consumedOtp) return { error: "This code has already been used. Please request a new one." };
+
+  const user = await db.query.appUsers.findFirst({
+    where: and(
+      eq(appUsers.organizationId, org.id),
+      eq(appUsers.email, email),
+      eq(appUsers.status, "active"),
+    ),
+  });
+
+  if (!user) {
+    return { error: "Your account is not a member of this workspace. Ask an administrator to invite you." };
+  }
+
+  await createOrgSession(org.id, user.id);
 
   revalidatePath("/dashboard");
   redirect("/dashboard");
 }
 
-export async function registerAttendee(formData: FormData) {
-  const eventId = formData.get("eventId") as string;
-  const eventSlug = formData.get("eventSlug") as string;
-  const ticketTypeId = formData.get("ticketTypeId") as string;
-  
-  const [event] = await db
-    .select()
-    .from(events)
-    .where(eq(events.id, eventId))
-    .limit(1);
-    
-  if (!event) {
-    throw new Error("Event not found");
-  }
-  
-  const isRegistrationUpcoming =
-    event.registrationOpensAt && new Date(event.registrationOpensAt) > new Date();
+export async function searchRegistrations(eventId: string, query: string) {
+  const actor = await requirePermission("registrations.read");
+  const org = await getOrganization();
+  if (!actor) throw new Error("Forbidden");
+  if (!org) throw new Error("Unauthorized");
 
-  if (isRegistrationUpcoming) {
-    throw new Error("Registration has not opened for this event yet.");
-  }
-  
-  const isRegistrationClosed =
-    (event.registrationClosesAt && new Date(event.registrationClosesAt) < new Date()) ||
-    new Date(event.endsAt) < new Date();
-    
-  if (isRegistrationClosed) {
-    throw new Error("Registration is closed for this event.");
-  }
-  
-  const firstName = formData.get("firstName") as string;
-  const lastName = formData.get("lastName") as string;
-  const email = formData.get("email") as string;
-  const phone = formData.get("phone") as string;
-  const church = formData.get("church") as string;
-
-  const customAnswersRaw = formData.get("customAnswers") as string;
-  let customAnswers = {};
-  if (customAnswersRaw) {
-    try {
-      customAnswers = JSON.parse(customAnswersRaw);
-    } catch (e) {
-      console.error("Failed to parse custom answers", e);
-    }
-  }
-
-  // Generate unique codes
-  const uuid = crypto.randomUUID();
-  const ticketCode = `SEL-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-
-  // Find ticket type to ensure it exists and get its price
-  const [ticket] = await db
-    .select()
-    .from(ticketTypes)
-    .where(eq(ticketTypes.id, ticketTypeId))
-    .limit(1);
-
-  if (!ticket) {
-    throw new Error("Invalid ticket selected");
-  }
-
-  // Insert registration
-  const [newRegistration] = await db
-    .insert(registrations)
-    .values({
-      eventId,
-      ticketTypeId,
-      code: uuid,
-      ticketCode,
-      firstName,
-      lastName,
-      email,
-      phone,
-      church,
-      amount: ticket.price,
-      status: "confirmed", // Assuming free for now
-      source: "event_page",
-      customAnswers,
-    })
-    .returning();
-
-  // Send the ticket confirmation email (non-blocking)
-  await sendTicketConfirmation(newRegistration.email, {
-    attendeeName: `${newRegistration.firstName} ${newRegistration.lastName}`,
-    eventName: event.title,
-    ticketName: ticket.name,
-    ticketCode: newRegistration.ticketCode,
-    startsAt: event.startsAt.toISOString(),
-    venueName: event.venueName || "TBD",
+  const event = await db.query.events.findFirst({
+    where: and(eq(events.id, eventId), eq(events.organizationId, org.id)),
+    columns: { id: true },
   });
 
-  // Redirect to success page with the registration ID
-  redirect(`/e/${eventSlug}/register/success?id=${newRegistration.id}`);
-}
-
-export async function searchRegistrations(eventId: string, query: string) {
-  const org = await getOrganization();
-  if (!org) throw new Error("Unauthorized");
+  if (!event) throw new Error("Event not found or unauthorized");
 
   const results = await db
     .select({
@@ -646,10 +634,12 @@ export async function searchRegistrations(eventId: string, query: string) {
 }
 
 export async function checkInAttendee(registrationId: string, eventId: string) {
+  const actor = await requirePermission("checkin.write");
   const org = await getOrganization();
+  if (!actor) throw new Error("Forbidden");
   if (!org) throw new Error("Unauthorized");
 
-  // Check if they are already checked in
+  // Check if they are already checked in.
   const [existingCheckIn] = await db
     .select()
     .from(checkIns)
@@ -658,6 +648,22 @@ export async function checkInAttendee(registrationId: string, eventId: string) {
 
   if (existingCheckIn) {
     return { success: false, error: "Attendee is already checked in!" };
+  }
+
+  // The registration must belong to both the requested event and the
+  // authenticated organization before a check-in can be created.
+  const registration = await db.query.registrations.findFirst({
+    where: and(
+      eq(registrations.id, registrationId),
+      eq(registrations.eventId, eventId)
+    ),
+    with: {
+      event: true,
+    } as any,
+  });
+
+  if (!registration || (registration as any).event?.organizationId !== org.id) {
+    return { success: false, error: "Attendee not found for this event." };
   }
 
   // Insert the check-in record
@@ -687,14 +693,16 @@ export async function checkInAttendee(registrationId: string, eventId: string) {
 }
 
 export async function saveEventAsBlueprint(eventId: string, name: string, description?: string) {
+  const actor = await requirePermission("events.write");
   const org = await getOrganization();
+  if (!actor) return { error: "You do not have permission to save blueprints." };
   if (!org) {
     return { error: "Organization not found" };
   }
 
   // Fetch the event with all its relations that form the DNA
   const event = (await db.query.events.findFirst({
-    where: eq(events.id, eventId),
+    where: and(eq(events.id, eventId), eq(events.organizationId, org.id)),
     with: {
       ticketTypes: true,
       sessions: true,
@@ -768,9 +776,10 @@ export async function createEventFromBlueprint(blueprintId: string, overrides: {
   coverImage?: string;
   media?: any;
 }) {
+  const actor = await requirePermission("events.write");
   const org = await getOrganization();
-  if (!org) {
-    return { error: "Organization not found" };
+  if (!actor || !org) {
+    return { error: "Not authorized" };
   }
 
   const blueprint = await db.query.blueprints.findFirst({
@@ -855,7 +864,9 @@ export async function createEventFromBlueprint(blueprintId: string, overrides: {
 /* ------------------------------------------------------------------ */
 
 export async function createTicketType(eventId: string, formData: FormData) {
+  const actor = await requirePermission("tickets.write");
   const org = await getOrganization();
+  if (!actor) return { error: "You do not have permission to manage tickets." };
   if (!org) return { error: "Not authenticated" };
 
   const event = await db.query.events.findFirst({
@@ -903,7 +914,9 @@ export async function createTicketType(eventId: string, formData: FormData) {
 }
 
 export async function updateTicketType(ticketId: string, eventId: string, formData: FormData) {
+  const actor = await requirePermission("tickets.write");
   const org = await getOrganization();
+  if (!actor) return { error: "You do not have permission to manage tickets." };
   if (!org) return { error: "Not authenticated" };
 
   const event = await db.query.events.findFirst({
@@ -935,7 +948,7 @@ export async function updateTicketType(ticketId: string, eventId: string, formDa
         isVisible,
         benefits,
       })
-      .where(eq(ticketTypes.id, ticketId));
+      .where(and(eq(ticketTypes.id, ticketId), eq(ticketTypes.eventId, eventId)));
 
     revalidatePath(`/dashboard/events/${eventId}/tickets`);
     revalidatePath(`/e/${event.slug}`);
@@ -952,7 +965,9 @@ export async function updateTicketType(ticketId: string, eventId: string, formDa
 }
 
 export async function deleteTicketType(ticketId: string, eventId: string) {
+  const actor = await requirePermission("tickets.write");
   const org = await getOrganization();
+  if (!actor) return { error: "You do not have permission to manage tickets." };
   if (!org) return { error: "Not authenticated" };
 
   const event = await db.query.events.findFirst({
@@ -966,14 +981,14 @@ export async function deleteTicketType(ticketId: string, eventId: string) {
   let redirectUrl = "";
   try {
     const ticket = await db.query.ticketTypes.findFirst({
-      where: eq(ticketTypes.id, ticketId),
+      where: and(eq(ticketTypes.id, ticketId), eq(ticketTypes.eventId, eventId)),
     });
 
     if (ticket && ticket.sold > 0) {
       return { error: "Cannot delete a ticket type that has registrations." };
     }
 
-    await db.delete(ticketTypes).where(eq(ticketTypes.id, ticketId));
+    await db.delete(ticketTypes).where(and(eq(ticketTypes.id, ticketId), eq(ticketTypes.eventId, eventId)));
 
     revalidatePath(`/dashboard/events/${eventId}/tickets`);
     revalidatePath(`/e/${event.slug}`);
@@ -986,5 +1001,117 @@ export async function deleteTicketType(ticketId: string, eventId: string) {
 
   if (redirectUrl) {
     redirect(redirectUrl);
+  }
+}
+
+export async function resolvePaymentCapacityReview(registrationId: string, eventId: string) {
+  const actor = await requirePermission("registrations.write");
+  const org = await getOrganization();
+  if (!actor) return { error: "You do not have permission to resolve registrations." };
+  if (!org) return { error: "Not authenticated" };
+
+  const event = await db.query.events.findFirst({
+    where: and(eq(events.id, eventId), eq(events.organizationId, org.id)),
+    columns: { id: true, title: true, startsAt: true, venueName: true, city: true },
+  });
+  if (!event) return { error: "Event not found or unauthorized" };
+
+  try {
+    await db.transaction(async tx => {
+      const registration = await tx.query.registrations.findFirst({
+        where: and(
+          eq(registrations.id, registrationId),
+          eq(registrations.eventId, eventId),
+          eq(registrations.status, "payment_capacity_review"),
+        ),
+      });
+      if (!registration) throw new Error("REGISTRATION_NOT_REVIEWABLE");
+
+      if (!registration.ticketTypeId) {
+        await tx.update(registrations)
+          .set({ status: "confirmed" })
+          .where(eq(registrations.id, registrationId));
+        return;
+      }
+
+      await tx.execute(sql`SELECT id FROM ticket_types WHERE id = ${registration.ticketTypeId} FOR UPDATE`);
+      const ticket = await tx.query.ticketTypes.findFirst({
+        where: eq(ticketTypes.id, registration.ticketTypeId),
+      });
+      if (!ticket) throw new Error("TICKET_NOT_FOUND");
+
+      const activeReservations = await tx.execute(sql`
+        SELECT COUNT(*)::int AS count
+        FROM ticket_reservations
+        WHERE ticket_type_id = ${registration.ticketTypeId}
+          AND status = 'reserved'
+          AND expires_at > NOW()
+      `);
+      const reservedCount = Number((activeReservations.rows[0] as { count: number | string }).count);
+
+      if (ticket.capacity > 0 && ticket.sold + reservedCount >= ticket.capacity) {
+        throw new Error("TICKET_CAPACITY");
+      }
+
+      const reservation = await tx.query.ticketReservations.findFirst({
+        where: eq(ticketReservations.registrationId, registrationId),
+      });
+
+      if (reservation) {
+        await tx.update(ticketReservations)
+          .set({ status: "confirmed" })
+          .where(eq(ticketReservations.id, reservation.id));
+      } else {
+        await tx.insert(ticketReservations).values({
+          ticketTypeId: ticket.id,
+          eventId,
+          registrationId,
+          status: "confirmed",
+          expiresAt: new Date(),
+        });
+      }
+
+      await tx.update(ticketTypes)
+        .set({ sold: sql`${ticketTypes.sold} + 1` })
+        .where(eq(ticketTypes.id, ticket.id));
+
+      await tx.update(registrations)
+        .set({ status: "confirmed" })
+        .where(eq(registrations.id, registrationId));
+    });
+
+    const confirmedRegistration = await db.query.registrations.findFirst({
+      where: and(eq(registrations.id, registrationId), eq(registrations.eventId, eventId)),
+    });
+
+    if (confirmedRegistration) {
+      const confirmedTicket = confirmedRegistration.ticketTypeId
+        ? await db.query.ticketTypes.findFirst({ where: eq(ticketTypes.id, confirmedRegistration.ticketTypeId) })
+        : null;
+
+      await sendTicketConfirmation(confirmedRegistration.email, {
+        attendeeName: confirmedRegistration.firstName,
+        eventName: event.title,
+        ticketName: confirmedTicket?.name || "General Admission",
+        ticketCode: confirmedRegistration.ticketCode,
+        startsAt: new Date(event.startsAt).toLocaleString("en-US", {
+          weekday: "short", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "numeric",
+        }),
+        venueName: event.venueName || event.city || "Virtual Event",
+      });
+    }
+
+    revalidatePath(`/dashboard/events/${eventId}`);
+    revalidatePath(`/dashboard/events/${eventId}/command`);
+    return { success: true };
+  } catch (error) {
+    if (error instanceof Error && error.message === "REGISTRATION_NOT_REVIEWABLE") {
+      return { error: "This registration is no longer awaiting capacity review." };
+    }
+    if (error instanceof Error && error.message === "TICKET_CAPACITY") {
+      return { error: "The ticket type is still at capacity." };
+    }
+    console.error("[selah] capacity review resolution failed:", error);
+    return { error: "Could not resolve this payment-capacity review." };
   }
 }

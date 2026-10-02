@@ -1,0 +1,2 @@
+ALTER TABLE "registrations" ADD COLUMN IF NOT EXISTS "idempotency_key" text;
+CREATE UNIQUE INDEX IF NOT EXISTS "registrations_event_idempotency_unique" ON "registrations" ("event_id","idempotency_key");

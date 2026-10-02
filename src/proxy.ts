@@ -1,65 +1,36 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
 const COOKIE_NAME = "selah_session";
 
-// Routes that don't require a session
-const PUBLIC_PREFIXES = ["/", "/e/", "/login", "/register", "/verify/", "/api/", "/_next/", "/images/", "/uploads/", "/favicon"];
-
-function isPublic(pathname: string): boolean {
-  if (pathname === "/") return true;
-  return PUBLIC_PREFIXES.some(
-    (prefix) => prefix !== "/" && pathname.startsWith(prefix)
-  );
-}
-
-function getSecret(): Uint8Array {
+function getSecret() {
   const secret = process.env.AUTH_SECRET;
   if (!secret) {
+    if (process.env.NODE_ENV === "production") throw new Error("AUTH_SECRET is required in production.");
     return new TextEncoder().encode("dev-only-insecure-secret-32-chars!!");
   }
   return new TextEncoder().encode(secret);
 }
 
-export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const token = request.cookies.get(COOKIE_NAME)?.value;
-
-  // Protect dashboard routes
-  if (pathname.startsWith("/dashboard")) {
-    if (!token) {
-      const loginUrl = new URL("/login", request.url);
-      loginUrl.searchParams.set("from", pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-
-    try {
-      await jwtVerify(token, getSecret());
-      return NextResponse.next();
-    } catch {
-      // Token is expired, tampered, or invalid
-      const loginUrl = new URL("/login", request.url);
-      loginUrl.searchParams.set("from", pathname);
-      const response = NextResponse.redirect(loginUrl);
-      // Clear the bad cookie
-      response.cookies.delete(COOKIE_NAME);
-      return response;
-    }
+export async function proxy(request: Request) {
+  const url = new URL(request.url);
+  if (!url.pathname.startsWith("/dashboard")) {
+    return NextResponse.next();
   }
 
-  // Redirect signed-in users away from auth pages
-  if (pathname === "/login" || pathname === "/register") {
-    if (token) {
-      try {
-        await jwtVerify(token, getSecret());
-        return NextResponse.redirect(new URL("/dashboard", request.url));
-      } catch {
-        // Token is invalid, let them see the auth page
-      }
-    }
-  }
+  const token = request.headers.get("cookie")?.split(";").map(v => v.trim()).find(v => v.startsWith(COOKIE_NAME + "="))?.slice(COOKIE_NAME.length + 1);
 
-  return NextResponse.next();
+  if (!token) return NextResponse.redirect(new URL("/login", request.url));
+
+  try {
+    const { payload } = await jwtVerify(token, getSecret());
+    if (!payload.orgId || typeof payload.orgId !== "string") throw new Error("Invalid session");
+    return NextResponse.next();
+  } catch {
+    const response = NextResponse.redirect(new URL("/login", request.url));
+    response.headers.set("Cache-Control", "no-store");
+    return response;
+  }
 }
 
 export const config = {

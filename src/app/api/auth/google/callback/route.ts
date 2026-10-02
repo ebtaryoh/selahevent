@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { db } from "@/db";
-import { organizations, auditLogs } from "@/db/schema";
-import { ilike } from "drizzle-orm";
+import { organizations, auditLogs, appUsers } from "@/db/schema";
+import { and, eq } from "drizzle-orm";
 import { createOrgSession } from "@/lib/session";
 import { redirect } from "next/navigation";
+import crypto from "crypto";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -31,7 +32,8 @@ export async function GET(req: Request) {
   cookieStore.delete("google_oauth_state");
 
   // Get the next URL and clear the cookie
-  const nextUrl = cookieStore.get("google_oauth_next")?.value || "/dashboard";
+  const rawNextUrl = cookieStore.get("google_oauth_next")?.value || "/dashboard";
+  const nextUrl = rawNextUrl.startsWith("/") && !rawNextUrl.startsWith("//") ? rawNextUrl : "/dashboard";
   cookieStore.delete("google_oauth_next");
 
   try {
@@ -65,26 +67,27 @@ export async function GET(req: Request) {
       return NextResponse.redirect(`${loginUrl}?error=Failed to fetch Google user info.`);
     }
 
-    const { email, name, picture } = await userResponse.json();
+    const { email, name, picture, verified_email: verifiedEmail } = await userResponse.json();
 
-    if (!email) {
-      return NextResponse.redirect(`${loginUrl}?error=No email provided by Google.`);
+    if (!email || verifiedEmail !== true) {
+      return NextResponse.redirect(`${loginUrl}?error=Google did not provide a verified email address.`);
     }
 
     // Look up the organization by email
     const orgs = await db
       .select()
       .from(organizations)
-      .where(ilike(organizations.email, email))
+      .where(eq(organizations.email, email))
       .limit(1);
 
     let org;
+    let user;
 
     if (orgs.length === 0) {
       // Auto-provision a new workspace for the user
       const workspaceName = name ? `${name}'s Workspace` : "My Workspace";
       const baseSlug = workspaceName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
-      const slug = `${baseSlug}-${Math.floor(Math.random() * 9000 + 1000)}`;
+      const slug = `${baseSlug}-${crypto.randomInt(1000, 10000)}`;
 
       const inserted = await db.insert(organizations).values({
         name: workspaceName,
@@ -95,6 +98,16 @@ export async function GET(req: Request) {
       }).returning();
       
       org = inserted[0];
+
+      const [ownerUser] = await db.insert(appUsers).values({
+        organizationId: org.id,
+        name: name || email.split("@")[0],
+        email,
+        role: "owner",
+        status: "active",
+        imageUrl: picture,
+      }).returning();
+      user = ownerUser;
 
       // Audit log for creation
       await db.insert(auditLogs).values({
@@ -111,14 +124,28 @@ export async function GET(req: Request) {
         const updated = await db
           .update(organizations)
           .set({ logoUrl: picture })
-          .where(ilike(organizations.email, email))
+          .where(eq(organizations.email, email))
           .returning();
         org = updated[0];
       }
     }
 
-    // Create session
-    await createOrgSession(org.id);
+    if (!user) {
+      user = await db.query.appUsers.findFirst({
+        where: and(eq(appUsers.organizationId, org.id), eq(appUsers.email, email)),
+      });
+    }
+
+    if (!user) {
+      // Existing workspaces must explicitly provision members. Never grant owner
+      // access merely because the Google email matches the organization email.
+      return NextResponse.redirect(`${loginUrl}?error=Your account is not a member of this workspace. Ask an administrator to invite you.`);
+    }
+
+    // New Google workspaces create their owner above. Existing workspaces require membership.
+
+    // Create a user-bound session
+    await createOrgSession(org.id, user.id);
 
     // Audit log
     await db.insert(auditLogs).values({

@@ -769,20 +769,20 @@ async function runSeed() {
     );
 
     await db.insert(volunteers).values([
-      { eventId: summitId, name: "Grace Ihedi", department: "Ushering", role: "Team Lead", shift: "Morning (06:00–13:00)", phone: "+234 803 111 2233", status: "confirmed", isLeader: true },
-      { eventId: summitId, name: "Samuel Etim", department: "Protocol", role: "Coordinator", shift: "Full day", phone: "+234 803 111 2234", status: "confirmed", isLeader: true },
-      { eventId: summitId, name: "Joy Adebayo", department: "Registration", role: "Desk Lead", shift: "Morning (06:00–13:00)", phone: "+234 803 111 2235", status: "confirmed", isLeader: true },
-      { eventId: summitId, name: "Daniel Ojo", department: "Media", role: "Camera", shift: "Afternoon (12:00–20:00)", phone: "+234 803 111 2236", status: "confirmed" },
-      { eventId: summitId, name: "Esther Nnaji", department: "Welfare", role: "Member", shift: "Morning (06:00–13:00)", phone: "+234 803 111 2237", status: "confirmed" },
-      { eventId: summitId, name: "Paul Okonkwo", department: "Security", role: "Shift Lead", shift: "Afternoon (12:00–20:00)", phone: "+234 803 111 2238", status: "confirmed", isLeader: true },
-      { eventId: summitId, name: "Rita Adeyinka", department: "Medical", role: "Nurse", shift: "Full day", phone: "+234 803 111 2239", status: "confirmed" },
-      { eventId: summitId, name: "Femi Balogun", department: "Transportation", role: "Route Lead", shift: "Morning (06:00–13:00)", phone: "+234 803 111 2240", status: "confirmed", isLeader: true },
-      { eventId: summitId, name: "Anna Peter", department: "Prayer Team", role: "Member", shift: "Evening (17:00–22:00)", phone: "+234 803 111 2241", status: "confirmed" },
-      { eventId: summitId, name: "John Uche", department: "Technical", role: "Sound", shift: "Full day", phone: "+234 803 111 2242", status: "pending" },
-      { eventId: summitId, name: "Martha James", department: "Ushering", role: "Member", shift: "Afternoon (12:00–20:00)", phone: "+234 803 111 2243", status: "pending" },
-      { eventId: summitId, name: "Kelvin Sadiq", department: "Media", role: "Editor", shift: "Evening (17:00–22:00)", phone: "+234 803 111 2244", status: "pending" },
-      { eventId: retreatId, name: "Bisi Olanrewaju", department: "Welfare", role: "Team Lead", shift: "Full day", phone: "+234 803 111 2245", status: "confirmed", isLeader: true },
-      { eventId: retreatId, name: "Andrew Kalu", department: "Transportation", role: "Driver Lead", shift: "Morning (06:00–13:00)", phone: "+234 803 111 2246", status: "confirmed", isLeader: true },
+      { organizationId: orgId, eventId: summitId, name: "Grace Ihedi", department: "Ushering", role: "Team Lead", shift: "Morning (06:00–13:00)", phone: "+234 803 111 2233", status: "confirmed", isLeader: true },
+      { organizationId: orgId, eventId: summitId, name: "Samuel Etim", department: "Protocol", role: "Coordinator", shift: "Full day", phone: "+234 803 111 2234", status: "confirmed", isLeader: true },
+      { organizationId: orgId, eventId: summitId, name: "Joy Adebayo", department: "Registration", role: "Desk Lead", shift: "Morning (06:00–13:00)", phone: "+234 803 111 2235", status: "confirmed", isLeader: true },
+      { organizationId: orgId, eventId: summitId, name: "Daniel Ojo", department: "Media", role: "Camera", shift: "Afternoon (12:00–20:00)", phone: "+234 803 111 2236", status: "confirmed" },
+      { organizationId: orgId, eventId: summitId, name: "Esther Nnaji", department: "Welfare", role: "Member", shift: "Morning (06:00–13:00)", phone: "+234 803 111 2237", status: "confirmed" },
+      { organizationId: orgId, eventId: summitId, name: "Paul Okonkwo", department: "Security", role: "Shift Lead", shift: "Afternoon (12:00–20:00)", phone: "+234 803 111 2238", status: "confirmed", isLeader: true },
+      { organizationId: orgId, eventId: summitId, name: "Rita Adeyinka", department: "Medical", role: "Nurse", shift: "Full day", phone: "+234 803 111 2239", status: "confirmed" },
+      { organizationId: orgId, eventId: summitId, name: "Femi Balogun", department: "Transportation", role: "Route Lead", shift: "Morning (06:00–13:00)", phone: "+234 803 111 2240", status: "confirmed", isLeader: true },
+      { organizationId: orgId, eventId: summitId, name: "Anna Peter", department: "Prayer Team", role: "Member", shift: "Evening (17:00–22:00)", phone: "+234 803 111 2241", status: "confirmed" },
+      { organizationId: orgId, eventId: summitId, name: "John Uche", department: "Technical", role: "Sound", shift: "Full day", phone: "+234 803 111 2242", status: "pending" },
+      { organizationId: orgId, eventId: summitId, name: "Martha James", department: "Ushering", role: "Member", shift: "Afternoon (12:00–20:00)", phone: "+234 803 111 2243", status: "pending" },
+      { organizationId: orgId, eventId: summitId, name: "Kelvin Sadiq", department: "Media", role: "Editor", shift: "Evening (17:00–22:00)", phone: "+234 803 111 2244", status: "pending" },
+      { organizationId: orgId, eventId: retreatId, name: "Bisi Olanrewaju", department: "Welfare", role: "Team Lead", shift: "Full day", phone: "+234 803 111 2245", status: "confirmed", isLeader: true },
+      { organizationId: orgId, eventId: retreatId, name: "Andrew Kalu", department: "Transportation", role: "Driver Lead", shift: "Morning (06:00–13:00)", phone: "+234 803 111 2246", status: "confirmed", isLeader: true },
     ]);
 
     await db.insert(tasks).values([

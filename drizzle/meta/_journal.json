@@ -15,6 +15,62 @@
       "when": 1789836922673,
       "tag": "0001_dapper_harry_osborn",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790930053064,
+      "tag": "0002_ticket_reservations",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790931340905,
+      "tag": "0003_checkin_unique",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790931429964,
+      "tag": "0004_otp_attempts",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790931800000,
+      "tag": "0005_registration_idempotency",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790931900000,
+      "tag": "0006_payment_gateway_reference_unique",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790932000000,
+      "tag": "0007_rate_limit_buckets",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790932100000,
+      "tag": "0008_volunteer_org_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790932200000,
+      "tag": "0009_payment_checkout_url",
+      "breakpoints": true
     }
   ]
 }

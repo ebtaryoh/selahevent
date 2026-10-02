@@ -3,12 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { organizations } from "@/db/schema";
-import { getOrganization } from "../data";
+import { getOrganization, requirePermission } from "../data";
 import { ensureSeed } from "../seed";
 import { eq } from "drizzle-orm";
 import { put } from "@vercel/blob";
 import fs from "fs";
 import path from "path";
+import { randomUUID } from "crypto";
+import { validateMediaFile } from "../media";
 
 /** Write a file to disk (local fallback for media uploads). */
 function writeFileToDisk(filepath: string, buffer: Buffer): void {
@@ -20,8 +22,10 @@ function writeFileToDisk(filepath: string, buffer: Buffer): void {
 export async function updateOrganizationSettings(orgId: string, formData: FormData) {
   await ensureSeed();
   
+  const actor = await requirePermission("settings.write");
   // Ensure the user is updating their own org
   const sessionOrg = await getOrganization();
+  if (!actor) return { error: "You do not have permission to change organization settings." };
   if (!sessionOrg || sessionOrg.id !== orgId) {
     return { error: "Unauthorized" };
   }
@@ -40,13 +44,34 @@ export async function updateOrganizationSettings(orgId: string, formData: FormDa
   let logoUrl = sessionOrg.logoUrl;
   const avatarFile = formData.get("avatar") as File | null;
   if (avatarFile && avatarFile.size > 0) {
-    const filename = `${Date.now()}-avatar-${avatarFile.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+    if (avatarFile.size > 4 * 1024 * 1024) {
+      return { error: "Organization logos must be 4 MB or smaller." };
+    }
+    if (!avatarFile.type.startsWith("image/")) {
+      return { error: "Organization logo must be an image." };
+    }
+
+    const mediaError = await validateMediaFile(avatarFile);
+    if (mediaError) return { error: mediaError };
+
+    const ext = avatarFile.name.includes(".")
+      ? avatarFile.name.split(".").pop()!.toLowerCase().replace(/[^a-z0-9]/g, "")
+      : "bin";
+    const filename = `${Date.now()}-avatar-${randomUUID()}-${ext}`;
+
+    if (!process.env.BLOB_READ_WRITE_TOKEN && process.env.NODE_ENV === "production") {
+      return { error: "Logo uploads are temporarily unavailable. Please configure storage and try again." };
+    }
+
     if (process.env.BLOB_READ_WRITE_TOKEN) {
       try {
         const blob = await put(filename, avatarFile, { access: "public", multipart: true });
         logoUrl = blob.url;
       } catch (error) {
         console.error("Vercel Blob upload failed:", error);
+        if (process.env.NODE_ENV === "production") {
+          return { error: "Logo upload failed. Please try again." };
+        }
         const buffer = Buffer.from(await avatarFile.arrayBuffer());
         const filepath = path.join(process.cwd(), "public", "uploads", filename);
         writeFileToDisk(filepath, buffer);

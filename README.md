@@ -187,19 +187,19 @@ Node host) with a managed Postgres/Supabase database.
 - Sensitive attendee fields (emergency contacts, dietary/medical notes) are
   never rendered on public pages and are excluded from the registrations
   preview.
-- Security headers, CSRF protection and per-route rate limiting should be added
-  at the edge/middleware layer for production (see `RATE_LIMIT_PER_MINUTE`).
+- Security headers, same-site session cookies, signed-session authorization, and per-route rate limiting are implemented. Browser state-changing APIs rely on same-site cookies and authenticated authorization checks.
+
 
 ---
 
 ## 9. Production checklist
 
 - [ ] `DATABASE_URL` points at the production database with backups enabled
-- [ ] `NEXT_PUBLIC_SITE_URL` set and canonical URLs verified
+- [ ] `NEXT_PUBLIC_SITE_URL` set to the real production origin and canonical URLs verified
 - [ ] Paystack live keys configured and a real transaction verified end-to-end
 - [ ] Email provider verified; sender domain authenticated (SPF/DKIM)
 - [ ] Row Level Security enabled on tenant tables (Supabase)
-- [ ] Rate limiting and bot protection on `/api/*`
+- [x] Rate limiting on public/high-risk API and authentication flows; production bot protection should still be layered at the edge for high-volume events.
 - [ ] Error monitoring and structured logging connected
 - [ ] Accessibility audit (WCAG 2.2 AA) on the registration flow
 - [ ] Data retention policy documented and enforced

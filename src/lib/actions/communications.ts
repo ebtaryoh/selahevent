@@ -2,16 +2,18 @@
 
 import { db } from "@/db";
 import { events } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import { getOrganization } from "@/lib/data";
+import { and, eq } from "drizzle-orm";
+import { getOrganization, requirePermission } from "@/lib/data";
 import { revalidatePath } from "next/cache";
 
 export async function updateCommsPlan(eventId: string, formData: FormData) {
+  const actor = await requirePermission("communications.write");
   const org = await getOrganization();
+  if (!actor) return { error: "You do not have permission to perform this action." };
   if (!org) return { error: "Not authenticated" };
 
   const event = await db.query.events.findFirst({
-    where: eq(events.id, eventId),
+    where: and(eq(events.id, eventId), eq(events.organizationId, org.id)),
   });
 
   if (!event || event.organizationId !== org.id) {
@@ -38,7 +40,7 @@ export async function updateCommsPlan(eventId: string, formData: FormData) {
       .set({
         commsPlan: [...currentPlan, newPlanItem],
       })
-      .where(eq(events.id, eventId));
+      .where(and(eq(events.id, eventId), eq(events.organizationId, org.id)));
 
     revalidatePath(`/dashboard/events/${eventId}`);
     revalidatePath(`/dashboard/events/${eventId}/communications`);
@@ -51,14 +53,16 @@ export async function updateCommsPlan(eventId: string, formData: FormData) {
 }
 
 export async function deleteCommsPlanItem(eventId: string, itemId: string) {
+  const actor = await requirePermission("communications.write");
   const org = await getOrganization();
+  if (!actor) return { error: "You do not have permission to perform this action." };
   if (!org) return { error: "Not authenticated" };
 
   const event = await db.query.events.findFirst({
-    where: eq(events.id, eventId),
+    where: and(eq(events.id, eventId), eq(events.organizationId, org.id)),
   });
 
-  if (!event || event.organizationId !== org.id) {
+  if (!event) {
     return { error: "Event not found or unauthorized" };
   }
   
@@ -71,7 +75,7 @@ export async function deleteCommsPlanItem(eventId: string, itemId: string) {
       .set({
         commsPlan: newPlan,
       })
-      .where(eq(events.id, eventId));
+      .where(and(eq(events.id, eventId), eq(events.organizationId, org.id)));
 
     revalidatePath(`/dashboard/events/${eventId}`);
     revalidatePath(`/dashboard/events/${eventId}/communications`);

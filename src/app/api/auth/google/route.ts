@@ -4,15 +4,17 @@ import { cookies } from "next/headers";
 
 export async function GET(req: Request) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  if (!clientId) {
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
     return NextResponse.json(
-      { error: "GOOGLE_CLIENT_ID is not configured." },
+      { error: "Google sign-in is not configured." },
       { status: 500 }
     );
   }
 
   const url = new URL(req.url);
-  const nextUrl = url.searchParams.get("next") || "/dashboard";
+  const rawNextUrl = url.searchParams.get("next") || "/dashboard";
+  const nextUrl = rawNextUrl.startsWith("/") && !rawNextUrl.startsWith("//") ? rawNextUrl : "/dashboard";
 
   // Determine the callback URL based on the incoming request to support both local and prod
   const redirectUri = `${url.protocol}//${url.host}/api/auth/google/callback`;
@@ -27,6 +29,7 @@ export async function GET(req: Request) {
     secure: process.env.NODE_ENV === "production",
     maxAge: 60 * 10, // 10 minutes
     path: "/",
+    sameSite: "lax",
   });
 
   // Store the next URL to redirect to after successful login
@@ -35,6 +38,7 @@ export async function GET(req: Request) {
     secure: process.env.NODE_ENV === "production",
     maxAge: 60 * 10, // 10 minutes
     path: "/",
+    sameSite: "lax",
   });
 
   const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");

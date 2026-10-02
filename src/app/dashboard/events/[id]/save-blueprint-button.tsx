@@ -59,7 +59,7 @@ export function SaveBlueprintButton({ eventId }: { eventId: string }) {
 
             <h3 className="font-display text-[1.4rem] font-semibold text-ink">Save as Blueprint</h3>
             <p className="mt-2 text-[0.875rem] text-warm-500">
-              Preserve this event's structure—including ticket types, questions, and sessions—to instantly duplicate it later.
+              Preserve this event&apos;s structure—including ticket types, questions, and sessions—to instantly duplicate it later.
             </p>
 
             <form onSubmit={handleSave} className="mt-6 space-y-4">

@@ -2,13 +2,15 @@
 
 import { db } from "@/db";
 import { events, speakers } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import { getOrganization } from "@/lib/data";
+import { and, eq } from "drizzle-orm";
+import { getOrganization, requirePermission } from "@/lib/data";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export async function createSpeaker(eventId: string, formData: FormData) {
+  const actor = await requirePermission("events.write");
   const org = await getOrganization();
+  if (!actor) return { error: "You do not have permission to manage speakers." };
   if (!org) return { error: "Not authenticated" };
 
   const event = await db.query.events.findFirst({
@@ -52,7 +54,9 @@ export async function createSpeaker(eventId: string, formData: FormData) {
 }
 
 export async function updateSpeaker(speakerId: string, eventId: string, formData: FormData) {
+  const actor = await requirePermission("events.write");
   const org = await getOrganization();
+  if (!actor) return { error: "You do not have permission to manage speakers." };
   if (!org) return { error: "Not authenticated" };
 
   const event = await db.query.events.findFirst({
@@ -80,7 +84,7 @@ export async function updateSpeaker(speakerId: string, eventId: string, formData
         bio,
         topic,
       })
-      .where(eq(speakers.id, speakerId));
+      .where(and(eq(speakers.id, speakerId), eq(speakers.eventId, eventId), eq(speakers.organizationId, org.id)));
 
     revalidatePath(`/dashboard/events/${eventId}/speakers`);
     revalidatePath(`/e/${event.slug}`);
@@ -97,7 +101,9 @@ export async function updateSpeaker(speakerId: string, eventId: string, formData
 }
 
 export async function deleteSpeaker(speakerId: string, eventId: string) {
+  const actor = await requirePermission("events.write");
   const org = await getOrganization();
+  if (!actor) return { error: "You do not have permission to manage speakers." };
   if (!org) return { error: "Not authenticated" };
 
   const event = await db.query.events.findFirst({
@@ -110,7 +116,7 @@ export async function deleteSpeaker(speakerId: string, eventId: string) {
 
   let redirectUrl = "";
   try {
-    await db.delete(speakers).where(eq(speakers.id, speakerId));
+    await db.delete(speakers).where(and(eq(speakers.id, speakerId), eq(speakers.eventId, eventId), eq(speakers.organizationId, org.id)));
 
     revalidatePath(`/dashboard/events/${eventId}/speakers`);
     revalidatePath(`/e/${event.slug}`);

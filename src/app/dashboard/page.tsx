@@ -165,7 +165,40 @@ export default async function DashboardPage() {
           </Link>
         </div>
 
-        <div className="mt-9 overflow-hidden rounded-[15px] border border-[rgba(22,19,17,0.1)] bg-paper">
+        <div className="mt-9 grid gap-3 md:hidden">
+          {events.map((event) => {
+            const stat = stats.find((row) => row.event.id === event.id);
+            return (
+              <article key={event.id} className="motion-lift rounded-[16px] border border-black/[0.08] bg-paper p-5 shadow-[var(--shadow-soft)]">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="truncate text-[0.98rem] font-semibold text-ink">{event.title}</div>
+                    <div className="mt-1 truncate text-[0.75rem] text-warm-400">{event.venueName} · {event.city}</div>
+                  </div>
+                  <span className={event.status === "published" ? "pill pill-live" : event.status === "completed" ? "pill pill-neutral" : "pill pill-warn"}>
+                    {titleCase(event.status)}
+                  </span>
+                </div>
+                <div className="mt-5 grid grid-cols-2 gap-3">
+                  <div className="rounded-[11px] bg-parchment p-3.5">
+                    <div className="eyebrow text-[0.5rem] text-warm-400">Registered</div>
+                    <div className="tnum mt-1 text-[1.15rem] font-semibold text-ink">{formatNumber(stat?.s.registered ?? 0)} <span className="text-[0.72rem] font-normal text-warm-400">/ {formatNumber(event.capacity)}</span></div>
+                  </div>
+                  <div className="rounded-[11px] bg-parchment p-3.5">
+                    <div className="eyebrow text-[0.5rem] text-warm-400">Readiness</div>
+                    <div className="tnum mt-1 text-[1.15rem] font-semibold text-ink">{event.readiness}%</div>
+                  </div>
+                </div>
+                <div className="mt-4 flex gap-2">
+                  <Link href={`/e/${event.slug}`} className="btn btn-ghost flex-1 !px-4 !py-3 !text-[0.75rem]">View page</Link>
+                  <Link href={`/dashboard/events/${event.id}`} className="btn btn-primary flex-1 !px-4 !py-3 !text-[0.75rem]">Manage</Link>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+
+        <div className="mt-9 hidden overflow-hidden rounded-[15px] border border-[rgba(22,19,17,0.1)] bg-paper md:block">
           <div className="overflow-x-auto">
             <table className="ledger">
               <thead>
@@ -187,7 +220,7 @@ export default async function DashboardPage() {
                     <tr key={event.id}>
                       <td>
                         <div className="flex items-center gap-3.5">
-                          <div className="h-11 w-11 shrink-0 overflow-hidden rounded-[9px] bg-warm-200 flex items-center justify-center">
+                          <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-[9px] bg-warm-200 flex items-center justify-center">
                             {event.coverImage ? (
                               <Image
                                 src={event.coverImage}
@@ -481,7 +514,7 @@ export default async function DashboardPage() {
         <div className="mt-9 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           {openTasks.slice(0, 8).map((task, i) => (
             <Reveal key={task.id} delay={i * 0.05}>
-              <div className="flex h-full flex-col rounded-[13px] border border-[rgba(22,19,17,0.1)] bg-paper p-6">
+              <div className="motion-lift flex h-full flex-col rounded-[13px] border border-[rgba(22,19,17,0.1)] bg-paper p-6">
                 <div className="flex items-start justify-between gap-3">
                   <span className="pill pill-neutral !text-[0.645rem]">
                     {task.category}
@@ -574,7 +607,7 @@ export default async function DashboardPage() {
               {blueprints.slice(0, 3).map((blueprint) => (
                 <div
                   key={blueprint.id}
-                  className="rounded-[13px] border border-[rgba(232,211,166,0.22)] bg-[rgba(247,243,236,0.07)] p-5"
+                  className="motion-lift rounded-[13px] border border-[rgba(232,211,166,0.22)] bg-[rgba(247,243,236,0.07)] p-5"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>

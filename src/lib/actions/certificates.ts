@@ -2,16 +2,18 @@
 
 import { db } from "@/db";
 import { events } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import { getOrganization } from "@/lib/data";
+import { and, eq } from "drizzle-orm";
+import { getOrganization, requirePermission } from "@/lib/data";
 import { revalidatePath } from "next/cache";
 
 export async function updateCertificateSettings(eventId: string, formData: FormData) {
+  const actor = await requirePermission("certificates.write");
   const org = await getOrganization();
+  if (!actor) return { error: "You do not have permission to perform this action." };
   if (!org) return { error: "Not authenticated" };
 
   const event = await db.query.events.findFirst({
-    where: eq(events.id, eventId),
+    where: and(eq(events.id, eventId), eq(events.organizationId, org.id)),
   });
 
   if (!event || event.organizationId !== org.id) {
@@ -34,7 +36,7 @@ export async function updateCertificateSettings(eventId: string, formData: FormD
       .set({
         certificateThreshold,
       })
-      .where(eq(events.id, eventId));
+      .where(and(eq(events.id, eventId), eq(events.organizationId, org.id)));
 
     revalidatePath(`/dashboard/events/${eventId}`);
     revalidatePath(`/dashboard/events/${eventId}/certificates`);

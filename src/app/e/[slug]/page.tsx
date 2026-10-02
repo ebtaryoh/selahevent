@@ -15,6 +15,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Countdown } from "@/components/countdown";
+import { Reveal } from "@/components/ui";
 import {
   getEventBySlug,
   getSessions,
@@ -178,7 +179,8 @@ export default async function EventPage({ params }: Params) {
             </span>
           </nav>
 
-          <div className="mt-8 grid gap-10 lg:grid-cols-[1.35fr_1fr] lg:items-end">
+          <Reveal delay={0.08} y={24} className="mt-8">
+          <div className="grid gap-10 lg:grid-cols-[1.35fr_1fr] lg:items-end">
             <div>
               <div className="flex flex-wrap items-center gap-2.5">
                 {isRegistrationClosed ? (
@@ -344,11 +346,12 @@ export default async function EventPage({ params }: Params) {
               </div>
             </div>
           </div>
+          </Reveal>
         </div>
       </section>
 
       {/* ------------- About + proof ------------- */}
-      <section className="border-b border-[rgba(22,19,17,0.1)] bg-parchment py-18">
+      <section className="page-enter border-b border-[rgba(22,19,17,0.1)] bg-parchment py-18">
         <div className="mx-auto grid w-full max-w-[1180px] gap-12 px-5 sm:px-8 lg:grid-cols-[1.3fr_1fr]">
           <div>
             <div className="eyebrow text-[0.625rem] text-[var(--color-brass-deep)]">
@@ -848,7 +851,21 @@ export default async function EventPage({ params }: Params) {
         </div>
       </section>
 
-      <footer className="bg-cypress-deep py-10">
+      {!isRegistrationClosed && !isRegistrationUpcoming ? (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-black/10 bg-paper/95 px-4 py-3 shadow-[0_-16px_40px_-28px_rgba(14,42,34,0.55)] backdrop-blur-xl sm:hidden">
+          <div className="mx-auto flex max-w-lg items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[0.78rem] font-semibold text-ink">{event.title}</div>
+              <div className="mt-0.5 text-[0.68rem] text-warm-500">{formatDate(event.startsAt)} · {event.city}</div>
+            </div>
+            <Link href={`/e/${event.slug}/register`} className="btn btn-brass !px-5 !py-3 !text-[0.78rem]">
+              Register <ArrowUpRight size={15} />
+            </Link>
+          </div>
+        </div>
+      ) : null}
+
+      <footer className="bg-cypress-deep py-10 pb-24 sm:pb-10">
         <div className="mx-auto flex w-full max-w-[1180px] flex-col items-center justify-between gap-5 px-5 text-center sm:flex-row sm:px-8 sm:text-left">
           <p className="text-[0.8125rem] text-[rgba(247,243,236,0.62)]">
             {event.title} · {formatRange(event.startsAt, event.endsAt)} ·{" "}

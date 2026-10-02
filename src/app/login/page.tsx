@@ -28,7 +28,7 @@ export default async function LoginPage() {
             </Reveal>
             <Reveal delay={0.1}>
               <p className="mx-auto mt-4 max-w-xl text-[1.125rem] leading-[1.68] text-warm-600">
-                Sign in to your organization's workspace to manage your events, tickets, and registrations.
+                Sign in to your organization&apos;s workspace to manage your events, tickets, and registrations.
               </p>
             </Reveal>
           </div>
