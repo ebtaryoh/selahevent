@@ -29,6 +29,13 @@
       "when": 1790931340905,
       "tag": "0003_checkin_unique",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790931429964,
+      "tag": "0004_otp_attempts",
+      "breakpoints": true
     }
   ]
 }
