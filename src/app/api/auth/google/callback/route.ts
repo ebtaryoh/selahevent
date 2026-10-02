@@ -81,6 +81,7 @@ export async function GET(req: Request) {
       .limit(1);
 
     let org;
+    let user;
 
     if (orgs.length === 0) {
       // Auto-provision a new workspace for the user
@@ -129,9 +130,11 @@ export async function GET(req: Request) {
       }
     }
 
-    let user = await db.query.appUsers.findFirst({
-      where: and(eq(appUsers.organizationId, org.id), eq(appUsers.email, email)),
-    });
+    if (!user) {
+      user = await db.query.appUsers.findFirst({
+        where: and(eq(appUsers.organizationId, org.id), eq(appUsers.email, email)),
+      });
+    }
 
     if (!user) {
       // Existing workspaces must explicitly provision members. Never grant owner
@@ -140,7 +143,6 @@ export async function GET(req: Request) {
     }
 
     // New Google workspaces create their owner above. Existing workspaces require membership.
-    if (!user) return NextResponse.redirect(`${loginUrl}?error=Unable to establish workspace membership.`);
 
     // Create a user-bound session
     await createOrgSession(org.id, user.id);
