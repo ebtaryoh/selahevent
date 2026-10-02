@@ -22,6 +22,13 @@
       "when": 1790930053064,
       "tag": "0002_ticket_reservations",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790931340905,
+      "tag": "0003_checkin_unique",
+      "breakpoints": true
     }
   ]
 }
