@@ -44,8 +44,8 @@ export async function updateOrganizationSettings(orgId: string, formData: FormDa
   let logoUrl = sessionOrg.logoUrl;
   const avatarFile = formData.get("avatar") as File | null;
   if (avatarFile && avatarFile.size > 0) {
-    if (avatarFile.size > 5 * 1024 * 1024) {
-      return { error: "Organization logos must be 5 MB or smaller." };
+    if (avatarFile.size > 4 * 1024 * 1024) {
+      return { error: "Organization logos must be 4 MB or smaller." };
     }
     if (!avatarFile.type.startsWith("image/")) {
       return { error: "Organization logo must be an image." };
