@@ -98,6 +98,14 @@ export async function POST(request: Request) {
     }
   }
 
+  const eventRate = await enforceRateLimit("registration-event", event.id, 120, 60);
+  if (!eventRate.allowed) {
+    return NextResponse.json(
+      { ok: false, error: "This event is receiving a high volume of registrations. Please try again shortly." },
+      { status: 429, headers: rateLimitHeaders(eventRate) },
+    );
+  }
+
   const duplicate = await db
     .select({ id: registrations.id })
     .from(registrations)
