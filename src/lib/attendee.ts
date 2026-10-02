@@ -2,11 +2,12 @@
 
 import { db } from "@/db";
 import { attendees, otps } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, gt, lt, sql } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import { sendEmailOTP } from "@/lib/email";
 import { randomInt } from "crypto";
+import { hashOtp, normalizeOtpEmail } from "@/lib/otp";
 
 function getAttendeeJwtSecret(): Uint8Array {
   const secret = process.env.ATTENDEE_JWT_SECRET;
@@ -23,15 +24,24 @@ export async function requestAttendeeOTP(email: string, orgId: string) {
   try {
     // Generate a 6-digit OTP
     const code = randomInt(100000, 1000000).toString();
+    const cleanEmail = normalizeOtpEmail(email);
+    const recentOtp = await db.query.otps.findFirst({
+      where: and(
+        eq(otps.email, cleanEmail),
+        eq(otps.organizationId, orgId),
+        gt(otps.createdAt, new Date(Date.now() - 60 * 1000)),
+      ),
+    });
+    if (recentOtp) return { error: "Please wait a minute before requesting another code." };
     
     // Set expiration to 10 minutes from now
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
     
     // Save to DB
     await db.insert(otps).values({
-      email: email.toLowerCase().trim(),
+      email: cleanEmail,
       organizationId: orgId,
-      code,
+      code: hashOtp(code),
       expiresAt,
     });
 
@@ -54,34 +64,33 @@ export async function requestAttendeeOTP(email: string, orgId: string) {
 
 export async function verifyAttendeeOTP(email: string, orgId: string, code: string) {
   try {
-    const cleanEmail = email.toLowerCase().trim();
-    
-    // Universal bypass for demo/local dev
-    const isMasterCode = process.env.NODE_ENV !== "production" && code === "123456";
+    const cleanEmail = normalizeOtpEmail(email);
     let attendeeId: string | null = null;
-    
-    if (!isMasterCode) {
-      // Find the latest valid OTP
-      const otpRecord = await db.query.otps.findFirst({
-        where: and(
-          eq(otps.email, cleanEmail),
-          eq(otps.organizationId, orgId),
-          eq(otps.code, code)
-        ),
-        orderBy: (otps, { desc }) => [desc(otps.createdAt)],
-      });
 
-      if (!otpRecord) {
-        return { error: "Invalid OTP code" };
-      }
+    const otpRecord = await db.query.otps.findFirst({
+      where: and(
+        eq(otps.email, cleanEmail),
+        eq(otps.organizationId, orgId),
+      ),
+      orderBy: (otps, { desc }) => [desc(otps.createdAt)],
+    });
 
-      if (new Date() > otpRecord.expiresAt) {
-        return { error: "OTP has expired" };
-      }
-      
-      // Clean up used OTPs if real one is used
-      await db.delete(otps).where(and(eq(otps.email, cleanEmail), eq(otps.organizationId, orgId)));
+    if (!otpRecord) return { error: "Invalid OTP code" };
+    if (new Date() > otpRecord.expiresAt) return { error: "OTP has expired" };
+    if (otpRecord.attempts >= 5) return { error: "Too many incorrect attempts. Please request a new code." };
+
+    const codeHash = hashOtp(code);
+    if (otpRecord.code !== codeHash) {
+      await db.update(otps)
+        .set({ attempts: sql`${otps.attempts} + 1` })
+        .where(and(eq(otps.id, otpRecord.id), lt(otps.attempts, 5)));
+      return { error: "Invalid OTP code" };
     }
+
+    const [consumedOtp] = await db.delete(otps)
+      .where(and(eq(otps.id, otpRecord.id), eq(otps.code, codeHash), lt(otps.attempts, 5)))
+      .returning({ id: otps.id });
+    if (!consumedOtp) return { error: "This code has already been used. Please request a new code." };
 
     // Check if attendee exists
     let attendee = await db.query.attendees.findFirst({
