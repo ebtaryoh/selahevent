@@ -1,152 +1,184 @@
-import { NextResponse } from "next/server";
+import { and, eq, sql } from "drizzle-orm";
 import crypto from "crypto";
+import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { events, organizations, payments, registrations, ticketTypes } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import {
+  events,
+  organizations,
+  payments,
+  registrations,
+  ticketTypes,
+  ticketReservations,
+} from "@/db/schema";
 import { sendTicketConfirmation } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
+
+function signaturesMatch(expected: string, received: string) {
+  const a = Buffer.from(expected, "utf8");
+  const b = Buffer.from(received, "utf8");
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
 
 export async function POST(req: Request) {
   try {
     const rawBody = await req.text();
     const signature = req.headers.get("x-paystack-signature");
-    
-    if (!signature) {
-      return NextResponse.json({ error: "Missing signature" }, { status: 400 });
-    }
+    if (!signature) return NextResponse.json({ error: "Missing signature" }, { status: 400 });
 
     let payload: {
       event: string;
-      data: {
-        reference: string;
-        [key: string]: unknown;
-      };
+      data: { reference?: string; [key: string]: unknown };
     };
+
     try {
       payload = JSON.parse(rawBody);
-    } catch (err) {
+    } catch {
       return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     }
 
-    // We only care about charge.success
-    if (payload.event !== "charge.success") {
-      return NextResponse.json({ ok: true });
-    }
+    const reference = payload.data?.reference;
+    if (!reference) return NextResponse.json({ error: "Missing reference" }, { status: 400 });
 
-    const reference = payload.data.reference;
-    if (!reference) {
-      return NextResponse.json({ error: "Missing reference" }, { status: 400 });
-    }
-
-    // Find the payment record
     const paymentRecord = await db
       .select()
       .from(payments)
       .where(eq(payments.gatewayReference, reference))
       .limit(1)
-      .then((r) => r[0]);
+      .then(r => r[0]);
 
-    if (!paymentRecord) {
-      return NextResponse.json({ error: "Payment not found" }, { status: 404 });
-    }
-    
-    // If it's already paid, just return ok
-    if (paymentRecord.status === "paid" && paymentRecord.verified) {
-      return NextResponse.json({ ok: true });
-    }
+    if (!paymentRecord) return NextResponse.json({ error: "Payment not found" }, { status: 404 });
+    if (!paymentRecord.eventId) return NextResponse.json({ error: "Payment missing event association" }, { status: 400 });
 
-    if (!paymentRecord.eventId) {
-      return NextResponse.json({ error: "Payment missing event association" }, { status: 400 });
-    }
-
-    // Find the organization to get the secret key
     const eventRecord = await db
       .select()
       .from(events)
-      .where(eq(events.id, paymentRecord.eventId as string))
+      .where(eq(events.id, paymentRecord.eventId))
       .limit(1)
-      .then((r) => r[0]);
-      
-    if (!eventRecord) {
-      return NextResponse.json({ error: "Event not found" }, { status: 404 });
-    }
+      .then(r => r[0]);
+
+    if (!eventRecord) return NextResponse.json({ error: "Event not found" }, { status: 404 });
 
     const organization = await db
       .select()
       .from(organizations)
       .where(eq(organizations.id, eventRecord.organizationId))
       .limit(1)
-      .then((r) => r[0]);
-      
-    if (!organization) {
-      return NextResponse.json({ error: "Organization not found" }, { status: 404 });
-    }
+      .then(r => r[0]);
+
+    if (!organization) return NextResponse.json({ error: "Organization not found" }, { status: 404 });
 
     const secretKey = organization.paystackSecretKey || process.env.PAYSTACK_SECRET_KEY;
-    
-    if (!secretKey) {
-      console.error("Paystack secret key missing for organization:", organization.id);
-      return NextResponse.json({ error: "Configuration error" }, { status: 500 });
-    }
+    if (!secretKey) return NextResponse.json({ error: "Configuration error" }, { status: 500 });
 
-    // Verify signature
-    const hash = crypto.createHmac("sha512", secretKey).update(rawBody).digest("hex");
-    if (hash !== signature) {
-      console.error("Paystack webhook signature mismatch");
+    const expectedSignature = crypto.createHmac("sha512", secretKey).update(rawBody).digest("hex");
+    if (!signaturesMatch(expectedSignature, signature)) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
-    // Verification passed, update records
-    await db
-      .update(payments)
-      .set({
-        status: "paid",
-        verified: true,
-        paidAt: new Date(),
-      })
-      .where(eq(payments.id, paymentRecord.id));
+    if (payload.event === "charge.success") {
+      if (paymentRecord.status === "paid" && paymentRecord.verified) {
+        return NextResponse.json({ ok: true });
+      }
 
-    let updatedRegistration;
-    if (paymentRecord.registrationId) {
-      const result = await db
-        .update(registrations)
-        .set({
-          status: "confirmed",
-        })
-        .where(eq(registrations.id, paymentRecord.registrationId as string))
-        .returning();
-      updatedRegistration = result[0];
+      let shouldSendConfirmation = false;
+
+      await db.transaction(async tx => {
+        await tx
+          .update(payments)
+          .set({ status: "paid", verified: true, paidAt: new Date() })
+          .where(eq(payments.id, paymentRecord.id));
+
+        if (!paymentRecord.registrationId) return;
+
+        await tx
+          .update(registrations)
+          .set({ status: "confirmed" })
+          .where(eq(registrations.id, paymentRecord.registrationId));
+
+        const confirmedReservation = await tx
+          .update(ticketReservations)
+          .set({ status: "confirmed" })
+          .where(and(
+            eq(ticketReservations.registrationId, paymentRecord.registrationId),
+            eq(ticketReservations.status, "reserved")
+          ))
+          .returning({ ticketTypeId: ticketReservations.ticketTypeId });
+
+        if (confirmedReservation.length > 0) {
+          await tx
+            .update(ticketTypes)
+            .set({ sold: sql.raw('"sold" + 1') })
+            .where(eq(ticketTypes.id, confirmedReservation[0].ticketTypeId));
+        }
+
+        shouldSendConfirmation = true;
+      });
+
+      if (shouldSendConfirmation && paymentRecord.registrationId) {
+        const updatedRegistration = await db
+          .select()
+          .from(registrations)
+          .where(eq(registrations.id, paymentRecord.registrationId))
+          .limit(1)
+          .then(r => r[0]);
+
+        if (updatedRegistration) {
+          let ticketName = "General Admission";
+          if (updatedRegistration.ticketTypeId) {
+            const ticket = await db
+              .select()
+              .from(ticketTypes)
+              .where(eq(ticketTypes.id, updatedRegistration.ticketTypeId))
+              .limit(1)
+              .then(r => r[0]);
+            if (ticket) ticketName = ticket.name;
+          }
+
+          await sendTicketConfirmation(updatedRegistration.email, {
+            attendeeName: updatedRegistration.firstName,
+            eventName: eventRecord.title,
+            ticketName,
+            ticketCode: updatedRegistration.ticketCode,
+            startsAt: new Date(eventRecord.startsAt).toLocaleString("en-US", {
+              weekday: "short",
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+              hour: "numeric",
+              minute: "numeric",
+            }),
+            venueName: eventRecord.venueName || eventRecord.city || "Virtual Event",
+          });
+        }
+      }
+
+      return NextResponse.json({ ok: true });
     }
 
-    // Send confirmation email
-    if (updatedRegistration) {
-      // Get ticket details
-      let ticketName = "General Admission";
-      if (updatedRegistration.ticketTypeId) {
-        const ticket = await db
-          .select()
-          .from(ticketTypes)
-          .where(eq(ticketTypes.id, updatedRegistration.ticketTypeId))
-          .limit(1)
-          .then((r) => r[0]);
-        if (ticket) ticketName = ticket.name;
-      }
-      
-      await sendTicketConfirmation(updatedRegistration.email, {
-        attendeeName: updatedRegistration.firstName,
-        eventName: eventRecord.title,
-        ticketName: ticketName,
-        ticketCode: updatedRegistration.ticketCode,
-        startsAt: new Date(eventRecord.startsAt).toLocaleString("en-US", {
-          weekday: "short",
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-          hour: "numeric",
-          minute: "numeric",
-        }),
-        venueName: eventRecord.venueName || eventRecord.city || "Virtual Event",
+    if (["charge.failed", "charge.abandoned"].includes(payload.event)) {
+      if (paymentRecord.status === "paid") return NextResponse.json({ ok: true });
+
+      await db.transaction(async tx => {
+        await tx
+          .update(payments)
+          .set({ status: "failed", verified: false })
+          .where(eq(payments.id, paymentRecord.id));
+
+        if (paymentRecord.registrationId) {
+          await tx
+            .update(registrations)
+            .set({ status: "cancelled" })
+            .where(eq(registrations.id, paymentRecord.registrationId));
+
+          await tx
+            .update(ticketReservations)
+            .set({ status: "released" })
+            .where(and(
+              eq(ticketReservations.registrationId, paymentRecord.registrationId),
+              eq(ticketReservations.status, "reserved")
+            ));
+        }
       });
     }
 
