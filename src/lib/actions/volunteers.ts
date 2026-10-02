@@ -91,7 +91,7 @@ export async function updateVolunteer(volunteerId: string, eventId: string, form
         status,
         isLeader,
       })
-      .where(and(eq(volunteers.id, volunteerId), eq(volunteers.eventId, eventId)));
+      .where(and(eq(volunteers.id, volunteerId), eq(volunteers.eventId, eventId), eq(volunteers.organizationId, org.id)));
 
     revalidatePath(`/dashboard/events/${eventId}`);
     revalidatePath(`/dashboard/events/${eventId}/volunteers`);
