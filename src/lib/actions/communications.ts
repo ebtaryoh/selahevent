@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { events } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { getOrganization, requirePermission } from "@/lib/data";
 import { revalidatePath } from "next/cache";
 
@@ -13,7 +13,7 @@ export async function updateCommsPlan(eventId: string, formData: FormData) {
   if (!org) return { error: "Not authenticated" };
 
   const event = await db.query.events.findFirst({
-    where: eq(events.id, eventId),
+    where: and(eq(events.id, eventId), eq(events.organizationId, org.id)),
   });
 
   if (!event || event.organizationId !== org.id) {
@@ -40,7 +40,7 @@ export async function updateCommsPlan(eventId: string, formData: FormData) {
       .set({
         commsPlan: [...currentPlan, newPlanItem],
       })
-      .where(eq(events.id, eventId));
+      .where(and(eq(events.id, eventId), eq(events.organizationId, org.id)));
 
     revalidatePath(`/dashboard/events/${eventId}`);
     revalidatePath(`/dashboard/events/${eventId}/communications`);
