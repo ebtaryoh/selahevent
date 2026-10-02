@@ -855,7 +855,7 @@ export default async function EventPage({ params }: Params) {
               <div className="truncate text-[0.78rem] font-semibold text-ink">{event.title}</div>
               <div className="mt-0.5 text-[0.68rem] text-warm-500">{formatDate(event.startsAt)} · {event.city}</div>
             </div>
-            <Link href={\`/e/\${event.slug}/register\`} className="btn btn-brass !px-5 !py-3 !text-[0.78rem]">
+            <Link href={`/e/${event.slug}/register`} className="btn btn-brass !px-5 !py-3 !text-[0.78rem]">
               Register <ArrowUpRight size={15} />
             </Link>
           </div>
