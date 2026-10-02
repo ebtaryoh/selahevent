@@ -77,6 +77,22 @@ export async function POST(req: Request) {
     }
 
     if (payload.event === "charge.success") {
+      const payloadAmount = typeof payload.data?.amount === "number" ? payload.data.amount : null;
+      const payloadCurrency = typeof payload.data?.currency === "string" ? payload.data.currency.toUpperCase() : null;
+      const expectedAmount = paymentRecord.amount * 100;
+      const expectedCurrency = paymentRecord.currency.toUpperCase();
+
+      if (payloadAmount !== expectedAmount || payloadCurrency !== expectedCurrency) {
+        console.error("Paystack webhook payment mismatch", {
+          reference,
+          expectedAmount,
+          receivedAmount: payloadAmount,
+          expectedCurrency,
+          receivedCurrency: payloadCurrency,
+        });
+        return NextResponse.json({ error: "Payment details do not match the registration." }, { status: 400 });
+      }
+
       if (paymentRecord.status === "paid" && paymentRecord.verified) {
         return NextResponse.json({ ok: true });
       }
