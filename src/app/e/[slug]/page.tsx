@@ -15,6 +15,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Countdown } from "@/components/countdown";
+import { Reveal } from "@/components/ui";
 import {
   getEventBySlug,
   getSessions,
@@ -178,7 +179,8 @@ export default async function EventPage({ params }: Params) {
             </span>
           </nav>
 
-          <div className="mt-8 grid gap-10 lg:grid-cols-[1.35fr_1fr] lg:items-end">
+          <Reveal delay={0.08} y={24} className="mt-8">
+          <div className="grid gap-10 lg:grid-cols-[1.35fr_1fr] lg:items-end">
             <div>
               <div className="flex flex-wrap items-center gap-2.5">
                 {isRegistrationClosed ? (
@@ -344,11 +346,12 @@ export default async function EventPage({ params }: Params) {
               </div>
             </div>
           </div>
+          </Reveal>
         </div>
       </section>
 
       {/* ------------- About + proof ------------- */}
-      <section className="border-b border-[rgba(22,19,17,0.1)] bg-parchment py-18">
+      <section className="page-enter border-b border-[rgba(22,19,17,0.1)] bg-parchment py-18">
         <div className="mx-auto grid w-full max-w-[1180px] gap-12 px-5 sm:px-8 lg:grid-cols-[1.3fr_1fr]">
           <div>
             <div className="eyebrow text-[0.625rem] text-[var(--color-brass-deep)]">
