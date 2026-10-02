@@ -508,7 +508,8 @@ export async function loginOrganization(formData: FormData) {
   const code = randomInt(100_000, 1_000_000).toString();
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-  await db.delete(otps).where(and(eq(otps.email, email), eq(otps.organizationId, org.id)));\n  await db.insert(otps).values({ email, organizationId: org.id, code: hashOtp(code), expiresAt });
+  await db.delete(otps).where(and(eq(otps.email, email), eq(otps.organizationId, org.id)));
+  await db.insert(otps).values({ email, organizationId: org.id, code: hashOtp(code), expiresAt });
 
   // In production: send via email provider using EMAIL_PROVIDER_API_KEY.
   // In dev: print to console so you can copy it.
