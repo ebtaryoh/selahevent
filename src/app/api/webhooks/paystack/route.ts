@@ -96,23 +96,34 @@ export async function POST(req: Request) {
           .set({ status: "confirmed" })
           .where(eq(registrations.id, paymentRecord.registrationId));
 
-        const confirmedReservation = await tx
-          .update(ticketReservations)
-          .set({ status: "confirmed" })
+        const reservation = await tx
+          .select()
+          .from(ticketReservations)
           .where(and(
             eq(ticketReservations.registrationId, paymentRecord.registrationId),
             eq(ticketReservations.status, "reserved")
           ))
-          .returning({ ticketTypeId: ticketReservations.ticketTypeId });
+          .limit(1)
+          .then(r => r[0]);
 
-        if (confirmedReservation.length > 0) {
+        if (reservation && reservation.expiresAt > new Date()) {
+          await tx
+            .update(ticketReservations)
+            .set({ status: "confirmed" })
+            .where(eq(ticketReservations.id, reservation.id));
+
           await tx
             .update(ticketTypes)
             .set({ sold: sql.raw('"sold" + 1') })
-            .where(eq(ticketTypes.id, confirmedReservation[0].ticketTypeId));
+            .where(eq(ticketTypes.id, reservation.ticketTypeId));
+          shouldSendConfirmation = true;
+        } else if (reservation) {
+          await tx
+            .update(registrations)
+            .set({ status: "payment_capacity_review" })
+            .where(eq(registrations.id, paymentRecord.registrationId));
         }
 
-        shouldSendConfirmation = true;
       });
 
       if (shouldSendConfirmation && paymentRecord.registrationId) {
