@@ -28,7 +28,7 @@ export default async function HomePage({
     "@context": "https://schema.org",
     "@type": "WebSite",
     name: "Selah",
-    url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://selah.events",
+    url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://selahevent.vercel.app",
     description: "The Christian Event Operating System for churches and ministries.",
   };
 
