@@ -113,10 +113,29 @@ export async function POST(request: Request) {
       .then(r => r[0]);
 
     if (existingByKey) {
+      const existingPayment = await db
+        .select({
+          status: payments.status,
+          reference: payments.gatewayReference,
+          checkoutUrl: payments.checkoutUrl,
+        })
+        .from(payments)
+        .where(eq(payments.registrationId, existingByKey.id))
+        .limit(1)
+        .then(r => r[0]);
+
       return NextResponse.json({
         ok: true,
         reused: true,
         registration: existingByKey,
+        payment: existingPayment
+          ? {
+              required: existingByKey.amount > 0,
+              status: existingPayment.status,
+              reference: existingPayment.reference,
+              checkoutUrl: existingPayment.checkoutUrl,
+            }
+          : null,
       });
     }
   }
@@ -292,10 +311,29 @@ export async function POST(request: Request) {
           .then(r => r[0]);
 
         if (existingByKey) {
+          const existingPayment = await db
+            .select({
+              status: payments.status,
+              reference: payments.gatewayReference,
+              checkoutUrl: payments.checkoutUrl,
+            })
+            .from(payments)
+            .where(eq(payments.registrationId, existingByKey.id))
+            .limit(1)
+            .then(r => r[0]);
+
           return NextResponse.json({
             ok: true,
             reused: true,
             registration: existingByKey,
+            payment: existingPayment
+              ? {
+                  required: existingByKey.amount > 0,
+                  status: existingPayment.status,
+                  reference: existingPayment.reference,
+                  checkoutUrl: existingPayment.checkoutUrl,
+                }
+              : null,
           });
         }
       }
@@ -347,6 +385,11 @@ export async function POST(request: Request) {
       }
 
       checkoutUrl = paystackData.data.authorization_url;
+      await db
+        .update(payments)
+        .set({ checkoutUrl })
+        .where(eq(payments.id, result.payment.id));
+
       if (paystackData.data.reference && paystackData.data.reference !== reference) {
         await db
           .update(payments)
