@@ -324,7 +324,7 @@ export const payments = pgTable(
     amount: integer("amount").notNull(),
     currency: text("currency").default("NGN").notNull(),
     gateway: text("gateway").default("paystack").notNull(),
-    gatewayReference: text("gateway_reference").default("").notNull(),
+    gatewayReference: text("gateway_reference").default("").notNull().unique(),
     status: text("status").default("pending").notNull(),
     verified: boolean("verified").default(false).notNull(),
     paidAt: timestamp("paid_at", { withTimezone: true }),
