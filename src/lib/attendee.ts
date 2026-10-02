@@ -6,15 +6,23 @@ import { eq, and } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import { sendEmailOTP } from "@/lib/email";
+import { randomInt } from "crypto";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "super-secret-attendee-key-change-in-prod"
-);
+function getAttendeeJwtSecret(): Uint8Array {
+  const secret = process.env.ATTENDEE_JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("ATTENDEE_JWT_SECRET environment variable is required in production.");
+    }
+    return new TextEncoder().encode("dev-only-attendee-secret-32-chars!!");
+  }
+  return new TextEncoder().encode(secret);
+}
 
 export async function requestAttendeeOTP(email: string, orgId: string) {
   try {
     // Generate a 6-digit OTP
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const code = randomInt(100000, 1000000).toString();
     
     // Set expiration to 10 minutes from now
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
@@ -72,7 +80,7 @@ export async function verifyAttendeeOTP(email: string, orgId: string, code: stri
       }
       
       // Clean up used OTPs if real one is used
-      await db.delete(otps).where(eq(otps.email, cleanEmail));
+      await db.delete(otps).where(and(eq(otps.email, cleanEmail), eq(otps.organizationId, orgId)));
     }
 
     // Check if attendee exists
@@ -97,7 +105,7 @@ export async function verifyAttendeeOTP(email: string, orgId: string, code: stri
       .setProtectedHeader({ alg: "HS256" })
       .setIssuedAt()
       .setExpirationTime("30d") // 30 days
-      .sign(JWT_SECRET);
+      .sign(getAttendeeJwtSecret());
 
     // Set cookie
     const cookieStore = await cookies();
@@ -126,7 +134,7 @@ export async function getAttendeeSession() {
   if (!token) return null;
 
   try {
-    const verified = await jwtVerify(token, JWT_SECRET);
+    const verified = await jwtVerify(token, getAttendeeJwtSecret());
     return verified.payload as { email: string; orgId: string; attendeeId?: string };
   } catch (err) {
     return null;
@@ -138,7 +146,11 @@ export async function getAttendeeProfile() {
   if (!session || !session.attendeeId) return null;
 
   const attendee = await db.query.attendees.findFirst({
-    where: eq(attendees.id, session.attendeeId),
+    where: and(
+        eq(attendees.id, session.attendeeId),
+        eq(attendees.organizationId, session.orgId),
+        eq(attendees.email, session.email),
+      ),
   });
 
   return attendee;
