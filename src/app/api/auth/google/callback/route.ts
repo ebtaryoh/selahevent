@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { db } from "@/db";
-import { organizations, auditLogs } from "@/db/schema";
+import { organizations, auditLogs, appUsers } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { createOrgSession } from "@/lib/session";
 import { redirect } from "next/navigation";
@@ -118,8 +118,23 @@ export async function GET(req: Request) {
       }
     }
 
-    // Create session
-    await createOrgSession(org.id);
+    let user = await db.query.appUsers.findFirst({
+      where: and(eq(appUsers.organizationId, org.id), eq(appUsers.email, email)),
+    });
+
+    if (!user) {
+      [user] = await db.insert(appUsers).values({
+        organizationId: org.id,
+        name: name || email.split("@")[0],
+        email,
+        role: "owner",
+        status: "active",
+        imageUrl: picture,
+      }).returning();
+    }
+
+    // Create a user-bound session
+    await createOrgSession(org.id, user.id);
 
     // Audit log
     await db.insert(auditLogs).values({
