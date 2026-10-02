@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { getEventById, getRegistrations } from "@/lib/data";
+import { getOrgSession } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -12,18 +12,18 @@ export async function GET(request: Request) {
     return new NextResponse("Missing eventId", { status: 400 });
   }
 
-  // Basic auth check (ensure the user is an organizer)
-  const cookieStore = await cookies();
-  const orgId = cookieStore.get("selah_org_id")?.value;
-  
-  if (!orgId) {
+  // Never trust a client-controlled organization cookie for authorization.
+  // The organization must come from the signed organizer session.
+  const session = await getOrgSession();
+
+  if (!session?.orgId) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
-  // Fetch event to get custom questions and verify ownership
+  // Fetch event and verify it belongs to the authenticated organization.
   const event = await getEventById(eventId);
 
-  if (!event || event.organizationId !== orgId) {
+  if (!event || event.organizationId !== session.orgId) {
     return new NextResponse("Forbidden", { status: 403 });
   }
 
@@ -48,7 +48,6 @@ export async function GET(request: Request) {
 
   const headers = [...baseHeaders, ...customHeaders];
 
-  // Helper to escape CSV fields
   const escapeCsv = (val: any) => {
     if (val === null || val === undefined) return '""';
     const str = String(val).replace(/"/g, '""');
