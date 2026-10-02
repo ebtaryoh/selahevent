@@ -17,7 +17,7 @@ export default function MyTicketsPage() {
         <div className="text-center">
           <h1 className="font-display text-3xl font-semibold tracking-tight">Find your tickets</h1>
           <p className="mt-3 text-[0.95rem] text-[#867c74]">
-            Enter the email address you used to register. We'll send you a link to access your tickets.
+            Enter the email address you used to register. We&apos;ll send you a link to access your tickets.
           </p>
         </div>
 
