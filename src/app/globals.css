@@ -425,8 +425,6 @@ select.input {
 }
 
 @keyframes selah-rise {
-
-@keyframes selah-rise {
   from {
     opacity: 0;
     transform: translateY(16px);
