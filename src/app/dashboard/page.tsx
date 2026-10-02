@@ -220,7 +220,7 @@ export default async function DashboardPage() {
                     <tr key={event.id}>
                       <td>
                         <div className="flex items-center gap-3.5">
-                          <div className="h-11 w-11 shrink-0 overflow-hidden rounded-[9px] bg-warm-200 flex items-center justify-center">
+                          <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-[9px] bg-warm-200 flex items-center justify-center">
                             {event.coverImage ? (
                               <Image
                                 src={event.coverImage}
