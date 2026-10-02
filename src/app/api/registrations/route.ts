@@ -227,6 +227,12 @@ export async function POST(request: Request) {
       }
 
       checkoutUrl = paystackData.data.authorization_url;
+      if (paystackData.data.reference && paystackData.data.reference !== reference) {
+        await db
+          .update(payments)
+          .set({ gatewayReference: paystackData.data.reference })
+          .where(eq(payments.id, result.payment.id));
+      }
     }
 
     if (!requiresPayment) {
