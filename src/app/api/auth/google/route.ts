@@ -12,7 +12,8 @@ export async function GET(req: Request) {
   }
 
   const url = new URL(req.url);
-  const nextUrl = url.searchParams.get("next") || "/dashboard";
+  const rawNextUrl = url.searchParams.get("next") || "/dashboard";
+  const nextUrl = rawNextUrl.startsWith("/") && !rawNextUrl.startsWith("//") ? rawNextUrl : "/dashboard";
 
   // Determine the callback URL based on the incoming request to support both local and prod
   const redirectUri = `${url.protocol}//${url.host}/api/auth/google/callback`;
@@ -27,6 +28,7 @@ export async function GET(req: Request) {
     secure: process.env.NODE_ENV === "production",
     maxAge: 60 * 10, // 10 minutes
     path: "/",
+    sameSite: "lax",
   });
 
   // Store the next URL to redirect to after successful login
