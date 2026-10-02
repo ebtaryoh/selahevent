@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/db";
 import { organizations } from "@/db/schema";
-import { getOrganization } from "../data";
+import { getOrganization, requirePermission } from "../data";
 import { ensureSeed } from "../seed";
 import { eq } from "drizzle-orm";
 import { put } from "@vercel/blob";
@@ -20,8 +20,10 @@ function writeFileToDisk(filepath: string, buffer: Buffer): void {
 export async function updateOrganizationSettings(orgId: string, formData: FormData) {
   await ensureSeed();
   
+  const actor = await requirePermission("settings.write");
   // Ensure the user is updating their own org
   const sessionOrg = await getOrganization();
+  if (!actor) return { error: "You do not have permission to change organization settings." };
   if (!sessionOrg || sessionOrg.id !== orgId) {
     return { error: "Unauthorized" };
   }
