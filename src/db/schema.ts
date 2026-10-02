@@ -62,7 +62,7 @@ export const appUsers = pgTable(
     lastActiveAt: timestamp("last_active_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
-  (t) => [index("app_users_org_idx").on(t.organizationId)]
+  (t) => [index("app_users_org_idx").on(t.organizationId), unique("app_users_org_email_unique").on(t.organizationId, t.email)]
 );
 
 /* ------------------------------------------------------------------ */
