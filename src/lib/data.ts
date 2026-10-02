@@ -9,6 +9,7 @@ import {
   checkIns,
   events,
   organizations,
+  appUsers,
   payments,
   registrations,
   sessions,
@@ -18,6 +19,36 @@ import {
   volunteers,
 } from "@/db/schema";
 import { ensureSeed } from "@/lib/seed";
+
+export type AppRole = "owner" | "admin" | "event_manager" | "checkin_staff" | "finance" | "volunteer_coordinator" | "viewer";
+
+const ROLE_PERMISSIONS: Record<AppRole, Set<string>> = {
+  owner: new Set(["*"]),
+  admin: new Set(["events.read","events.write","registrations.read","registrations.write","tickets.write","checkin.write","volunteers.write","communications.write","certificates.write","tasks.write","exports.read","payments.read","team.write","settings.write"]),
+  event_manager: new Set(["events.read","events.write","registrations.read","registrations.write","tickets.write","checkin.write","volunteers.write","communications.write","certificates.write","tasks.write","exports.read"]),
+  checkin_staff: new Set(["events.read","registrations.read","checkin.write"]),
+  finance: new Set(["events.read","registrations.read","payments.read","exports.read"]),
+  volunteer_coordinator: new Set(["events.read","volunteers.write","tasks.write"]),
+  viewer: new Set(["events.read","registrations.read"]),
+};
+
+export async function getCurrentUser() {
+  await ensureSeed();
+  const session = await getOrgSession();
+  if (!session?.userId) return null;
+  const user = await db.query.appUsers.findFirst({
+    where: and(eq(appUsers.id, session.userId), eq(appUsers.organizationId, session.orgId), eq(appUsers.status, "active")),
+  });
+  return user ? { ...user, role: user.role as AppRole } : null;
+}
+
+export async function requirePermission(permission: string) {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  const permissions = ROLE_PERMISSIONS[user.role] ?? ROLE_PERMISSIONS.viewer;
+  if (!permissions.has("*") && !permissions.has(permission)) return null;
+  return user;
+}
 
 export async function getOrganization() {
   await ensureSeed();
