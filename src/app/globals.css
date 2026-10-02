@@ -369,6 +369,63 @@ select.input {
 
 /* ---------- motion ---------- */
 
+.page-enter {
+  animation: selah-page-in 760ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.motion-lift {
+  transition:
+    transform 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 220ms ease;
+}
+
+.motion-lift:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-lift);
+}
+
+.motion-sheen {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.motion-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(
+    110deg,
+    transparent 0%,
+    transparent 42%,
+    rgba(232, 211, 166, 0.13) 50%,
+    transparent 58%,
+    transparent 100%
+  );
+  transform: translateX(-120%);
+  transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.motion-sheen:hover::after {
+  transform: translateX(120%);
+}
+
+@keyframes selah-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.997);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes selah-rise {
+
 @keyframes selah-rise {
   from {
     opacity: 0;
