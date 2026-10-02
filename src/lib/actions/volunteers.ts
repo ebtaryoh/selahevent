@@ -32,6 +32,7 @@ export async function createVolunteer(eventId: string, formData: FormData) {
   let redirectUrl = "";
   try {
     await db.insert(volunteers).values({
+      organizationId: org.id,
       eventId,
       name,
       department,
