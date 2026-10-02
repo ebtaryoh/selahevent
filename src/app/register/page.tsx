@@ -27,7 +27,7 @@ export default async function RegisterPage() {
             </Reveal>
             <Reveal delay={0.1}>
               <p className="mx-auto mt-4 max-w-xl text-[1.125rem] leading-[1.68] text-warm-600">
-                Join our premium Christian marketplace. Set up your organization's workspace in seconds and start managing events immediately.
+                Join our premium Christian marketplace. Set up your organization&apos;s workspace in seconds and start managing events immediately.
               </p>
             </Reveal>
           </div>
