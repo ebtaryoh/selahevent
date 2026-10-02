@@ -994,3 +994,85 @@ export async function deleteTicketType(ticketId: string, eventId: string) {
     redirect(redirectUrl);
   }
 }
+
+export async function resolvePaymentCapacityReview(registrationId: string, eventId: string) {
+  const actor = await requirePermission("registrations.write");
+  const org = await getOrganization();
+  if (!actor) return { error: "You do not have permission to resolve registrations." };
+  if (!org) return { error: "Not authenticated" };
+
+  const event = await db.query.events.findFirst({
+    where: and(eq(events.id, eventId), eq(events.organizationId, org.id)),
+    columns: { id: true },
+  });
+  if (!event) return { error: "Event not found or unauthorized" };
+
+  try {
+    await db.transaction(async tx => {
+      const registration = await tx.query.registrations.findFirst({
+        where: and(
+          eq(registrations.id, registrationId),
+          eq(registrations.eventId, eventId),
+          eq(registrations.status, "payment_capacity_review"),
+        ),
+      });
+      if (!registration) throw new Error("REGISTRATION_NOT_REVIEWABLE");
+
+      if (!registration.ticketTypeId) {
+        await tx.update(registrations)
+          .set({ status: "confirmed" })
+          .where(eq(registrations.id, registrationId));
+        return;
+      }
+
+      await tx.execute(sql`SELECT id FROM ticket_types WHERE id = ${registration.ticketTypeId} FOR UPDATE`);
+      const ticket = await tx.query.ticketTypes.findFirst({
+        where: eq(ticketTypes.id, registration.ticketTypeId),
+      });
+      if (!ticket) throw new Error("TICKET_NOT_FOUND");
+
+      if (ticket.capacity > 0 && ticket.sold >= ticket.capacity) {
+        throw new Error("TICKET_CAPACITY");
+      }
+
+      const reservation = await tx.query.ticketReservations.findFirst({
+        where: eq(ticketReservations.registrationId, registrationId),
+      });
+
+      if (reservation) {
+        await tx.update(ticketReservations)
+          .set({ status: "confirmed" })
+          .where(eq(ticketReservations.id, reservation.id));
+      } else {
+        await tx.insert(ticketReservations).values({
+          ticketTypeId: ticket.id,
+          eventId,
+          registrationId,
+          status: "confirmed",
+          expiresAt: new Date(),
+        });
+      }
+
+      await tx.update(ticketTypes)
+        .set({ sold: sql.raw('"sold" + 1') })
+        .where(eq(ticketTypes.id, ticket.id));
+
+      await tx.update(registrations)
+        .set({ status: "confirmed" })
+        .where(eq(registrations.id, registrationId));
+    });
+
+    revalidatePath(`/dashboard/events/${eventId}`);
+    revalidatePath(`/dashboard/events/${eventId}/command`);
+    return { success: true };
+  } catch (error) {
+    if (error instanceof Error && error.message === "REGISTRATION_NOT_REVIEWABLE") {
+      return { error: "This registration is no longer awaiting capacity review." };
+    }
+    if (error instanceof Error && error.message === "TICKET_CAPACITY") {
+      return { error: "The ticket type is still at capacity." };
+    }
+    console.error("[selah] capacity review resolution failed:", error);
+    return { error: "Could not resolve this payment-capacity review." };
+  }
+}
