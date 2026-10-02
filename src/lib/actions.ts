@@ -136,7 +136,6 @@ export async function createEvent(formData: FormData) {
 for (const file of mediaFiles) {
       if (file.size === 0) continue;
 
-      const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
       const mediaError = validateMediaFile(file);
       if (mediaError) return { error: mediaError };
       const filename = mediaFilename(file);
