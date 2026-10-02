@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     }
 
     const cleanEmail = String(email).toLowerCase().trim();
-    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$/.test(cleanEmail) || cleanEmail.length > 254) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(cleanEmail) || cleanEmail.length > 254) {
       return NextResponse.json({ success: true });
     }
     const emailLimit = await enforceRateLimit("my-tickets-email", cleanEmail, 3, 600);
