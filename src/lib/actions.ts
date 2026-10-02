@@ -639,7 +639,6 @@ export async function searchRegistrations(eventId: string, query: string) {
     .where(
       and(
         eq(registrations.eventId, eventId),
-        eq(events.id, eventId),
         or(
           ilike(registrations.ticketCode, `%${query}%`),
           ilike(registrations.email, `%${query}%`),
