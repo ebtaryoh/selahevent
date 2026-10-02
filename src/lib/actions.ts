@@ -619,6 +619,13 @@ export async function searchRegistrations(eventId: string, query: string) {
   const org = await getOrganization();
   if (!org) throw new Error("Unauthorized");
 
+  const event = await db.query.events.findFirst({
+    where: and(eq(events.id, eventId), eq(events.organizationId, org.id)),
+    columns: { id: true },
+  });
+
+  if (!event) throw new Error("Event not found or unauthorized");
+
   const results = await db
     .select({
       id: registrations.id,
@@ -632,6 +639,7 @@ export async function searchRegistrations(eventId: string, query: string) {
     .where(
       and(
         eq(registrations.eventId, eventId),
+        eq(events.id, eventId),
         or(
           ilike(registrations.ticketCode, `%${query}%`),
           ilike(registrations.email, `%${query}%`),
@@ -658,6 +666,22 @@ export async function checkInAttendee(registrationId: string, eventId: string) {
 
   if (existingCheckIn) {
     return { success: false, error: "Attendee is already checked in!" };
+  }
+
+  // The registration must belong to both the requested event and the
+  // authenticated organization before a check-in can be created.
+  const registration = await db.query.registrations.findFirst({
+    where: and(
+      eq(registrations.id, registrationId),
+      eq(registrations.eventId, eventId)
+    ),
+    with: {
+      event: true,
+    } as any,
+  });
+
+  if (!registration || (registration as any).event?.organizationId !== org.id) {
+    return { success: false, error: "Attendee not found for this event." };
   }
 
   // Insert the check-in record
@@ -694,7 +718,7 @@ export async function saveEventAsBlueprint(eventId: string, name: string, descri
 
   // Fetch the event with all its relations that form the DNA
   const event = (await db.query.events.findFirst({
-    where: eq(events.id, eventId),
+    where: and(eq(events.id, eventId), eq(events.organizationId, org.id)),
     with: {
       ticketTypes: true,
       sessions: true,
