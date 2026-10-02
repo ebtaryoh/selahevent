@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { getOrganization } from "@/lib/data";
+import { getOrganization, requirePermission } from "@/lib/data";
 import { checkIns, events, registrations, ticketTypes } from "@/db/schema";
 
 export const dynamic = "force-dynamic";
@@ -31,8 +31,9 @@ export async function POST(request: Request) {
   }
 
   // Check-in is an organizer operation. The event must belong to the authenticated organization.
+  const staffUser = await requirePermission("checkin.write");
   const org = await getOrganization();
-  if (!org) {
+  if (!staffUser || !org) {
     return NextResponse.json(
       { ok: false, error: "Unauthorized." },
       { status: 401 }
