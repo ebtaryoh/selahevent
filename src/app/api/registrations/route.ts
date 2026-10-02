@@ -63,6 +63,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "That email address doesn't look right. Please check and try again." }, { status: 422 });
   }
 
+  const lengthLimits: Array<[string, string, number]> = [
+    ["first name", firstName, 100],
+    ["last name", lastName, 100],
+    ["email address", email, 254],
+    ["phone number", String(payload.phone ?? "").trim(), 40],
+    ["city", String(payload.city ?? "").trim(), 120],
+    ["country", String(payload.country ?? "").trim(), 120],
+    ["church", String(payload.church ?? "").trim(), 200],
+    ["attendee type", String(payload.attendeeType ?? "").trim(), 80],
+    ["dietary information", String(payload.dietary ?? "").trim(), 500],
+    ["emergency name", String(payload.emergencyName ?? "").trim(), 120],
+    ["emergency phone", String(payload.emergencyPhone ?? "").trim(), 40],
+  ];
+  const oversized = lengthLimits.find(([, value, max]) => value.length > max);
+  if (oversized) {
+    return NextResponse.json({ ok: false, error: oversized[0] + " is too long." }, { status: 422 });
+  }
+
   const event = await db.select().from(events).where(eq(events.slug, slug)).limit(1).then(r => r[0]);
   if (!event) return NextResponse.json({ ok: false, error: "That event could not be found." }, { status: 404 });
 
