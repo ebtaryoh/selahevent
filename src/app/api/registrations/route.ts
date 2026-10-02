@@ -88,13 +88,9 @@ export async function POST(request: Request) {
   try {
     const result = await db.transaction(async tx => {
       if (ticket) {
-        await tx.execute(sql.raw("SELECT id FROM ticket_types WHERE id = '" + ticket.id + "' FOR UPDATE"));
+        await tx.execute(sql`SELECT id FROM ticket_types WHERE id = \${ticket.id} FOR UPDATE`);
 
-        const active = await tx.execute(sql.raw(
-          "SELECT COUNT(*)::int AS count FROM ticket_reservations WHERE ticket_type_id = '" +
-          ticket.id +
-          "' AND status = 'reserved' AND expires_at > NOW()"
-        ));
+        const active = await tx.execute(sql`SELECT COUNT(*)::int AS count FROM ticket_reservations WHERE ticket_type_id = \${ticket.id} AND status = 'reserved' AND expires_at > NOW()`);
         const reservedCount = Number((active.rows[0] as { count: number | string }).count);
 
         const locked = await tx.select().from(ticketTypes).where(eq(ticketTypes.id, ticket.id)).limit(1).then(r => r[0]);
@@ -285,9 +281,14 @@ export async function POST(request: Request) {
 
     if (session && !session.attendeeId && attendeeId) {
       const { SignJWT } = await import("jose");
-      const JWT_SECRET = new TextEncoder().encode(
-        process.env.JWT_SECRET || "super-secret-attendee-key-change-in-prod"
-      );
+      const attendeeSecret = process.env.ATTENDEE_JWT_SECRET;
+      if (!attendeeSecret) {
+        if (process.env.NODE_ENV === "production") {
+          throw new Error("ATTENDEE_JWT_SECRET environment variable is required in production.");
+        }
+        throw new Error("ATTENDEE_JWT_SECRET is required for attendee sessions.");
+      }
+      const JWT_SECRET = new TextEncoder().encode(attendeeSecret);
       const token = await new SignJWT({
         email: session.email,
         orgId: session.orgId,
