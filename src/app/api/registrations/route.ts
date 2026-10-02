@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { events, organizations, payments, registrations, ticketTypes, attendees, ticketReservations } from "@/db/schema";
 import { sendTicketConfirmation } from "@/lib/email";
+import { enforceRateLimit, getClientAddress, rateLimitHeaders } from "@/lib/rate-limit";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +21,14 @@ function makeCode(prefix: string) {
 }
 
 export async function POST(request: Request) {
+  const clientAddress = getClientAddress(request);
+  const abuseLimit = await enforceRateLimit("registration-ip", clientAddress, 30, 60);
+  if (!abuseLimit.allowed) {
+    return NextResponse.json(
+      { ok: false, error: "Too many registration attempts. Please wait a moment and try again." },
+      { status: 429, headers: rateLimitHeaders(abuseLimit) },
+    );
+  }
   let payload: Record<string, unknown>;
   try {
     payload = await request.json();
