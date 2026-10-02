@@ -32,7 +32,8 @@ export async function GET(req: Request) {
   cookieStore.delete("google_oauth_state");
 
   // Get the next URL and clear the cookie
-  const nextUrl = cookieStore.get("google_oauth_next")?.value || "/dashboard";
+  const rawNextUrl = cookieStore.get("google_oauth_next")?.value || "/dashboard";
+  const nextUrl = rawNextUrl.startsWith("/") && !rawNextUrl.startsWith("//") ? rawNextUrl : "/dashboard";
   cookieStore.delete("google_oauth_next");
 
   try {
@@ -97,6 +98,15 @@ export async function GET(req: Request) {
       
       org = inserted[0];
 
+      const [ownerUser] = await db.insert(appUsers).values({
+        organizationId: org.id,
+        name: name || email.split("@")[0],
+        email,
+        role: "owner",
+        status: "active",
+        imageUrl: picture,
+      }).returning();
+
       // Audit log for creation
       await db.insert(auditLogs).values({
         organizationId: org.id,
@@ -123,15 +133,13 @@ export async function GET(req: Request) {
     });
 
     if (!user) {
-      [user] = await db.insert(appUsers).values({
-        organizationId: org.id,
-        name: name || email.split("@")[0],
-        email,
-        role: "owner",
-        status: "active",
-        imageUrl: picture,
-      }).returning();
+      // Existing workspaces must explicitly provision members. Never grant owner
+      // access merely because the Google email matches the organization email.
+      return NextResponse.redirect(`${loginUrl}?error=Your account is not a member of this workspace. Ask an administrator to invite you.`);
     }
+
+    // New Google workspaces create their owner above. Existing workspaces require membership.
+    if (!user) return NextResponse.redirect(`${loginUrl}?error=Unable to establish workspace membership.`);
 
     // Create a user-bound session
     await createOrgSession(org.id, user.id);
