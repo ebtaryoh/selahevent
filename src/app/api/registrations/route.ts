@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import {
@@ -93,10 +93,24 @@ export async function POST(request: Request) {
       ? await db
           .select()
           .from(ticketTypes)
-          .where(eq(ticketTypes.id, ticketIdRaw))
+          // A ticket ID is only valid for this event. Never trust the
+          // browser to establish the event/ticket relationship.
+          .where(
+            and(
+              eq(ticketTypes.id, ticketIdRaw),
+              eq(ticketTypes.eventId, event.id)
+            )
+          )
           .limit(1)
           .then((r) => r[0])
       : undefined;
+
+  if (ticketIdRaw && typeof ticketIdRaw === "string" && !ticket) {
+    return NextResponse.json(
+      { ok: false, error: "That ticket type is not available for this event." },
+      { status: 422 }
+    );
+  }
 
   if (ticket && ticket.capacity > 0 && ticket.sold >= ticket.capacity) {
     return NextResponse.json(
@@ -132,8 +146,6 @@ export async function POST(request: Request) {
   
   // INITIALIZE PAYSTACK TRANSACTION
   if (requiresPayment) {
-    // If the organization hasn't provided a secret key, we could fallback to env vars, 
-    // but for now let's assume they must have one.
     const secretKey = organization?.paystackSecretKey || process.env.PAYSTACK_SECRET_KEY;
     
     if (!secretKey) {
@@ -143,7 +155,6 @@ export async function POST(request: Request) {
       );
     }
     
-    // Amount in kobo/cents
     const amountInKobo = Math.round(amount * 100);
     
     const paystackRes = await fetch("https://api.paystack.co/transaction/initialize", {
@@ -175,7 +186,7 @@ export async function POST(request: Request) {
     }
     
     checkoutUrl = paystackData.data.authorization_url;
-    paystackReference = paystackData.data.reference; // usually same as what we passed, but let's be safe
+    paystackReference = paystackData.data.reference;
   }
 
   const { getAttendeeSession } = await import("@/lib/attendee");
@@ -207,10 +218,6 @@ export async function POST(request: Request) {
       .returning();
       
     attendeeId = attendee.id;
-
-    // TODO: Ideally we should update the JWT here to include the attendeeId if it was null,
-    // but the Next.js App Router doesn't allow setting cookies directly in an API Route unless using NextResponse.
-    // We will do it below by adding to the response cookies.
 
     const [created] = await db
       .insert(registrations)
@@ -268,8 +275,6 @@ export async function POST(request: Request) {
         .where(eq(ticketTypes.id, ticket.id));
     }
 
-    // Only send ticket confirmation email immediately if it's FREE or UNDER REVIEW.
-    // Paid tickets will receive the email when the webhook fires.
     if (!requiresPayment || ticket?.requiresApproval) {
       await sendTicketConfirmation(created.email, {
         attendeeName: created.firstName,
