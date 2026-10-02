@@ -4,6 +4,7 @@ import { CommandCenter } from "@/components/command-center";
 import { ArrowLeft, Users } from "lucide-react";
 import Link from "next/link";
 import { formatNumber } from "@/lib/format";
+import { Reveal } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -20,8 +21,9 @@ export default async function CommandPage({
   const stats = await getEventStats(event.id);
 
   return (
-    <div className="min-h-[80vh]">
+    <div className="page-enter min-h-[80vh]">
       {/* Top Navigation & Live Stats */}
+      <Reveal y={14}>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <Link
           href={`/dashboard/events/${event.id}`}
@@ -43,9 +45,12 @@ export default async function CommandPage({
           </div>
         </div>
       </div>
+      </Reveal>
 
       {/* Main Command Center Component */}
-      <CommandCenter eventId={event.id} />
+      <Reveal delay={0.08} y={18}>
+        <CommandCenter eventId={event.id} />
+      </Reveal>
     </div>
   );
 }
