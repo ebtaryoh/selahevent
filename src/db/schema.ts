@@ -301,11 +301,13 @@ export const registrations = pgTable(
     amount: integer("amount").default(0).notNull(),
     source: text("source").default("event_page").notNull(),
     customAnswers: jsonb("custom_answers").$type<Record<string, string>>().default({}),
+    idempotencyKey: text("idempotency_key"),
     createdAt: createdAt(),
   },
   (t) => [
     index("registrations_event_idx").on(t.eventId),
     index("registrations_email_idx").on(t.email),
+    unique("registrations_event_idempotency_unique").on(t.eventId, t.idempotencyKey),
   ]
 );
 
