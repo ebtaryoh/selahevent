@@ -25,15 +25,16 @@ function getSecret(): Uint8Array {
 
 export type OrgSessionPayload = {
   orgId: string;
+  userId?: string;
 };
 
 /**
  * Signs a JWT and sets the session cookie.
  * Call this after a successful OTP verification or org registration.
  */
-export async function createOrgSession(orgId: string): Promise<void> {
+export async function createOrgSession(orgId: string, userId?: string): Promise<void> {
   const secret = getSecret();
-  const token = await new SignJWT({ orgId })
+  const token = await new SignJWT({ orgId, ...(userId ? { userId } : {}) })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(`${SESSION_DURATION_SECONDS}s`)
@@ -61,7 +62,10 @@ export async function getOrgSession(): Promise<OrgSessionPayload | null> {
   try {
     const { payload } = await jwtVerify(token, getSecret());
     if (!payload.orgId || typeof payload.orgId !== "string") return null;
-    return { orgId: payload.orgId as string };
+    return {
+      orgId: payload.orgId as string,
+      ...(typeof payload.userId === "string" ? { userId: payload.userId } : {}),
+    };
   } catch {
     // Expired, tampered, or otherwise invalid
     return null;
