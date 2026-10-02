@@ -123,7 +123,11 @@ export async function deleteVolunteer(volunteerId: string, eventId: string) {
 
   let redirectUrl = "";
   try {
-    await db.delete(volunteers).where(and(eq(volunteers.id, volunteerId), eq(volunteers.eventId, eventId)));
+    await db.delete(volunteers).where(and(
+      eq(volunteers.id, volunteerId),
+      eq(volunteers.eventId, eventId),
+      eq(volunteers.organizationId, org.id),
+    ));
 
     revalidatePath(`/dashboard/events/${eventId}`);
     revalidatePath(`/dashboard/events/${eventId}/volunteers`);
