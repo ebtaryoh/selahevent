@@ -13,6 +13,7 @@ import {
   auditLogs,
   events,
   organizations,
+  appUsers,
   otps,
   registrations,
   sessions,
@@ -515,7 +516,21 @@ export async function verifyOrgOTP(formData: FormData) {
     return { error: "Organization not found." };
   }
 
-  await createOrgSession(org.id);
+  let user = await db.query.appUsers.findFirst({
+    where: and(eq(appUsers.organizationId, org.id), eq(appUsers.email, email)),
+  });
+
+  if (!user) {
+    [user] = await db.insert(appUsers).values({
+      organizationId: org.id,
+      name: email.split("@")[0],
+      email,
+      role: "owner",
+      status: "active",
+    }).returning();
+  }
+
+  await createOrgSession(org.id, user.id);
 
   revalidatePath("/dashboard");
   redirect("/dashboard");
