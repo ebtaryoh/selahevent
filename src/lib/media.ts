@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 
-export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
-export const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
+export const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+export const MAX_VIDEO_BYTES = 4 * 1024 * 1024;
 export const MAX_MEDIA_FILES = 8;
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
@@ -32,8 +32,8 @@ export async function validateMediaFile(file: File) {
     return "Unsupported media type. Use JPG, PNG, WebP, GIF, MP4, WebM, or MOV.";
   }
 
-  if (isImage && file.size > MAX_IMAGE_BYTES) return "Images must be 10 MB or smaller.";
-  if (isVideo && file.size > MAX_VIDEO_BYTES) return "Videos must be 100 MB or smaller.";
+  if (isImage && file.size > MAX_IMAGE_BYTES) return "Images must be 4 MB or smaller.";
+  if (isVideo && file.size > MAX_VIDEO_BYTES) return "Videos must be 4 MB or smaller.";
 
   const bytes = Buffer.from(await file.arrayBuffer());
   const detected = detectType(bytes);
