@@ -530,7 +530,7 @@ export async function verifyOrgOTP(formData: FormData) {
   const codeHash = hashOtp(code);
   if (otpRecord.code !== codeHash) {
     await db.update(otps)
-      .set({ attempts: sql`\${otps.attempts} + 1` })
+      .set({ attempts: sql`${otps.attempts} + 1` })
       .where(and(eq(otps.id, otpRecord.id), lt(otps.attempts, 5)));
     return { error: "Invalid code. Please check the code we sent and try again." };
   }
