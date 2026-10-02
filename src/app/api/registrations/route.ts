@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const RESERVATION_MINUTES = 15;
+const IDEMPOTENCY_MAX_LENGTH = 128;
 
 function randomToken(bytes = 8) {
   return randomBytes(bytes).toString("hex").toUpperCase();
@@ -24,6 +25,11 @@ export async function POST(request: Request) {
     payload = await request.json();
   } catch {
     return NextResponse.json({ ok: false, error: "We couldn't read that submission. Please try again." }, { status: 400 });
+  }
+
+  const idempotencyKey = String(payload.idempotencyKey ?? "").trim();
+  if (idempotencyKey && idempotencyKey.length > IDEMPOTENCY_MAX_LENGTH) {
+    return NextResponse.json({ ok: false, error: "Invalid idempotency key." }, { status: 422 });
   }
 
   const slug = String(payload.eventSlug ?? "").trim();
@@ -64,6 +70,23 @@ export async function POST(request: Request) {
   }
   if (ticket && !ticket.isVisible) {
     return NextResponse.json({ ok: false, error: "That ticket type is no longer available." }, { status: 409 });
+  }
+
+  if (idempotencyKey) {
+    const existingByKey = await db
+      .select({ id: registrations.id, code: registrations.code, ticketCode: registrations.ticketCode, status: registrations.status, amount: registrations.amount })
+      .from(registrations)
+      .where(and(eq(registrations.eventId, event.id), eq(registrations.idempotencyKey, idempotencyKey)))
+      .limit(1)
+      .then(r => r[0]);
+
+    if (existingByKey) {
+      return NextResponse.json({
+        ok: true,
+        reused: true,
+        registration: existingByKey,
+      });
+    }
   }
 
   const duplicate = await db
@@ -145,6 +168,7 @@ export async function POST(request: Request) {
         amount,
         source: "event_page",
         customAnswers: (payload.customAnswers as Record<string, string>) ?? {},
+        idempotencyKey: idempotencyKey || null,
       }).returning();
 
       if (!created) throw new Error("REGISTRATION_INSERT_FAILED");
