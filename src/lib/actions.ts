@@ -62,6 +62,27 @@ function writeFileToDisk(filepath: string, buffer: Buffer): boolean {
   }
 }
 
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
+const MAX_MEDIA_FILES = 8;
+const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const ALLOWED_VIDEO_TYPES = new Set(["video/mp4", "video/webm", "video/quicktime"]);
+
+function validateMediaFile(file: File) {
+  if (!file || file.size <= 0) return "Empty media files are not allowed.";
+  const isImage = ALLOWED_IMAGE_TYPES.has(file.type);
+  const isVideo = ALLOWED_VIDEO_TYPES.has(file.type);
+  if (!isImage && !isVideo) return "Unsupported media type. Use JPG, PNG, WebP, GIF, MP4, WebM, or MOV.";
+  if (isImage && file.size > MAX_IMAGE_BYTES) return "Images must be 10 MB or smaller.";
+  if (isVideo && file.size > MAX_VIDEO_BYTES) return "Videos must be 100 MB or smaller.";
+  return null;
+}
+
+function mediaFilename(file: File) {
+  const ext = file.name.includes(".") ? file.name.split(".").pop()!.toLowerCase().replace(/[^a-z0-9]/g, "") : "bin";
+  return Date.now() + "-" + randomInt(1_000_000, 9_999_999) + "." + ext;
+}
+
 /** Insert an audit log entry — fire-and-forget (errors are non-fatal). */
 async function logAudit(orgId: string, actor: string, action: string, entity: string, entityId: string, detail: string) {
   try {
@@ -111,10 +132,14 @@ export async function createEvent(formData: FormData) {
   const parsedFocus = focusX && focusY ? { x: parseFloat(focusX as string), y: parseFloat(focusY as string) } : undefined;
   
   if (mediaFiles && mediaFiles.length > 0) {
-    for (const file of mediaFiles) {
+        if (mediaFiles.length > MAX_MEDIA_FILES) return { error: "You can upload a maximum of 8 media files per event." };
+for (const file of mediaFiles) {
       if (file.size === 0) continue;
 
       const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+      const mediaError = validateMediaFile(file);
+      if (mediaError) return { error: mediaError };
+      const filename = mediaFilename(file);
       const type = file.type.startsWith("video/") ? "video" : "image";
 
       if (process.env.BLOB_READ_WRITE_TOKEN) {
@@ -279,11 +304,15 @@ export async function updateEvent(eventId: string, formData: FormData) {
   let hasNewMedia = false;
   
   if (mediaFiles && mediaFiles.length > 0) {
-    for (const file of mediaFiles) {
+        if (mediaFiles.length > MAX_MEDIA_FILES) return { error: "You can upload a maximum of 8 media files per event." };
+for (const file of mediaFiles) {
       if (file.size === 0) continue;
       hasNewMedia = true;
 
       const filename = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+      const mediaError = validateMediaFile(file);
+      if (mediaError) return { error: mediaError };
+      const filename = mediaFilename(file);
       const type = file.type.startsWith("video/") ? "video" : "image";
 
       if (process.env.BLOB_READ_WRITE_TOKEN) {
