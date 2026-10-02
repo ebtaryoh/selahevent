@@ -28,7 +28,7 @@ jobs:
         run: npm ci
 
       - name: Refresh non-breaking dependency fixes
-        run: npm audit fix --package-lock-only
+        run: npm audit fix --package-lock-only || true
 
       - name: Persist dependency lockfile updates
         run: |
