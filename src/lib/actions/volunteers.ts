@@ -2,7 +2,7 @@
 
 import { db } from "@/db";
 import { events, volunteers } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { getOrganization, requirePermission } from "@/lib/data";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -91,7 +91,7 @@ export async function updateVolunteer(volunteerId: string, eventId: string, form
         status,
         isLeader,
       })
-      .where(eq(volunteers.id, volunteerId));
+      .where(and(eq(volunteers.id, volunteerId), eq(volunteers.eventId, eventId)));
 
     revalidatePath(`/dashboard/events/${eventId}`);
     revalidatePath(`/dashboard/events/${eventId}/volunteers`);
