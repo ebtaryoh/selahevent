@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 import { sendEmailOTP, sendEventCreatedNotification, sendTicketConfirmation } from "@/lib/email";
 import { parseVideoEmbedUrl } from "@/lib/format";
 import { redirect } from "next/navigation";
-import { eq, ilike, or, and, sql } from "drizzle-orm";
+import { eq, ilike, or, and, gt, lt, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   auditLogs,
@@ -26,6 +26,7 @@ import { createOrgSession } from "./session";
 import { put } from "@vercel/blob";
 import path from "path";
 import { ensureSeed } from "./seed";
+import { hashOtp, normalizeOtpEmail } from "./otp";
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                              */
@@ -455,7 +456,15 @@ export async function registerOrganization(formData: FormData) {
 export async function loginOrganization(formData: FormData) {
   await ensureSeed();
 
-  const email = (formData.get("email") as string).toLowerCase().trim();
+  const email = normalizeOtpEmail((formData.get("email") as string));
+
+  const recentOtp = await db.query.otps.findFirst({
+    where: and(
+      eq(otps.email, email),
+      gt(otps.createdAt, new Date(Date.now() - 60 * 1000)),
+    ),
+  });
+  if (recentOtp) return { error: "Please wait a minute before requesting another code." };
 
   // Find the org by email
   const [org] = await db
@@ -472,7 +481,7 @@ export async function loginOrganization(formData: FormData) {
   const code = randomInt(100_000, 1_000_000).toString();
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-  await db.insert(otps).values({ email, organizationId: org.id, code, expiresAt });
+  await db.delete(otps).where(and(eq(otps.email, email), eq(otps.organizationId, org.id)));\n  await db.insert(otps).values({ email, organizationId: org.id, code: hashOtp(code), expiresAt });
 
   // In production: send via email provider using EMAIL_PROVIDER_API_KEY.
   // In dev: print to console so you can copy it.
@@ -493,31 +502,9 @@ export async function loginOrganization(formData: FormData) {
  * Step 2 of org login — verify the OTP code and create a signed session.
  */
 export async function verifyOrgOTP(formData: FormData) {
-  const email = (formData.get("email") as string).toLowerCase().trim();
+  const email = normalizeOtpEmail((formData.get("email") as string));
   const code = (formData.get("code") as string).trim();
 
-  // Dev bypass: master code "000000" in non-production
-  const isMasterCode = process.env.NODE_ENV !== "production" && code === "000000";
-
-  if (!isMasterCode) {
-    const otpRecord = await db.query.otps.findFirst({
-      where: and(eq(otps.email, email), eq(otps.code, code)),
-      orderBy: (otps, { desc }) => [desc(otps.createdAt)],
-    });
-
-    if (!otpRecord) {
-      return { error: "Invalid code. Please check the code we sent and try again." };
-    }
-
-    if (new Date() > otpRecord.expiresAt) {
-      return { error: "This code has expired. Please request a new one." };
-    }
-
-    // Consume all OTPs for this email
-    await db.delete(otps).where(eq(otps.email, email));
-  }
-
-  // Find the org
   const [org] = await db
     .select()
     .from(organizations)
@@ -527,6 +514,31 @@ export async function verifyOrgOTP(formData: FormData) {
   if (!org) {
     return { error: "Organization not found." };
   }
+
+  const otpRecord = await db.query.otps.findFirst({
+    where: and(
+      eq(otps.email, email),
+      eq(otps.organizationId, org.id),
+    ),
+    orderBy: (otps, { desc }) => [desc(otps.createdAt)],
+  });
+
+  if (!otpRecord) return { error: "Invalid code. Please check the code we sent and try again." };
+  if (new Date() > otpRecord.expiresAt) return { error: "This code has expired. Please request a new one." };
+  if (otpRecord.attempts >= 5) return { error: "Too many incorrect attempts. Please request a new code." };
+
+  const codeHash = hashOtp(code);
+  if (otpRecord.code !== codeHash) {
+    await db.update(otps)
+      .set({ attempts: sql`\${otps.attempts} + 1` })
+      .where(and(eq(otps.id, otpRecord.id), lt(otps.attempts, 5)));
+    return { error: "Invalid code. Please check the code we sent and try again." };
+  }
+
+  const [consumedOtp] = await db.delete(otps)
+    .where(and(eq(otps.id, otpRecord.id), eq(otps.code, codeHash), lt(otps.attempts, 5)))
+    .returning({ id: otps.id });
+  if (!consumedOtp) return { error: "This code has already been used. Please request a new one." };
 
   const user = await db.query.appUsers.findFirst({
     where: and(
