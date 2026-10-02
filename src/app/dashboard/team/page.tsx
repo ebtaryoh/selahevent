@@ -57,7 +57,7 @@ export default async function TeamPage() {
             <Users className="text-[var(--color-brass)]" /> Team & Volunteers
           </h1>
           <p className="mt-2 text-warm-500 text-sm max-w-2xl">
-            Manage who has access to your organization's events. Roles dictate what they can see and do.
+            Manage who has access to your organization&apos;s events. Roles dictate what they can see and do.
           </p>
         </div>
       </div>
