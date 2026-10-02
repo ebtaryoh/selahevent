@@ -614,7 +614,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
               Event Trailer (YouTube or Vimeo Link)
             </label>
             <p className="mb-4 text-sm text-warm-500">
-              Paste a link to your event's promo video. We'll automatically embed it beautifully on your event page.
+              Paste a link to your event&apos;s promo video. We&apos;ll automatically embed it beautifully on your event page.
             </p>
             <input
               id="videoUrl"
