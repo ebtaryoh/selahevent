@@ -188,14 +188,14 @@ Node host) with a managed Postgres/Supabase database.
   never rendered on public pages and are excluded from the registrations
   preview.
 - Security headers, same-site session cookies, signed-session authorization, and per-route rate limiting are implemented. Browser state-changing APIs rely on same-site cookies and authenticated authorization checks.
-  at the edge/middleware layer for production (see `RATE_LIMIT_PER_MINUTE`).
+
 
 ---
 
 ## 9. Production checklist
 
 - [ ] `DATABASE_URL` points at the production database with backups enabled
-- [ ] `NEXT_PUBLIC_SITE_URL` set and canonical URLs verified
+- [ ] `NEXT_PUBLIC_SITE_URL` set to the real production origin and canonical URLs verified
 - [ ] Paystack live keys configured and a real transaction verified end-to-end
 - [ ] Email provider verified; sender domain authenticated (SPF/DKIM)
 - [ ] Row Level Security enabled on tenant tables (Supabase)
