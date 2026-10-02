@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getEventById, getRegistrations } from "@/lib/data";
 import { getOrgSession } from "@/lib/session";
+import { requirePermission } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,7 @@ export async function GET(request: Request) {
 
   if (!eventId) return new NextResponse("Missing eventId", { status: 400 });
 
+  const actor = await requirePermission("exports.read");
   const session = await getOrgSession();
   if (!session?.orgId) return new NextResponse("Unauthorized", { status: 401 });
 
