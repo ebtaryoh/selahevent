@@ -15,6 +15,13 @@
       "when": 1789836922673,
       "tag": "0001_dapper_harry_osborn",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790930053064,
+      "tag": "0002_ticket_reservations",
+      "breakpoints": true
     }
   ]
 }
