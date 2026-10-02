@@ -84,11 +84,13 @@ export async function getEventBySlug(slug: string) {
 
 export async function getEventById(id: string) {
   if (!id || id === "undefined") return null;
+  const session = await getOrgSession();
+  if (!session) return null;
   await ensureSeed();
   return db
     .select()
     .from(events)
-    .where(eq(events.id, id))
+    .where(and(eq(events.id, id), eq(events.organizationId, session.orgId)))
     .limit(1)
     .then((r) => r[0] ?? null);
 }
@@ -208,7 +210,7 @@ export async function getTasks(orgId: string, eventId?: string) {
   await ensureSeed();
   const base = db.select().from(tasks);
   return eventId
-    ? base.where(eq(tasks.eventId, eventId)).orderBy(asc(tasks.dueAt))
+    ? base.where(and(eq(tasks.eventId, eventId), eq(tasks.organizationId, orgId))).orderBy(asc(tasks.dueAt))
     : base
         .where(eq(tasks.organizationId, orgId))
         .orderBy(asc(tasks.dueAt))
