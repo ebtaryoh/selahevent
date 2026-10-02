@@ -36,6 +36,20 @@
       "when": 1790931429964,
       "tag": "0004_otp_attempts",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790931800000,
+      "tag": "0005_registration_idempotency",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790931900000,
+      "tag": "0006_payment_gateway_reference_unique",
+      "breakpoints": true
     }
   ]
 }
