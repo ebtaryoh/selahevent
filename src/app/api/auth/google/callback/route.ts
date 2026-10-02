@@ -106,6 +106,7 @@ export async function GET(req: Request) {
         status: "active",
         imageUrl: picture,
       }).returning();
+      user = ownerUser;
 
       // Audit log for creation
       await db.insert(auditLogs).values({
