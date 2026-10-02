@@ -84,90 +84,107 @@ export async function POST(req: Request) {
 
       if (payloadAmount !== expectedAmount || payloadCurrency !== expectedCurrency) {
         console.error("Paystack webhook payment mismatch", {
-          reference,
-          expectedAmount,
-          receivedAmount: payloadAmount,
-          expectedCurrency,
-          receivedCurrency: payloadCurrency,
+          reference, expectedAmount, receivedAmount: payloadAmount, expectedCurrency, receivedCurrency: payloadCurrency,
         });
         return NextResponse.json({ error: "Payment details do not match the registration." }, { status: 400 });
-      }
-
-      if (paymentRecord.status === "paid" && paymentRecord.verified) {
-        return NextResponse.json({ ok: true });
       }
 
       let shouldSendConfirmation = false;
 
       await db.transaction(async tx => {
-        const updatedPayment = await tx
-          .update(payments)
-          .set({ status: "paid", verified: true, paidAt: new Date() })
-          .where(and(eq(payments.id, paymentRecord.id), ne(payments.status, "paid")))
-          .returning({ id: payments.id });
+        const lockedPayment = await tx.query.payments.findFirst({
+          where: eq(payments.id, paymentRecord.id),
+        });
+        if (!lockedPayment) throw new Error("PAYMENT_NOT_FOUND");
 
-        if (updatedPayment.length === 0) return;
+        await tx.execute(sql`SELECT id FROM payments WHERE id = ${paymentRecord.id} FOR UPDATE`);
+        const currentPayment = await tx.query.payments.findFirst({ where: eq(payments.id, paymentRecord.id) });
+        if (!currentPayment) throw new Error("PAYMENT_NOT_FOUND");
 
-        if (!paymentRecord.registrationId) return;
-
-        await tx
-          .update(registrations)
-          .set({ status: "confirmed" })
-          .where(eq(registrations.id, paymentRecord.registrationId));
-
-        const reservation = await tx
-          .select()
-          .from(ticketReservations)
-          .where(and(
-            eq(ticketReservations.registrationId, paymentRecord.registrationId),
-            eq(ticketReservations.status, "reserved")
-          ))
-          .limit(1)
-          .then(r => r[0]);
-
-        const anyReservation = reservation ?? await tx
-          .select()
-          .from(ticketReservations)
-          .where(eq(ticketReservations.registrationId, paymentRecord.registrationId))
-          .limit(1)
-          .then(r => r[0]);
-
-        if (reservation && reservation.expiresAt > new Date()) {
-          await tx
-            .update(ticketReservations)
-            .set({ status: "confirmed" })
-            .where(eq(ticketReservations.id, reservation.id));
-
-          await tx
-            .update(ticketTypes)
-            .set({ sold: sql.raw('"sold" + 1') })
-            .where(eq(ticketTypes.id, reservation.ticketTypeId));
-          shouldSendConfirmation = true;
-        } else if (anyReservation) {
-          await tx
-            .update(registrations)
-            .set({ status: "payment_capacity_review" })
-            .where(and(
-              eq(registrations.id, paymentRecord.registrationId),
-              ne(registrations.status, "confirmed"),
-            ));
-        } else {
-          await tx
-            .update(registrations)
-            .set({ status: "payment_capacity_review" })
-            .where(and(
-              eq(registrations.id, paymentRecord.registrationId),
-              ne(registrations.status, "confirmed"),
-            ));
+        if (currentPayment.status !== "paid" || !currentPayment.verified) {
+          await tx.update(payments)
+            .set({ status: "paid", verified: true, paidAt: currentPayment.paidAt ?? new Date() })
+            .where(eq(payments.id, currentPayment.id));
         }
 
+        if (!currentPayment.registrationId) return;
+
+        const registration = await tx.query.registrations.findFirst({
+          where: and(eq(registrations.id, currentPayment.registrationId), eq(registrations.eventId, eventRecord.id)),
+        });
+        if (!registration) return;
+
+        if (registration.status === "confirmed") return;
+
+        if (!registration.ticketTypeId) {
+          await tx.update(registrations)
+            .set({ status: "confirmed" })
+            .where(eq(registrations.id, registration.id));
+          shouldSendConfirmation = true;
+          return;
+        }
+
+        await tx.execute(sql`SELECT id FROM ticket_types WHERE id = ${registration.ticketTypeId} FOR UPDATE`);
+        const ticket = await tx.query.ticketTypes.findFirst({ where: eq(ticketTypes.id, registration.ticketTypeId) });
+        if (!ticket) {
+          await tx.update(registrations).set({ status: "payment_capacity_review" }).where(eq(registrations.id, registration.id));
+          return;
+        }
+
+        const reservation = await tx.query.ticketReservations.findFirst({
+          where: and(eq(ticketReservations.registrationId, registration.id), eq(ticketReservations.status, "reserved")),
+        });
+
+        if (!reservation || reservation.expiresAt <= new Date()) {
+          await tx.update(ticketReservations)
+            .set({ status: "released" })
+            .where(and(eq(ticketReservations.registrationId, registration.id), eq(ticketReservations.status, "reserved")));
+
+          await tx.update(registrations)
+            .set({ status: "payment_capacity_review" })
+            .where(eq(registrations.id, registration.id));
+          return;
+        }
+
+        const activeReservations = await tx.execute(sql`
+          SELECT COUNT(*)::int AS count
+          FROM ticket_reservations
+          WHERE ticket_type_id = ${ticket.id}
+            AND status = 'reserved'
+            AND expires_at > NOW()
+            AND registration_id <> ${registration.id}
+        `);
+        const reservedCount = Number((activeReservations.rows[0] as { count: number | string }).count);
+
+        if (ticket.capacity > 0 && ticket.sold + reservedCount >= ticket.capacity) {
+          await tx.update(ticketReservations)
+            .set({ status: "released" })
+            .where(eq(ticketReservations.id, reservation.id));
+          await tx.update(registrations)
+            .set({ status: "payment_capacity_review" })
+            .where(eq(registrations.id, registration.id));
+          return;
+        }
+
+        await tx.update(ticketReservations)
+          .set({ status: "confirmed" })
+          .where(and(eq(ticketReservations.id, reservation.id), eq(ticketReservations.status, "reserved")));
+
+        await tx.update(ticketTypes)
+          .set({ sold: sql`${ticketTypes.sold} + 1` })
+          .where(eq(ticketTypes.id, ticket.id));
+
+        await tx.update(registrations)
+          .set({ status: "confirmed" })
+          .where(eq(registrations.id, registration.id));
+        shouldSendConfirmation = true;
       });
 
       if (shouldSendConfirmation && paymentRecord.registrationId) {
         const updatedRegistration = await db
           .select()
           .from(registrations)
-          .where(eq(registrations.id, paymentRecord.registrationId))
+          .where(and(eq(registrations.id, paymentRecord.registrationId), eq(registrations.eventId, eventRecord.id)))
           .limit(1)
           .then(r => r[0]);
 
@@ -183,21 +200,20 @@ export async function POST(req: Request) {
             if (ticket) ticketName = ticket.name;
           }
 
-          await sendTicketConfirmation(updatedRegistration.email, {
-            attendeeName: updatedRegistration.firstName,
-            eventName: eventRecord.title,
-            ticketName,
-            ticketCode: updatedRegistration.ticketCode,
-            startsAt: new Date(eventRecord.startsAt).toLocaleString("en-US", {
-              weekday: "short",
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-              hour: "numeric",
-              minute: "numeric",
-            }),
-            venueName: eventRecord.venueName || eventRecord.city || "Virtual Event",
-          });
+          try {
+            await sendTicketConfirmation(updatedRegistration.email, {
+              attendeeName: updatedRegistration.firstName,
+              eventName: eventRecord.title,
+              ticketName,
+              ticketCode: updatedRegistration.ticketCode,
+              startsAt: new Date(eventRecord.startsAt).toLocaleString("en-US", {
+                weekday: "short", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "numeric",
+              }),
+              venueName: eventRecord.venueName || eventRecord.city || "Virtual Event",
+            });
+          } catch (emailError) {
+            console.error("[selah] payment confirmation email failed:", emailError);
+          }
         }
       }
 
