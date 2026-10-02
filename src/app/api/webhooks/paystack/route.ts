@@ -125,6 +125,13 @@ export async function POST(req: Request) {
           .limit(1)
           .then(r => r[0]);
 
+        const anyReservation = reservation ?? await tx
+          .select()
+          .from(ticketReservations)
+          .where(eq(ticketReservations.registrationId, paymentRecord.registrationId))
+          .limit(1)
+          .then(r => r[0]);
+
         if (reservation && reservation.expiresAt > new Date()) {
           await tx
             .update(ticketReservations)
@@ -136,11 +143,22 @@ export async function POST(req: Request) {
             .set({ sold: sql.raw('"sold" + 1') })
             .where(eq(ticketTypes.id, reservation.ticketTypeId));
           shouldSendConfirmation = true;
-        } else if (reservation) {
+        } else if (anyReservation) {
           await tx
             .update(registrations)
             .set({ status: "payment_capacity_review" })
-            .where(eq(registrations.id, paymentRecord.registrationId));
+            .where(and(
+              eq(registrations.id, paymentRecord.registrationId),
+              ne(registrations.status, "confirmed"),
+            ));
+        } else {
+          await tx
+            .update(registrations)
+            .set({ status: "payment_capacity_review" })
+            .where(and(
+              eq(registrations.id, paymentRecord.registrationId),
+              ne(registrations.status, "confirmed"),
+            ));
         }
 
       });
