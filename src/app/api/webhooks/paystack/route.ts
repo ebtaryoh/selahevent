@@ -1,4 +1,4 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
@@ -103,7 +103,7 @@ export async function POST(req: Request) {
         const updatedPayment = await tx
           .update(payments)
           .set({ status: "paid", verified: true, paidAt: new Date() })
-          .where(and(eq(payments.id, paymentRecord.id), eq(payments.status, "pending")))
+          .where(and(eq(payments.id, paymentRecord.id), ne(payments.status, "paid")))
           .returning({ id: payments.id });
 
         if (updatedPayment.length === 0) return;
