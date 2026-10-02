@@ -528,18 +528,16 @@ export async function verifyOrgOTP(formData: FormData) {
     return { error: "Organization not found." };
   }
 
-  let user = await db.query.appUsers.findFirst({
-    where: and(eq(appUsers.organizationId, org.id), eq(appUsers.email, email)),
+  const user = await db.query.appUsers.findFirst({
+    where: and(
+      eq(appUsers.organizationId, org.id),
+      eq(appUsers.email, email),
+      eq(appUsers.status, "active"),
+    ),
   });
 
   if (!user) {
-    [user] = await db.insert(appUsers).values({
-      organizationId: org.id,
-      name: email.split("@")[0],
-      email,
-      role: "owner",
-      status: "active",
-    }).returning();
+    return { error: "Your account is not a member of this workspace. Ask an administrator to invite you." };
   }
 
   await createOrgSession(org.id, user.id);
