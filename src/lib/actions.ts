@@ -21,7 +21,7 @@ import {
   checkIns,
   blueprints,
 } from "@/db/schema";
-import { getOrganization } from "./data";
+import { getOrganization, requirePermission } from "./data";
 import { createOrgSession } from "./session";
 import { put } from "@vercel/blob";
 import path from "path";
@@ -73,7 +73,9 @@ async function logAudit(orgId: string, actor: string, action: string, entity: st
 export async function createEvent(formData: FormData) {
   await ensureSeed();
   
+  const actor = await requirePermission("events.write");
   const org = await getOrganization();
+  if (!actor) return { error: "You do not have permission to create events." };
   if (!org) {
     throw new Error("Organization not found");
   }
@@ -229,7 +231,9 @@ export async function createEvent(formData: FormData) {
 
 export async function updateEvent(eventId: string, formData: FormData) {
   await ensureSeed();
+  const actor = await requirePermission("events.write");
   const org = await getOrganization();
+  if (!actor) return { error: "You do not have permission to edit events." };
   if (!org) return { error: "Organization not found" };
 
   const existingEvent = await db.query.events.findFirst({
@@ -427,8 +431,16 @@ export async function registerOrganization(formData: FormData) {
     })
     .returning();
 
-  // Create a signed session immediately (no OTP needed for new registration)
-  await createOrgSession(newOrg.id);
+  const [ownerUser] = await db.insert(appUsers).values({
+    organizationId: newOrg.id,
+    name,
+    email,
+    role: "owner",
+    status: "active",
+  }).returning();
+
+  // Create a user-bound session immediately for the new workspace.
+  await createOrgSession(newOrg.id, ownerUser.id);
 
   revalidatePath("/");
   revalidatePath("/dashboard");
@@ -632,7 +644,9 @@ export async function registerAttendee(formData: FormData) {
 }
 
 export async function searchRegistrations(eventId: string, query: string) {
+  const actor = await requirePermission("registrations.read");
   const org = await getOrganization();
+  if (!actor) throw new Error("Forbidden");
   if (!org) throw new Error("Unauthorized");
 
   const event = await db.query.events.findFirst({
@@ -669,7 +683,9 @@ export async function searchRegistrations(eventId: string, query: string) {
 }
 
 export async function checkInAttendee(registrationId: string, eventId: string) {
+  const actor = await requirePermission("checkin.write");
   const org = await getOrganization();
+  if (!actor) throw new Error("Forbidden");
   if (!org) throw new Error("Unauthorized");
 
   // Check if they are already checked in
@@ -726,7 +742,9 @@ export async function checkInAttendee(registrationId: string, eventId: string) {
 }
 
 export async function saveEventAsBlueprint(eventId: string, name: string, description?: string) {
+  const actor = await requirePermission("events.write");
   const org = await getOrganization();
+  if (!actor) return { error: "You do not have permission to save blueprints." };
   if (!org) {
     return { error: "Organization not found" };
   }
@@ -807,9 +825,10 @@ export async function createEventFromBlueprint(blueprintId: string, overrides: {
   coverImage?: string;
   media?: any;
 }) {
+  const actor = await requirePermission("events.write");
   const org = await getOrganization();
-  if (!org) {
-    return { error: "Organization not found" };
+  if (!actor || !org) {
+    return { error: "Not authorized" };
   }
 
   const blueprint = await db.query.blueprints.findFirst({
@@ -894,7 +913,9 @@ export async function createEventFromBlueprint(blueprintId: string, overrides: {
 /* ------------------------------------------------------------------ */
 
 export async function createTicketType(eventId: string, formData: FormData) {
+  const actor = await requirePermission("tickets.write");
   const org = await getOrganization();
+  if (!actor) return { error: "You do not have permission to manage tickets." };
   if (!org) return { error: "Not authenticated" };
 
   const event = await db.query.events.findFirst({
@@ -942,7 +963,9 @@ export async function createTicketType(eventId: string, formData: FormData) {
 }
 
 export async function updateTicketType(ticketId: string, eventId: string, formData: FormData) {
+  const actor = await requirePermission("tickets.write");
   const org = await getOrganization();
+  if (!actor) return { error: "You do not have permission to manage tickets." };
   if (!org) return { error: "Not authenticated" };
 
   const event = await db.query.events.findFirst({
@@ -991,7 +1014,9 @@ export async function updateTicketType(ticketId: string, eventId: string, formDa
 }
 
 export async function deleteTicketType(ticketId: string, eventId: string) {
+  const actor = await requirePermission("tickets.write");
   const org = await getOrganization();
+  if (!actor) return { error: "You do not have permission to manage tickets." };
   if (!org) return { error: "Not authenticated" };
 
   const event = await db.query.events.findFirst({
