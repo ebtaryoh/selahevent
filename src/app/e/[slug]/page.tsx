@@ -848,7 +848,21 @@ export default async function EventPage({ params }: Params) {
         </div>
       </section>
 
-      <footer className="bg-cypress-deep py-10">
+      {!isRegistrationClosed && !isRegistrationUpcoming ? (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-black/10 bg-paper/95 px-4 py-3 shadow-[0_-16px_40px_-28px_rgba(14,42,34,0.55)] backdrop-blur-xl sm:hidden">
+          <div className="mx-auto flex max-w-lg items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[0.78rem] font-semibold text-ink">{event.title}</div>
+              <div className="mt-0.5 text-[0.68rem] text-warm-500">{formatDate(event.startsAt)} · {event.city}</div>
+            </div>
+            <Link href={\`/e/\${event.slug}/register\`} className="btn btn-brass !px-5 !py-3 !text-[0.78rem]">
+              Register <ArrowUpRight size={15} />
+            </Link>
+          </div>
+        </div>
+      ) : null}
+
+      <footer className="bg-cypress-deep py-10 pb-24 sm:pb-10">
         <div className="mx-auto flex w-full max-w-[1180px] flex-col items-center justify-between gap-5 px-5 text-center sm:flex-row sm:px-8 sm:text-left">
           <p className="text-[0.8125rem] text-[rgba(247,243,236,0.62)]">
             {event.title} · {formatRange(event.startsAt, event.endsAt)} ·{" "}
