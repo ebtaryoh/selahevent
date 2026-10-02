@@ -59,10 +59,10 @@ export async function deleteCommsPlanItem(eventId: string, itemId: string) {
   if (!org) return { error: "Not authenticated" };
 
   const event = await db.query.events.findFirst({
-    where: eq(events.id, eventId),
+    where: and(eq(events.id, eventId), eq(events.organizationId, org.id)),
   });
 
-  if (!event || event.organizationId !== org.id) {
+  if (!event) {
     return { error: "Event not found or unauthorized" };
   }
   
@@ -75,7 +75,7 @@ export async function deleteCommsPlanItem(eventId: string, itemId: string) {
       .set({
         commsPlan: newPlan,
       })
-      .where(eq(events.id, eventId));
+      .where(and(eq(events.id, eventId), eq(events.organizationId, org.id)));
 
     revalidatePath(`/dashboard/events/${eventId}`);
     revalidatePath(`/dashboard/events/${eventId}/communications`);
