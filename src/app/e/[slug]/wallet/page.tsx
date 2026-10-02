@@ -87,7 +87,7 @@ export default async function WalletPage({ params }: Params) {
             </div>
             <h3 className="font-display text-lg font-semibold text-ink">No tickets found</h3>
             <p className="text-warm-500 mt-2 max-w-md mx-auto">
-              You haven't registered for any events from this organization yet.
+              You haven&apos;t registered for any events from this organization yet.
             </p>
           </div>
         ) : (
