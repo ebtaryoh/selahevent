@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 import { sendEmailOTP, sendEventCreatedNotification, sendTicketConfirmation } from "@/lib/email";
 import { parseVideoEmbedUrl } from "@/lib/format";
 import { redirect } from "next/navigation";
-import { eq, ilike, or, and } from "drizzle-orm";
+import { eq, ilike, or, and, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   auditLogs,
@@ -38,7 +38,7 @@ async function generateUniqueSlug(base: string, maxAttempts = 5): Promise<string
     .replace(/(^-|-$)+/g, "");
 
   for (let i = 0; i < maxAttempts; i++) {
-    const suffix = Math.floor(Math.random() * 9000 + 1000); // 4-digit suffix
+    const suffix = randomInt(1000, 10000); // 4-digit cryptographic suffix
     const slug = `${baseSlug}-${suffix}`;
     const existing = await db.select({ id: events.id }).from(events).where(eq(events.slug, slug)).limit(1);
     if (existing.length === 0) return slug;
@@ -408,7 +408,7 @@ export async function registerOrganization(formData: FormData) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)+/g, "");
-  let orgSlug = `${baseSlug}-${Math.floor(Math.random() * 9000 + 1000)}`;
+  let orgSlug = `${baseSlug}-${randomInt(1000, 10000)}`;
   const slugExists = await db.select({ id: organizations.id }).from(organizations).where(eq(organizations.slug, orgSlug)).limit(1);
   if (slugExists.length > 0) orgSlug = `${baseSlug}-${Date.now()}`;
 
@@ -569,13 +569,13 @@ export async function registerAttendee(formData: FormData) {
 
   // Generate unique codes
   const uuid = crypto.randomUUID();
-  const ticketCode = `SEL-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+  const ticketCode = `SEL-${randomInt(0, 36 ** 6).toString(36).padStart(6, "0").toUpperCase()}`;
 
   // Find ticket type to ensure it exists and get its price
   const [ticket] = await db
     .select()
     .from(ticketTypes)
-    .where(eq(ticketTypes.id, ticketTypeId))
+    .where(and(eq(ticketTypes.id, ticketTypeId), eq(ticketTypes.eventId, event.id)))
     .limit(1);
 
   if (!ticket) {
@@ -959,7 +959,7 @@ export async function updateTicketType(ticketId: string, eventId: string, formDa
         isVisible,
         benefits,
       })
-      .where(eq(ticketTypes.id, ticketId));
+      .where(and(eq(ticketTypes.id, ticketId), eq(ticketTypes.eventId, eventId)));
 
     revalidatePath(`/dashboard/events/${eventId}/tickets`);
     revalidatePath(`/e/${event.slug}`);
@@ -990,14 +990,14 @@ export async function deleteTicketType(ticketId: string, eventId: string) {
   let redirectUrl = "";
   try {
     const ticket = await db.query.ticketTypes.findFirst({
-      where: eq(ticketTypes.id, ticketId),
+      where: and(eq(ticketTypes.id, ticketId), eq(ticketTypes.eventId, eventId)),
     });
 
     if (ticket && ticket.sold > 0) {
       return { error: "Cannot delete a ticket type that has registrations." };
     }
 
-    await db.delete(ticketTypes).where(eq(ticketTypes.id, ticketId));
+    await db.delete(ticketTypes).where(and(eq(ticketTypes.id, ticketId), eq(ticketTypes.eventId, eventId)));
 
     revalidatePath(`/dashboard/events/${eventId}/tickets`);
     revalidatePath(`/e/${event.slug}`);
