@@ -138,7 +138,7 @@ export default async function BlueprintsPage() {
         <div className="mt-9 grid gap-6 lg:grid-cols-2">
           {blueprints.map((blueprint, i) => (
             <Reveal key={blueprint.id} delay={i * 0.06}>
-              <article className="group flex h-full flex-col rounded-[16px] border border-[rgba(22,19,17,0.11)] bg-paper p-8 transition-shadow duration-300 hover:shadow-[0_32px_64px_-34px_rgba(14,42,34,0.55)]">
+              <article className="group motion-lift flex h-full flex-col rounded-[16px] border border-[rgba(22,19,17,0.11)] bg-paper p-8 transition-shadow duration-300 hover:shadow-[0_32px_64px_-34px_rgba(14,42,34,0.55)]">
                 <div className="flex items-start justify-between gap-5">
                   <div>
                     <span className="pill pill-brass">{blueprint.category}</span>
@@ -204,7 +204,7 @@ export default async function BlueprintsPage() {
         <div className="mt-9 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           {memoryCategories.map((category, i) => (
             <Reveal key={category.title} delay={i * 0.05}>
-              <div className="flex h-full flex-col rounded-[15px] border border-[rgba(22,19,17,0.1)] bg-paper p-7">
+              <div className="motion-lift flex h-full flex-col rounded-[15px] border border-[rgba(22,19,17,0.1)] bg-paper p-7">
                 <div className="flex items-start justify-between gap-4">
                   <Compass
                     size={21}
