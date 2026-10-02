@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
+import { getOrganization } from "@/lib/data";
 import { checkIns, events, registrations, ticketTypes } from "@/db/schema";
 
 export const dynamic = "force-dynamic";
@@ -29,10 +30,19 @@ export async function POST(request: Request) {
     );
   }
 
+  // Check-in is an organizer operation. The event must belong to the authenticated organization.
+  const org = await getOrganization();
+  if (!org) {
+    return NextResponse.json(
+      { ok: false, error: "Unauthorized." },
+      { status: 401 }
+    );
+  }
+
   const event = await db
     .select()
     .from(events)
-    .where(eq(events.id, eventId))
+    .where(and(eq(events.id, eventId), eq(events.organizationId, org.id)))
     .limit(1)
     .then((r) => r[0]);
 
