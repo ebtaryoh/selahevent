@@ -27,7 +27,7 @@ export default async function HomePage({
 
   return (
     <div className="min-h-screen bg-parchment">
-      <SiteHeader isSignedIn={!!session} />
+      <SiteHeader isSignedIn={!!session} />\n      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
 
       {/* Hero Section */}
       <section className="relative isolate overflow-hidden pt-[72px]">
