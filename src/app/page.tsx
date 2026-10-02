@@ -24,11 +24,20 @@ export default async function HomePage({
   const params = await searchParams;
   const publicEvents = await getAllPublicEvents(params);
   const session = await getOrgSession();
+  const websiteJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Selah",
+    url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://selah.events",
+    description: "The Christian Event Operating System for churches and ministries.",
+  };
 
   return (
     <div className="min-h-screen bg-parchment">
-      <SiteHeader isSignedIn={!!session} />\n      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
+      <SiteHeader isSignedIn={!!session} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
 
+      <main id="main-content">
       {/* Hero Section */}
       <section className="relative isolate overflow-hidden pt-[72px]">
         <div className="absolute inset-0 -z-10">
@@ -274,6 +283,7 @@ export default async function HomePage({
         </div>
       </section>
 
+      </main>
       <SiteFooter />
     </div>
   );
