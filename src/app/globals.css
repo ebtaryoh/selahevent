@@ -39,6 +39,7 @@
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
   -webkit-text-size-adjust: 100%;
 }
 
@@ -54,6 +55,25 @@ body {
 ::selection {
   background: var(--color-brass-light);
   color: var(--color-cypress-deep);
+}
+
+.skip-link {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  z-index: 100;
+  transform: translateY(-180%);
+  border-radius: 999px;
+  background: var(--color-cypress);
+  color: var(--color-parchment);
+  padding: 0.75rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  box-shadow: var(--shadow-lift);
+  transition: transform 160ms ease;
+}
+.skip-link:focus {
+  transform: translateY(0);
 }
 
 :focus-visible {
@@ -148,6 +168,8 @@ body {
 .btn:active {
   transform: translateY(1px) scale(0.995);
 }
+
+.btn:focus-visible, .input:focus-visible { outline: 3px solid rgba(192,138,46,0.55); outline-offset: 3px; }
 
 .btn:disabled {
   opacity: 0.55;
