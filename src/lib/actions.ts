@@ -1,6 +1,7 @@
 "use server";
 
 import fs from "fs";
+import { randomInt } from "crypto";
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { sendEmailOTP, sendEventCreatedNotification, sendTicketConfirmation } from "@/lib/email";
@@ -455,7 +456,7 @@ export async function loginOrganization(formData: FormData) {
   }
 
   // Generate 6-digit OTP
-  const code = Math.floor(100_000 + Math.random() * 900_000).toString();
+  const code = randomInt(100_000, 1_000_000).toString();
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
   await db.insert(otps).values({ email, organizationId: org.id, code, expiresAt });
