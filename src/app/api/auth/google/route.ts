@@ -4,9 +4,10 @@ import { cookies } from "next/headers";
 
 export async function GET(req: Request) {
   const clientId = process.env.GOOGLE_CLIENT_ID;
-  if (!clientId) {
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
     return NextResponse.json(
-      { error: "GOOGLE_CLIENT_ID is not configured." },
+      { error: "Google sign-in is not configured." },
       { status: 500 }
     );
   }
@@ -37,6 +38,7 @@ export async function GET(req: Request) {
     secure: process.env.NODE_ENV === "production",
     maxAge: 60 * 10, // 10 minutes
     path: "/",
+    sameSite: "lax",
   });
 
   const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
