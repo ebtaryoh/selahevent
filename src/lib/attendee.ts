@@ -9,7 +9,7 @@ import { sendEmailOTP } from "@/lib/email";
 import { randomInt } from "crypto";
 import { hashOtp, normalizeOtpEmail } from "@/lib/otp";
 import { headers } from "next/headers";
-import { enforceRateLimit, getClientAddress, rateLimitHeaders } from "@/lib/rate-limit";
+import { enforceRateLimit, getClientAddressFromHeaders, rateLimitHeaders } from "@/lib/rate-limit";
 
 function getAttendeeJwtSecret(): Uint8Array {
   const secret = process.env.ATTENDEE_JWT_SECRET;
@@ -25,7 +25,7 @@ function getAttendeeJwtSecret(): Uint8Array {
 export async function requestAttendeeOTP(email: string, orgId: string) {
   try {
     const headerStore = await headers();
-    const clientAddress = getClientAddress(new Request("http://localhost", { headers: headerStore }));
+    const clientAddress = getClientAddressFromHeaders(headerStore);
     const ipLimit = await enforceRateLimit("attendee-otp-ip", clientAddress, 5, 600);
     if (!ipLimit.allowed) {
       return { error: "Too many OTP requests. Please try again later.", rateLimit: rateLimitHeaders(ipLimit) };
