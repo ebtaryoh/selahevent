@@ -155,6 +155,29 @@ export const ticketTypes = pgTable(
   (t) => [index("ticket_types_event_idx").on(t.eventId)]
 );
 
+export const ticketReservations = pgTable(
+  "ticket_reservations",
+  {
+    id: id(),
+    ticketTypeId: uuid("ticket_type_id")
+      .notNull()
+      .references(() => ticketTypes.id, { onDelete: "cascade" }),
+    eventId: uuid("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    registrationId: uuid("registration_id"),
+    status: text("status").default("reserved").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("ticket_reservations_ticket_idx").on(t.ticketTypeId),
+    index("ticket_reservations_event_idx").on(t.eventId),
+    index("ticket_reservations_registration_idx").on(t.registrationId),
+    index("ticket_reservations_active_idx").on(t.ticketTypeId, t.status, t.expiresAt),
+  ]
+);
+
 export const speakers = pgTable(
   "speakers",
   {
