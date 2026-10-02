@@ -20,6 +20,7 @@ import {
   ticketTypes,
   checkIns,
   blueprints,
+  ticketReservations,
 } from "@/db/schema";
 import { getOrganization, requirePermission } from "./data";
 import { createOrgSession } from "./session";
