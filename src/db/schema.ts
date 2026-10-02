@@ -327,6 +327,7 @@ export const payments = pgTable(
     gatewayReference: text("gateway_reference").default("").notNull().unique(),
     status: text("status").default("pending").notNull(),
     verified: boolean("verified").default(false).notNull(),
+    checkoutUrl: text("checkout_url"),
     paidAt: timestamp("paid_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
