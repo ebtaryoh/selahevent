@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { db } from "@/db";
 import { organizations, auditLogs } from "@/db/schema";
-import { ilike } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { createOrgSession } from "@/lib/session";
 import { redirect } from "next/navigation";
+import crypto from "crypto";
 
 export async function GET(req: Request) {
   const url = new URL(req.url);
@@ -75,7 +76,7 @@ export async function GET(req: Request) {
     const orgs = await db
       .select()
       .from(organizations)
-      .where(ilike(organizations.email, email))
+      .where(eq(organizations.email, email))
       .limit(1);
 
     let org;
@@ -84,7 +85,7 @@ export async function GET(req: Request) {
       // Auto-provision a new workspace for the user
       const workspaceName = name ? `${name}'s Workspace` : "My Workspace";
       const baseSlug = workspaceName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)+/g, "");
-      const slug = `${baseSlug}-${Math.floor(Math.random() * 9000 + 1000)}`;
+      const slug = `${baseSlug}-${crypto.randomInt(1000, 10000)}`;
 
       const inserted = await db.insert(organizations).values({
         name: workspaceName,
@@ -111,7 +112,7 @@ export async function GET(req: Request) {
         const updated = await db
           .update(organizations)
           .set({ logoUrl: picture })
-          .where(ilike(organizations.email, email))
+          .where(eq(organizations.email, email))
           .returning();
         org = updated[0];
       }
