@@ -190,8 +190,8 @@ export default async function DashboardPage() {
                   </div>
                 </div>
                 <div className="mt-4 flex gap-2">
-                  <Link href={\`/e/\${event.slug}\`} className="btn btn-ghost flex-1 !px-4 !py-3 !text-[0.75rem]">View page</Link>
-                  <Link href={\`/dashboard/events/\${event.id}\`} className="btn btn-primary flex-1 !px-4 !py-3 !text-[0.75rem]">Manage</Link>
+                  <Link href={`/e/${event.slug}`} className="btn btn-ghost flex-1 !px-4 !py-3 !text-[0.75rem]">View page</Link>
+                  <Link href={`/dashboard/events/${event.id}`} className="btn btn-primary flex-1 !px-4 !py-3 !text-[0.75rem]">Manage</Link>
                 </div>
               </article>
             );
