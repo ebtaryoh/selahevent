@@ -356,6 +356,7 @@ export const checkIns = pgTable(
   (t) => [
     index("check_ins_event_idx").on(t.eventId),
     index("check_ins_registration_idx").on(t.registrationId),
+    unique("check_ins_registration_unique").on(t.registrationId),
   ]
 );
 
