@@ -258,6 +258,7 @@ export const otps = pgTable(
       .notNull()
       .references(() => organizations.id, { onDelete: "cascade" }),
     code: text("code").notNull(),
+    attempts: integer("attempts").default(0).notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     createdAt: createdAt(),
   },
