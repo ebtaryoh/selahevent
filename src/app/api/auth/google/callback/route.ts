@@ -67,10 +67,10 @@ export async function GET(req: Request) {
       return NextResponse.redirect(`${loginUrl}?error=Failed to fetch Google user info.`);
     }
 
-    const { email, name, picture } = await userResponse.json();
+    const { email, name, picture, verified_email: verifiedEmail } = await userResponse.json();
 
-    if (!email) {
-      return NextResponse.redirect(`${loginUrl}?error=No email provided by Google.`);
+    if (!email || verifiedEmail !== true) {
+      return NextResponse.redirect(`${loginUrl}?error=Google did not provide a verified email address.`);
     }
 
     // Look up the organization by email
