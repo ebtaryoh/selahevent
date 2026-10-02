@@ -110,7 +110,7 @@ export default async function HomePage({
         </div>
       </section>
 
-      <section id="lifecycle" className="scroll-mt-24 bg-parchment py-24 sm:py-32"
+      <section id="lifecycle" className="scroll-mt-24 bg-parchment py-24 sm:py-32">
         <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
           <SectionHead
             index="01"
