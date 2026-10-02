@@ -50,6 +50,13 @@
       "when": 1790931900000,
       "tag": "0006_payment_gateway_reference_unique",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790932000000,
+      "tag": "0007_rate_limit_buckets",
+      "breakpoints": true
     }
   ]
 }
