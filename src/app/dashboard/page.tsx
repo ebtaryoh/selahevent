@@ -169,7 +169,7 @@ export default async function DashboardPage() {
           {events.map((event) => {
             const stat = stats.find((row) => row.event.id === event.id);
             return (
-              <article key={event.id} className="rounded-[16px] border border-black/[0.08] bg-paper p-5 shadow-[var(--shadow-soft)]">
+              <article key={event.id} className="motion-lift rounded-[16px] border border-black/[0.08] bg-paper p-5 shadow-[var(--shadow-soft)]">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="truncate text-[0.98rem] font-semibold text-ink">{event.title}</div>
@@ -514,7 +514,7 @@ export default async function DashboardPage() {
         <div className="mt-9 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           {openTasks.slice(0, 8).map((task, i) => (
             <Reveal key={task.id} delay={i * 0.05}>
-              <div className="flex h-full flex-col rounded-[13px] border border-[rgba(22,19,17,0.1)] bg-paper p-6">
+              <div className="motion-lift flex h-full flex-col rounded-[13px] border border-[rgba(22,19,17,0.1)] bg-paper p-6">
                 <div className="flex items-start justify-between gap-3">
                   <span className="pill pill-neutral !text-[0.645rem]">
                     {task.category}
@@ -607,7 +607,7 @@ export default async function DashboardPage() {
               {blueprints.slice(0, 3).map((blueprint) => (
                 <div
                   key={blueprint.id}
-                  className="rounded-[13px] border border-[rgba(232,211,166,0.22)] bg-[rgba(247,243,236,0.07)] p-5"
+                  className="motion-lift rounded-[13px] border border-[rgba(232,211,166,0.22)] bg-[rgba(247,243,236,0.07)] p-5"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>
