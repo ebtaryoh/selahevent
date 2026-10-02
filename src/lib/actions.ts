@@ -1012,7 +1012,7 @@ export async function resolvePaymentCapacityReview(registrationId: string, event
 
   const event = await db.query.events.findFirst({
     where: and(eq(events.id, eventId), eq(events.organizationId, org.id)),
-    columns: { id: true },
+    columns: { id: true, title: true, startsAt: true, venueName: true, city: true },
   });
   if (!event) return { error: "Event not found or unauthorized" };
 
@@ -1091,13 +1091,13 @@ export async function resolvePaymentCapacityReview(registrationId: string, event
 
       await sendTicketConfirmation(confirmedRegistration.email, {
         attendeeName: confirmedRegistration.firstName,
-        eventName: event.id,
+        eventName: event.title,
         ticketName: confirmedTicket?.name || "General Admission",
         ticketCode: confirmedRegistration.ticketCode,
-        startsAt: new Date().toLocaleString("en-US", {
+        startsAt: new Date(event.startsAt).toLocaleString("en-US", {
           weekday: "short", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "numeric",
         }),
-        venueName: org.name,
+        venueName: event.venueName || event.city || "Virtual Event",
       });
     }
 
