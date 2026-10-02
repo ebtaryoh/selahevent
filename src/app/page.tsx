@@ -94,7 +94,7 @@ export default async function HomePage({
 
 
       {/* Product story */}
-      <section className="border-y border-black/[0.07] bg-paper">
+      <section id="organizers" className="scroll-mt-24 border-y border-black/[0.07] bg-paper">
         <div className="mx-auto grid max-w-[1240px] grid-cols-2 gap-px bg-black/[0.07] sm:grid-cols-4">
           {[
             ["Plan", "Start from a proven event structure."],
@@ -110,7 +110,7 @@ export default async function HomePage({
         </div>
       </section>
 
-      <section className="bg-parchment py-24 sm:py-32">
+      <section id="lifecycle" className="scroll-mt-24 bg-parchment py-24 sm:py-32"
         <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
           <SectionHead
             index="01"
