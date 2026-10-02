@@ -28,6 +28,7 @@ import { put } from "@vercel/blob";
 import path from "path";
 import { ensureSeed } from "./seed";
 import { hashOtp, normalizeOtpEmail } from "./otp";
+import { MAX_MEDIA_FILES, mediaFilename, validateMediaFile } from "./media";
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                              */
@@ -61,27 +62,6 @@ function writeFileToDisk(filepath: string, buffer: Buffer): boolean {
     console.warn("[selah] Skipped local file write (likely on Vercel read-only filesystem):", e);
     return false;
   }
-}
-
-const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
-const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
-const MAX_MEDIA_FILES = 8;
-const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
-const ALLOWED_VIDEO_TYPES = new Set(["video/mp4", "video/webm", "video/quicktime"]);
-
-function validateMediaFile(file: File) {
-  if (!file || file.size <= 0) return "Empty media files are not allowed.";
-  const isImage = ALLOWED_IMAGE_TYPES.has(file.type);
-  const isVideo = ALLOWED_VIDEO_TYPES.has(file.type);
-  if (!isImage && !isVideo) return "Unsupported media type. Use JPG, PNG, WebP, GIF, MP4, WebM, or MOV.";
-  if (isImage && file.size > MAX_IMAGE_BYTES) return "Images must be 10 MB or smaller.";
-  if (isVideo && file.size > MAX_VIDEO_BYTES) return "Videos must be 100 MB or smaller.";
-  return null;
-}
-
-function mediaFilename(file: File) {
-  const ext = file.name.includes(".") ? file.name.split(".").pop()!.toLowerCase().replace(/[^a-z0-9]/g, "") : "bin";
-  return Date.now() + "-" + randomInt(1_000_000, 9_999_999) + "." + ext;
 }
 
 /** Insert an audit log entry — fire-and-forget (errors are non-fatal). */
@@ -142,12 +122,19 @@ for (const file of mediaFiles) {
       const filename = mediaFilename(file);
       const type = file.type.startsWith("video/") ? "video" : "image";
 
+      if (!process.env.BLOB_READ_WRITE_TOKEN && process.env.NODE_ENV === "production") {
+        return { error: "Media uploads are temporarily unavailable. Please configure storage and try again." };
+      }
+
       if (process.env.BLOB_READ_WRITE_TOKEN) {
         try {
           const blob = await put(filename, file, { access: "public", multipart: true });
           mediaPaths.push({ type, url: blob.url });
         } catch (error) {
           console.error("Vercel Blob upload failed:", error);
+          if (process.env.NODE_ENV === "production") {
+            return { error: "Media upload failed. Please try again." };
+          }
           const buffer = Buffer.from(await file.arrayBuffer());
           const filepath = path.join(process.cwd(), "public", "uploads", filename);
           if (writeFileToDisk(filepath, buffer)) {
@@ -398,7 +385,7 @@ for (const file of mediaFiles) {
         visibility: visibility || "public",
         updatedAt: new Date(),
       })
-      .where(eq(events.id, eventId));
+      .where(and(eq(events.id, eventId), eq(events.organizationId, org.id)));
 
     revalidatePath("/");
     revalidatePath("/dashboard");
