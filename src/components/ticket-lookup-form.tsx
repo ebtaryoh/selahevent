@@ -54,7 +54,7 @@ export function TicketLookupForm() {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="e.g., hello@example.com"
           required
-          className="w-full rounded-[10px] border border-[rgba(22,19,17,0.1)] bg-[#fdf8f4] px-4 py-3 text-[0.95rem] text-[#161311] placeholder-[#867c74] transition-all hover:bg-white focus:border-[#161311] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#161311]"
+          className="w-full rounded-[10px] border border-[rgba(255,255,255,0.1)] bg-[#fdf8f4] px-4 py-3 text-[0.95rem] text-[#161311] placeholder-[#867c74] transition-all hover:bg-white focus:border-[#161311] focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#161311]"
         />
       </div>
 

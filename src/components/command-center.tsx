@@ -125,7 +125,7 @@ export function CommandCenter({ eventId }: { eventId: string }) {
             {results.map((attendee) => (
               <div 
                 key={attendee.id} 
-                className="flex flex-col sm:flex-row sm:items-center justify-between p-5 rounded-[16px] bg-paper border border-[rgba(22,19,17,0.1)] shadow-sm gap-4"
+                className="flex flex-col sm:flex-row sm:items-center justify-between p-5 rounded-[16px] bg-paper border border-[rgba(255,255,255,0.1)] shadow-sm gap-4"
               >
                 <div>
                   <div className="flex items-center gap-3">

@@ -105,7 +105,7 @@ export default async function BlueprintsPage() {
           </div>
         </div>
 
-        <div className="mt-10 grid gap-px overflow-hidden rounded-[15px] border border-[rgba(22,19,17,0.1)] bg-[rgba(22,19,17,0.1)] sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-10 grid gap-px overflow-hidden rounded-[15px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.1)] sm:grid-cols-2 lg:grid-cols-4">
           {[
             { label: "Saved blueprints", value: blueprints.length, note: "Across categories" },
             { label: "Speaker profiles", value: stats.savedSpeakers, note: "Bios, topics, sessions" },
@@ -138,7 +138,7 @@ export default async function BlueprintsPage() {
         <div className="mt-9 grid gap-6 lg:grid-cols-2">
           {blueprints.map((blueprint, i) => (
             <Reveal key={blueprint.id} delay={i * 0.06}>
-              <article className="group flex h-full flex-col rounded-[16px] border border-[rgba(22,19,17,0.11)] bg-paper p-8 transition-shadow duration-300 hover:shadow-[0_32px_64px_-34px_rgba(14,42,34,0.55)]">
+              <article className="group flex h-full flex-col rounded-[16px] border border-[rgba(255,255,255,0.11)] bg-paper p-8 transition-shadow duration-300 hover:shadow-[0_32px_64px_-34px_rgba(14,42,34,0.55)]">
                 <div className="flex items-start justify-between gap-5">
                   <div>
                     <span className="pill pill-brass">{blueprint.category}</span>
@@ -164,7 +164,7 @@ export default async function BlueprintsPage() {
                   {(blueprint.includes ?? []).map((include) => (
                     <li
                       key={include}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(22,19,17,0.11)] bg-parchment px-3 py-1.5 text-[0.745rem] font-medium text-warm-600"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(255,255,255,0.11)] bg-parchment px-3 py-1.5 text-[0.745rem] font-medium text-warm-600"
                     >
                       <Check size={11} className="text-[var(--color-brass-deep)]" />
                       {include}
@@ -172,7 +172,7 @@ export default async function BlueprintsPage() {
                   ))}
                 </ul>
 
-                <div className="mt-auto flex items-center justify-between gap-4 border-t border-[rgba(22,19,17,0.1)] pt-6">
+                <div className="mt-auto flex items-center justify-between gap-4 border-t border-[rgba(255,255,255,0.1)] pt-6">
                   <div className="flex items-center gap-2 text-[0.795rem] text-warm-400">
                     <History size={13} />
                     Last used{" "}
@@ -204,7 +204,7 @@ export default async function BlueprintsPage() {
         <div className="mt-9 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           {memoryCategories.map((category, i) => (
             <Reveal key={category.title} delay={i * 0.05}>
-              <div className="flex h-full flex-col rounded-[15px] border border-[rgba(22,19,17,0.1)] bg-paper p-7">
+              <div className="flex h-full flex-col rounded-[15px] border border-[rgba(255,255,255,0.1)] bg-paper p-7">
                 <div className="flex items-start justify-between gap-4">
                   <Compass
                     size={21}
@@ -249,8 +249,8 @@ export default async function BlueprintsPage() {
       {/* Recent reuse */}
       <section>
         <div className="grid gap-8 lg:grid-cols-[1.2fr_1fr]">
-          <div className="overflow-hidden rounded-[15px] border border-[rgba(22,19,17,0.1)] bg-paper">
-            <div className="flex items-center justify-between gap-4 border-b border-[rgba(22,19,17,0.1)] px-7 py-5">
+          <div className="overflow-hidden rounded-[15px] border border-[rgba(255,255,255,0.1)] bg-paper">
+            <div className="flex items-center justify-between gap-4 border-b border-[rgba(255,255,255,0.1)] px-7 py-5">
               <h2 className="font-display text-[1.22rem] font-semibold text-ink">
                 Recent reuse across the organization
               </h2>
@@ -260,7 +260,7 @@ export default async function BlueprintsPage() {
               {reuseActivity.length > 0 ? reuseActivity.map((entry) => (
                 <li
                   key={entry.id}
-                  className="flex items-start gap-4 border-t border-[rgba(22,19,17,0.08)] px-7 py-4 first:border-t-0"
+                  className="flex items-start gap-4 border-t border-[rgba(255,255,255,0.08)] px-7 py-4 first:border-t-0"
                 >
                   <Users
                     size={17}
@@ -286,8 +286,8 @@ export default async function BlueprintsPage() {
             </ul>
           </div>
 
-          <div className="rounded-[15px] border border-[rgba(22,19,17,0.1)] bg-paper">
-            <div className="flex items-center justify-between gap-4 border-b border-[rgba(22,19,17,0.1)] px-7 py-5">
+          <div className="rounded-[15px] border border-[rgba(255,255,255,0.1)] bg-paper">
+            <div className="flex items-center justify-between gap-4 border-b border-[rgba(255,255,255,0.1)] px-7 py-5">
               <h2 className="font-display text-[1.22rem] font-semibold text-ink">
                 Retention controls
               </h2>
@@ -319,7 +319,7 @@ export default async function BlueprintsPage() {
               ].map((row) => (
                 <div
                   key={row.title}
-                  className="flex items-start justify-between gap-5 border-t border-[rgba(22,19,17,0.09)] pt-5 first:border-t-0 first:pt-0"
+                  className="flex items-start justify-between gap-5 border-t border-[rgba(255,255,255,0.09)] pt-5 first:border-t-0 first:pt-0"
                 >
                   <div>
                     <h3 className="text-[0.905rem] font-semibold text-ink">
@@ -335,7 +335,7 @@ export default async function BlueprintsPage() {
                 </div>
               ))}
 
-              <div className="rounded-[11px] bg-[rgba(192,138,46,0.08)] p-4">
+              <div className="rounded-[11px] bg-[rgba(226,192,115,0.08)] p-4">
                 <p className="text-[0.805rem] leading-[1.7] text-warm-600">
                   Last policy review:{" "}
                   <strong className="font-semibold text-ink">
@@ -351,8 +351,8 @@ export default async function BlueprintsPage() {
 
       {/* Audit */}
       <section>
-        <div className="overflow-hidden rounded-[15px] border border-[rgba(22,19,17,0.1)] bg-paper">
-          <div className="flex items-center justify-between gap-4 border-b border-[rgba(22,19,17,0.1)] px-7 py-5">
+        <div className="overflow-hidden rounded-[15px] border border-[rgba(255,255,255,0.1)] bg-paper">
+          <div className="flex items-center justify-between gap-4 border-b border-[rgba(255,255,255,0.1)] px-7 py-5">
             <h2 className="font-display text-[1.22rem] font-semibold text-ink">
               Organization audit log
             </h2>

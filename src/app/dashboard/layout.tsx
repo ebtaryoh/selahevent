@@ -59,9 +59,9 @@ export default async function DashboardLayout({
 
 
   return (
-    <div className="min-h-screen bg-parchment">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[252px] flex-col border-r border-[rgba(22,19,17,0.09)] bg-paper lg:flex">
-        <div className="flex items-center gap-3 border-b border-[rgba(22,19,17,0.09)] px-6 py-6">
+    <div className="min-h-screen bg-parchment selection:bg-brass selection:text-black">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[252px] flex-col border-r border-white/10 bg-[#08080a] lg:flex shadow-[4px_0_24px_rgba(0,0,0,0.5)] z-50">
+        <div className="flex items-center gap-3 border-b border-[rgba(255,255,255,0.09)] px-6 py-6">
           <SelahMark className="h-9 w-9" />
           <div>
             <div className="font-display text-[1.125rem] leading-none font-semibold text-ink">
@@ -76,7 +76,7 @@ export default async function DashboardLayout({
         <div className="px-5 pt-6">
           <Link
             href="/dashboard/settings"
-            className="flex w-full items-center gap-3 rounded-[11px] border border-[rgba(22,19,17,0.11)] bg-parchment px-3.5 py-3 text-left transition-colors hover:border-[rgba(192,138,46,0.5)]"
+            className="flex w-full items-center gap-3 rounded-[11px] border border-[rgba(255,255,255,0.11)] bg-parchment px-3.5 py-3 text-left transition-colors hover:border-[rgba(226,192,115,0.5)]"
           >
             <span
               className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-[8px] text-[0.72rem] font-bold text-white"
@@ -116,7 +116,7 @@ export default async function DashboardLayout({
               <li key={item.label}>
                 <Link
                   href={item.href}
-                  className="group flex items-center gap-3 rounded-[9px] px-3 py-2.5 text-[0.845rem] font-medium text-warm-600 transition-colors hover:bg-[rgba(192,138,46,0.1)] hover:text-ink"
+                  className="group flex items-center gap-3 rounded-[9px] px-3 py-2.5 text-[0.845rem] font-medium text-warm-600 transition-colors hover:bg-[rgba(226,192,115,0.1)] hover:text-ink"
                 >
                   <item.icon
                     size={17}
@@ -141,7 +141,7 @@ export default async function DashboardLayout({
             <li>
               <Link
                 href="/verify/GF-KLS27-10432"
-                className="group flex items-center gap-3 rounded-[9px] px-3 py-2.5 text-[0.845rem] font-medium text-warm-600 transition-colors hover:bg-[rgba(192,138,46,0.1)] hover:text-ink"
+                className="group flex items-center gap-3 rounded-[9px] px-3 py-2.5 text-[0.845rem] font-medium text-warm-600 transition-colors hover:bg-[rgba(226,192,115,0.1)] hover:text-ink"
               >
                 <ShieldCheck
                   size={17}
@@ -154,7 +154,7 @@ export default async function DashboardLayout({
             <li>
               <Link
                 href="/dashboard/settings"
-                className="group flex items-center gap-3 rounded-[9px] px-3 py-2.5 text-[0.845rem] font-medium text-warm-600 transition-colors hover:bg-[rgba(192,138,46,0.1)] hover:text-ink"
+                className="group flex items-center gap-3 rounded-[9px] px-3 py-2.5 text-[0.845rem] font-medium text-warm-600 transition-colors hover:bg-[rgba(226,192,115,0.1)] hover:text-ink"
               >
                 <Settings2
                   size={17}
@@ -167,10 +167,10 @@ export default async function DashboardLayout({
           </ul>
         </nav>
 
-        <div className="border-t border-[rgba(22,19,17,0.09)] p-4 shrink-0">
+        <div className="border-t border-[rgba(255,255,255,0.09)] p-4 shrink-0">
           <Link
             href="/dashboard/settings"
-            className="group flex items-center gap-3 rounded-[11px] bg-parchment px-3.5 py-3 transition-colors hover:bg-[rgba(192,138,46,0.05)]"
+            className="group flex items-center gap-3 rounded-[11px] bg-parchment px-3.5 py-3 transition-colors hover:bg-[rgba(226,192,115,0.05)]"
           >
             {org?.logoUrl ? (
               <img
@@ -201,7 +201,7 @@ export default async function DashboardLayout({
       </aside>
 
       {/* Mobile top bar */}
-      <div className="sticky top-0 z-40 flex items-center gap-3 border-b border-[rgba(22,19,17,0.09)] bg-paper px-4 py-3 lg:hidden">
+      <div className="sticky top-0 z-40 flex items-center gap-3 border-b border-white/10 bg-[rgba(16,16,18,0.8)] backdrop-blur-xl px-4 py-3 lg:hidden shadow-lg shadow-black/40">
         <SelahMark className="h-8 w-8" />
         <div className="min-w-0 flex-1">
           <div className="truncate text-[0.8125rem] font-semibold text-ink">
@@ -220,7 +220,7 @@ export default async function DashboardLayout({
       </div>
 
       <div className="lg:pl-[252px]">
-        <header className="hidden items-center justify-between gap-6 border-b border-[rgba(22,19,17,0.09)] bg-parchment px-8 py-5 lg:flex">
+        <header className="sticky top-0 z-30 hidden items-center justify-between gap-6 border-b border-white/10 bg-[rgba(8,8,10,0.8)] backdrop-blur-2xl px-8 py-5 lg:flex shadow-sm">
           <div className="flex items-center gap-3">
             <div className="relative">
               <Search

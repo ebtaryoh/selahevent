@@ -56,7 +56,7 @@ export function FocusImageUpload({
 
   if (!previewUrl) {
     return (
-      <div className="relative flex flex-col items-center justify-center rounded-[12px] border-2 border-dashed border-[rgba(22,19,17,0.15)] bg-parchment py-12 transition-colors hover:border-[var(--color-brass)] hover:bg-[rgba(192,138,46,0.05)]">
+      <div className="relative flex flex-col items-center justify-center rounded-[12px] border-2 border-dashed border-[rgba(255,255,255,0.15)] bg-parchment py-12 transition-colors hover:border-[var(--color-brass)] hover:bg-[rgba(226,192,115,0.05)]">
         <UploadCloud size={40} className="mb-4 text-brass-light" />
         <p className="mb-1 text-sm font-semibold text-ink">
           Click to upload event flyer

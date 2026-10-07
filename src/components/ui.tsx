@@ -149,7 +149,7 @@ export function SectionHead({
           background:
             tone === "light"
               ? "rgba(232,211,166,0.4)"
-              : "rgba(192,138,46,0.5)",
+              : "rgba(226,192,115,0.5)",
         }}
       />
       <h2
@@ -162,7 +162,7 @@ export function SectionHead({
         <div
           className={cn(
             "mt-4 text-[1.02rem] leading-[1.72]",
-            tone === "light" ? "text-[rgba(247,243,236,0.76)]" : "text-warm-600"
+            tone === "light" ? "text-[rgba(255,255,255,0.76)]" : "text-warm-600"
           )}
         >
           {description}
@@ -189,7 +189,7 @@ export function StatBlock({
         className="eyebrow"
         style={{
           color:
-            tone === "light" ? "rgba(247,243,236,0.62)" : "var(--color-warm-400)",
+            tone === "light" ? "rgba(255,255,255,0.62)" : "var(--color-warm-400)",
         }}
       >
         {label}
@@ -205,7 +205,7 @@ export function StatBlock({
           className="mt-2 text-[0.82rem] leading-relaxed"
           style={{
             color:
-              tone === "light" ? "rgba(247,243,236,0.62)" : "var(--color-warm-400)",
+              tone === "light" ? "rgba(255,255,255,0.62)" : "var(--color-warm-400)",
           }}
         >
           {detail}
@@ -231,7 +231,7 @@ export function ProgressBar({
   return (
     <div
       className="h-[6px] w-full overflow-hidden rounded-full"
-      style={{ background: "rgba(22,19,17,0.09)" }}
+      style={{ background: "rgba(255,255,255,0.09)" }}
       role="progressbar"
       aria-valuenow={Math.round(value)}
       aria-valuemin={0}

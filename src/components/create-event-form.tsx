@@ -127,11 +127,11 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
       <div className="space-y-6">
         
         {!isEditing && blueprints && blueprints.length > 0 && (
-          <div className="rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-[rgba(192,138,46,0.04)] p-6 shadow-sm">
+          <div className="rounded-[16px] border border-white/10 bg-brass/5 p-6 shadow-sm">
             <h2 className="font-display mb-2 flex items-center gap-2 text-lg font-semibold text-ink">
               <Copy size={18} className="text-brass" /> Start from Blueprint
             </h2>
-            <p className="mb-4 text-sm text-warm-600">
+            <p className="mb-4 text-sm text-warm-500">
               Save time by copying ticket tiers, custom questions, and sessions from a past event.
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -139,7 +139,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                 className={`relative flex cursor-pointer rounded-xl border p-4 transition-all ${
                   selectedBlueprintId === ""
                     ? "border-brass bg-brass/10 shadow-sm"
-                    : "border-[rgba(22,19,17,0.1)] bg-paper hover:border-brass/40"
+                    : "border-white/10 bg-paper hover:border-brass/40"
                 }`}
               >
                 <input
@@ -162,7 +162,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                   className={`relative flex cursor-pointer rounded-xl border p-4 transition-all ${
                     selectedBlueprintId === bp.id
                       ? "border-brass bg-brass/10 shadow-sm"
-                      : "border-[rgba(22,19,17,0.1)] bg-paper hover:border-brass/40"
+                      : "border-white/10 bg-paper hover:border-brass/40"
                   }`}
                 >
                   <input
@@ -186,7 +186,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
         )}
 
         {/* Basic Details */}
-        <div className="rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-paper p-6 shadow-sm">
+        <div className="rounded-[16px] border border-white/10 bg-paper p-6 shadow-sm">
           <h2 className="font-display mb-4 flex items-center gap-2 text-lg font-semibold text-ink">
             <Tag size={18} className="text-brass" /> Basic Details
           </h2>
@@ -216,7 +216,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                 name="eventType"
                 required
                 defaultValue={initialData?.eventType}
-                className="input !w-full bg-parchment"
+                className="input !w-full bg-black/20"
               >
                 <option value="conference">Conference</option>
                 <option value="retreat">Retreat</option>
@@ -289,7 +289,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
         </div>
 
         {/* Date & Time */}
-        <div className="rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-paper p-6 shadow-sm">
+        <div className="rounded-[16px] border border-white/10 bg-paper p-6 shadow-sm">
           <h2 className="font-display mb-4 flex items-center gap-2 text-lg font-semibold text-ink">
             <CalendarDays size={18} className="text-brass" /> Date & Time
           </h2>
@@ -304,7 +304,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                 name="timezone"
                 required
                 defaultValue={initialData?.timezone || "Africa/Lagos"}
-                className="input !w-full bg-parchment"
+                className="input !w-full bg-black/20"
               >
                 <option value="Africa/Lagos">Africa/Lagos (WAT)</option>
                 <option value="Europe/London">Europe/London (GMT/BST)</option>
@@ -368,7 +368,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
         </div>
 
         {/* Branding */}
-        <div className={`rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-paper p-6 shadow-sm transition-opacity duration-300 ${selectedBlueprintId ? 'opacity-50 pointer-events-none hidden' : ''}`}>
+        <div className={`rounded-[16px] border border-white/10 bg-paper p-6 shadow-sm transition-opacity duration-300 ${selectedBlueprintId ? 'opacity-50 pointer-events-none hidden' : ''}`}>
           <h2 className="font-display mb-4 flex items-center gap-2 text-lg font-semibold text-ink">
             <Palette size={18} className="text-brass" /> Branding
           </h2>
@@ -392,13 +392,13 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                   if (span) span.textContent = e.target.value;
                 }}
               />
-              <span className="text-sm text-warm-600 font-mono">#c08a2e</span>
+              <span className="text-sm text-warm-500 font-mono">#c08a2e</span>
             </div>
           </div>
         </div>
 
         {/* Location */}
-        <div className="rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-paper p-6 shadow-sm">
+        <div className="rounded-[16px] border border-white/10 bg-paper p-6 shadow-sm">
           <h2 className="font-display mb-4 flex items-center gap-2 text-lg font-semibold text-ink">
             <MapPin size={18} className="text-brass" /> Location
           </h2>
@@ -413,7 +413,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                 name="mode"
                 required
                 defaultValue={initialData?.mode || "in_person"}
-                className="input !w-full bg-parchment"
+                className="input !w-full bg-black/20"
               >
                 <option value="in_person">In Person</option>
                 <option value="online">Online</option>
@@ -480,7 +480,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
         </div>
 
         {/* Visibility */}
-        <div className="rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-paper p-6 shadow-sm">
+        <div className="rounded-[16px] border border-white/10 bg-paper p-6 shadow-sm">
           <h2 className="font-display mb-4 flex items-center gap-2 text-lg font-semibold text-ink">
             <ShieldCheck size={18} className="text-brass" /> Visibility
           </h2>
@@ -493,7 +493,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
               name="visibility"
               required
               defaultValue={initialData?.visibility || "public"}
-              className="input !w-full bg-parchment"
+              className="input !w-full bg-black/20"
             >
               <option value="public">Public (Anyone can see and register)</option>
               <option value="private">Private (Only accessible via direct link)</option>
@@ -502,7 +502,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
         </div>
 
         {/* Custom Registration Questions */}
-        <div className={`rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-paper p-6 shadow-sm transition-opacity duration-300 ${selectedBlueprintId ? 'opacity-50 pointer-events-none hidden' : ''}`}>
+        <div className={`rounded-[16px] border border-white/10 bg-paper p-6 shadow-sm transition-opacity duration-300 ${selectedBlueprintId ? 'opacity-50 pointer-events-none hidden' : ''}`}>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-display flex items-center gap-2 text-lg font-semibold text-ink">
               <ListTodo size={18} className="text-brass" /> Custom Questions
@@ -526,7 +526,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
               </div>
             ) : (
               customQuestions.map((q, index) => (
-                <div key={q.id} className="relative rounded-xl border border-warm-200 bg-parchment p-4 pr-12">
+                <div key={q.id} className="relative rounded-xl border border-warm-200 bg-black/20 p-4 pr-12">
                   <button
                     type="button"
                     onClick={() => removeQuestion(q.id)}
@@ -589,7 +589,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
         </div>
 
         {/* Media Upload */}
-        <div className="rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-paper p-6 shadow-sm">
+        <div className="rounded-[16px] border border-white/10 bg-paper p-6 shadow-sm">
           <h2 className="font-display mb-4 flex items-center gap-2 text-lg font-semibold text-ink">
             <ImageIcon size={18} className="text-brass" /> Event Media
           </h2>
@@ -626,7 +626,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
             />
           </div>
 
-          <hr className="my-8 border-t border-[rgba(22,19,17,0.08)]" />
+          <hr className="my-8 border-t border-[rgba(255,255,255,0.08)]" />
 
           <div>
             <label htmlFor="media" className="mb-1.5 block text-sm font-medium text-ink">
@@ -636,7 +636,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
               Add more photos to showcase your event or past events.
             </p>
             
-            <div className="relative flex flex-col items-center justify-center rounded-[12px] border-2 border-dashed border-[rgba(22,19,17,0.15)] bg-parchment py-8 transition-colors hover:border-[var(--color-brass)] hover:bg-[rgba(192,138,46,0.05)]">
+            <div className="relative flex flex-col items-center justify-center rounded-[12px] border-2 border-dashed border-[rgba(255,255,255,0.15)] bg-black/20 py-8 transition-colors hover:border-[var(--color-brass)] hover:bg-[rgba(226,192,115,0.05)]">
               <UploadCloud size={24} className="mb-2 text-brass-light" />
               <p className="mb-1 text-sm font-semibold text-ink">
                 Click to upload additional media

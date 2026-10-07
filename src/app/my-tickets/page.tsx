@@ -13,7 +13,7 @@ export default function MyTicketsPage() {
       <div className="absolute top-8 left-8">
         <SelahMark />
       </div>
-      <div className="w-full max-w-md space-y-8 rounded-[24px] bg-white p-10 shadow-sm border border-[rgba(22,19,17,0.1)]">
+      <div className="w-full max-w-md space-y-8 rounded-[24px] bg-white p-10 shadow-sm border border-[rgba(255,255,255,0.1)]">
         <div className="text-center">
           <h1 className="font-display text-3xl font-semibold tracking-tight">Find your tickets</h1>
           <p className="mt-3 text-[0.95rem] text-[#867c74]">

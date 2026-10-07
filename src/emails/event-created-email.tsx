@@ -54,7 +54,7 @@ const container = {
   maxWidth: "560px",
   backgroundColor: "#ffffff",
   borderRadius: "12px",
-  border: "1px solid rgba(22,19,17,0.1)",
+  border: "1px solid rgba(255,255,255,0.1)",
   marginTop: "40px",
   marginBottom: "40px",
 };

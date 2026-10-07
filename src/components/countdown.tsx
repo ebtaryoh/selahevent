@@ -32,7 +32,7 @@ export function Countdown({ target }: { target: string }) {
       {units.map((unit) => (
         <div
           key={unit.label}
-          className="rounded-[11px] border border-[rgba(22,19,17,0.11)] bg-paper px-2 py-3 text-center sm:px-3 sm:py-4"
+          className="rounded-[11px] border border-[rgba(255,255,255,0.11)] bg-paper px-2 py-3 text-center sm:px-3 sm:py-4"
         >
           <div className="font-display tnum text-[clamp(1.35rem,3.6vw,1.95rem)] leading-none font-semibold text-ink">
             {String(unit.value).padStart(2, "0")}

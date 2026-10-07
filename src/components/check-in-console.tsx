@@ -163,7 +163,7 @@ export function CheckInConsole({
   return (
     <div className="grid gap-6 lg:grid-cols-[1.15fr_1fr]">
       {/* Scanner */}
-      <div className="relative overflow-hidden rounded-[16px] border border-[rgba(232,211,166,0.22)] bg-[rgba(247,243,236,0.055)] p-7">
+      <div className="relative overflow-hidden rounded-[16px] border border-[rgba(232,211,166,0.22)] bg-[rgba(255,255,255,0.055)] p-7">
         <div className="flex items-center justify-between gap-4">
           <div>
             <div className="eyebrow text-[0.585rem] text-brass-light">
@@ -192,7 +192,7 @@ export function CheckInConsole({
             void runCheckIn(code, "qr");
           }}
         >
-          <label htmlFor="ticket-code" className="eyebrow text-[0.565rem] text-[rgba(247,243,236,0.62)]">
+          <label htmlFor="ticket-code" className="eyebrow text-[0.565rem] text-[rgba(255,255,255,0.62)]">
             Ticket code
           </label>
           <div className="mt-2.5 flex flex-col gap-3 sm:flex-row">
@@ -209,7 +209,7 @@ export function CheckInConsole({
                 placeholder="TKT-XXXXXX-0000"
                 autoComplete="off"
                 spellCheck={false}
-                className="w-full rounded-[11px] border border-[rgba(232,211,166,0.28)] bg-[rgba(9,32,25,0.55)] py-3.5 pr-4 pl-11 text-[1.02rem] font-semibold tracking-[0.07em] text-parchment placeholder:font-normal placeholder:tracking-normal placeholder:text-[rgba(247,243,236,0.42)] focus:border-[var(--color-brass)] focus:outline-none"
+                className="w-full rounded-[11px] border border-[rgba(232,211,166,0.28)] bg-[rgba(9,32,25,0.55)] py-3.5 pr-4 pl-11 text-[1.02rem] font-semibold tracking-[0.07em] text-parchment placeholder:font-normal placeholder:tracking-normal placeholder:text-[rgba(255,255,255,0.42)] focus:border-[var(--color-brass)] focus:outline-none"
               />
             </div>
             <button
@@ -228,7 +228,7 @@ export function CheckInConsole({
               )}
             </button>
           </div>
-          <p className="mt-3 text-[0.765rem] leading-[1.62] text-[rgba(247,243,236,0.58)]">
+          <p className="mt-3 text-[0.765rem] leading-[1.62] text-[rgba(255,255,255,0.58)]">
             Codes are validated on the server and recorded with a timestamp, the
             gate and the staff member. Duplicate check-ins are rejected.
           </p>
@@ -282,20 +282,20 @@ export function CheckInConsole({
                     {result.name}
                   </h4>
                   <div className="mt-2 flex flex-wrap gap-2">
-                    <span className="pill border-[rgba(247,243,236,0.22)] bg-[rgba(247,243,236,0.11)] text-[rgba(247,243,236,0.86)]">
+                    <span className="pill border-[rgba(255,255,255,0.22)] bg-[rgba(255,255,255,0.11)] text-[rgba(255,255,255,0.86)]">
                       {result.ticketName}
                     </span>
-                    <span className="tnum pill border-[rgba(247,243,236,0.22)] bg-[rgba(247,243,236,0.11)] text-[rgba(247,243,236,0.86)]">
+                    <span className="tnum pill border-[rgba(255,255,255,0.22)] bg-[rgba(255,255,255,0.11)] text-[rgba(255,255,255,0.86)]">
                       {result.ticketCode}
                     </span>
                     {result.kind === "success" && "city" in result ? (
-                      <span className="pill border-[rgba(247,243,236,0.22)] bg-[rgba(247,243,236,0.11)] text-[rgba(247,243,236,0.86)]">
+                      <span className="pill border-[rgba(255,255,255,0.22)] bg-[rgba(255,255,255,0.11)] text-[rgba(255,255,255,0.86)]">
                         {result.city || "—"}
                       </span>
                     ) : null}
                   </div>
 
-                  <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-[0.795rem] text-[rgba(247,243,236,0.72)]">
+                  <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-[0.795rem] text-[rgba(255,255,255,0.72)]">
                     <span className="inline-flex items-center gap-2">
                       <ShieldCheck size={13} className="text-brass-light" />
                       Gate: {result.gate}
@@ -334,7 +334,7 @@ export function CheckInConsole({
       </div>
 
       {/* Manual search */}
-      <div className="rounded-[16px] border border-[rgba(247,243,236,0.14)] bg-[rgba(247,243,236,0.045)] p-7">
+      <div className="rounded-[16px] border border-[rgba(255,255,255,0.14)] bg-[rgba(255,255,255,0.045)] p-7">
         <div className="eyebrow text-[0.585rem] text-brass-light">
           Manual lookup
         </div>
@@ -345,14 +345,14 @@ export function CheckInConsole({
         <div className="relative mt-6">
           <Search
             size={17}
-            className="absolute top-1/2 left-4 -translate-y-1/2 text-[rgba(247,243,236,0.5)]"
+            className="absolute top-1/2 left-4 -translate-y-1/2 text-[rgba(255,255,255,0.5)]"
           />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search name, city or ticket code"
             aria-label="Search attendees"
-            className="w-full rounded-[11px] border border-[rgba(247,243,236,0.18)] bg-[rgba(9,32,25,0.42)] py-3 pr-4 pl-11 text-[0.9125rem] text-parchment placeholder:text-[rgba(247,243,236,0.42)] focus:border-[var(--color-brass)] focus:outline-none"
+            className="w-full rounded-[11px] border border-[rgba(255,255,255,0.18)] bg-[rgba(9,32,25,0.42)] py-3 pr-4 pl-11 text-[0.9125rem] text-parchment placeholder:text-[rgba(255,255,255,0.42)] focus:border-[var(--color-brass)] focus:outline-none"
           />
         </div>
 
@@ -360,7 +360,7 @@ export function CheckInConsole({
           {filtered.map((attendee) => (
             <li
               key={attendee.ticketCode}
-              className="flex items-center gap-3.5 rounded-[11px] border border-[rgba(247,243,236,0.1)] bg-[rgba(247,243,236,0.05)] px-4 py-3"
+              className="flex items-center gap-3.5 rounded-[11px] border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)] px-4 py-3"
             >
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[rgba(232,211,166,0.16)] text-[0.725rem] font-semibold text-brass-light">
                 {attendee.name
@@ -373,7 +373,7 @@ export function CheckInConsole({
                 <div className="truncate text-[0.865rem] font-semibold text-parchment">
                   {attendee.name}
                 </div>
-                <div className="tnum truncate text-[0.725rem] text-[rgba(247,243,236,0.58)]">
+                <div className="tnum truncate text-[0.725rem] text-[rgba(255,255,255,0.58)]">
                   {attendee.ticketCode} · {attendee.city || "—"}
                 </div>
               </div>
@@ -389,12 +389,12 @@ export function CheckInConsole({
           ))}
 
           {filtered.length === 0 ? (
-            <li className="rounded-[11px] border border-dashed border-[rgba(247,243,236,0.18)] px-4 py-8 text-center">
+            <li className="rounded-[11px] border border-dashed border-[rgba(255,255,255,0.18)] px-4 py-8 text-center">
               <Search
                 size={20}
-                className="mx-auto text-[rgba(247,243,236,0.42)]"
+                className="mx-auto text-[rgba(255,255,255,0.42)]"
               />
-              <p className="mt-3 text-[0.845rem] leading-[1.68] text-[rgba(247,243,236,0.62)]">
+              <p className="mt-3 text-[0.845rem] leading-[1.68] text-[rgba(255,255,255,0.62)]">
                 No attendee matches “{query}”.
                 <br />
                 Check the spelling, or search by ticket code instead.
@@ -403,16 +403,16 @@ export function CheckInConsole({
           ) : null}
         </ul>
 
-        <div className="mt-6 rounded-[11px] border border-[rgba(247,243,236,0.12)] bg-[rgba(247,243,236,0.05)] p-4">
+        <div className="mt-6 rounded-[11px] border border-[rgba(255,255,255,0.12)] bg-[rgba(255,255,255,0.05)] p-4">
           <div className="flex items-baseline justify-between">
-            <span className="text-[0.795rem] text-[rgba(247,243,236,0.68)]">
+            <span className="text-[0.795rem] text-[rgba(255,255,255,0.68)]">
               Checked in this session
             </span>
             <span className="tnum font-display text-[1.42rem] leading-none font-semibold text-brass-light">
               {checkedIn.toLocaleString()}
             </span>
           </div>
-          <div className="mt-3 h-[5px] w-full overflow-hidden rounded-full bg-[rgba(247,243,236,0.16)]">
+          <div className="mt-3 h-[5px] w-full overflow-hidden rounded-full bg-[rgba(255,255,255,0.16)]">
             <div
               className="h-full rounded-full transition-[width] duration-700 ease-out"
               style={{
@@ -422,7 +422,7 @@ export function CheckInConsole({
               }}
             />
           </div>
-          <div className="mt-2 text-[0.715rem] text-[rgba(247,243,236,0.52)]">
+          <div className="mt-2 text-[0.715rem] text-[rgba(255,255,255,0.52)]">
             {Math.round((checkedIn / Math.max(1, initialRegistered)) * 100)}% of{" "}
             {initialRegistered.toLocaleString()} registered attendees
           </div>

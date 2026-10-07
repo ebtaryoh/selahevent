@@ -36,7 +36,7 @@ const columns: { title: string; items: string[] }[] = [
 
 export function SiteFooter() {
   return (
-    <footer className="relative overflow-hidden bg-cypress text-parchment">
+    <footer className="relative overflow-hidden bg-parchment-deep border-t border-white/5 text-ink">
       <div className="grain pointer-events-none absolute inset-0 opacity-60" />
       <div className="relative mx-auto w-full max-w-[1240px] px-5 pt-20 pb-12 sm:px-8">
         <div className="grid gap-12 lg:grid-cols-[1.45fr_1fr_1fr_1fr]">
@@ -52,20 +52,20 @@ export function SiteFooter() {
                 </div>
               </div>
             </div>
-            <p className="mt-6 max-w-sm text-[0.95rem] leading-[1.8] text-[rgba(247,243,236,0.72)]">
+            <p className="mt-6 max-w-sm text-[0.95rem] leading-[1.8] text-warm-500">
               Denomination-neutral software for the gatherings of the church —
               planned once, reused for years. Built with care for the people who
               make events happen.
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
-              <span className="pill border-[rgba(232,211,166,0.24)] bg-[rgba(232,211,166,0.1)] text-brass-light">
+              <span className="pill border-[rgba(226,192,115,0.24)] bg-[rgba(226,192,115,0.1)] text-brass-light">
                 <span className="relative flex h-1.5 w-1.5">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brass opacity-75" />
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-brass" />
                 </span>
                 All systems operational
               </span>
-              <span className="pill border-[rgba(247,243,236,0.16)] bg-[rgba(247,243,236,0.06)] text-[rgba(247,243,236,0.72)]">
+              <span className="pill border-white/10 bg-white/5 text-warm-500">
                 Paystack · Stripe-ready architecture
               </span>
             </div>
@@ -81,7 +81,7 @@ export function SiteFooter() {
                   <li key={item}>
                     <Link
                       href="#"
-                      className="text-[0.9125rem] leading-relaxed text-[rgba(247,243,236,0.7)] transition-colors hover:text-brass-light"
+                      className="text-[0.9125rem] leading-relaxed text-warm-500 transition-colors hover:text-brass-light"
                     >
                       {item}
                     </Link>
@@ -92,9 +92,9 @@ export function SiteFooter() {
           ))}
         </div>
 
-        <div className="mt-16 h-px w-full bg-[rgba(232,211,166,0.22)]" />
+        <div className="mt-16 h-px w-full bg-white/10" />
 
-        <div className="mt-8 flex flex-col gap-5 text-[0.8125rem] text-[rgba(247,243,236,0.6)] sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-8 flex flex-col gap-5 text-[0.8125rem] text-warm-500 sm:flex-row sm:items-center sm:justify-between">
           <p>
             © {new Date().getFullYear()} Selah Event Systems. Demonstration
             product — all organisations, people and figures shown are fictional.

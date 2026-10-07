@@ -67,15 +67,16 @@ export default async function DashboardPage() {
     <div className="space-y-12">
       {/* ---------- Greeting ---------- */}
       <section>
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between relative">
+          <div className="absolute -top-10 -left-10 w-[300px] h-[300px] bg-brass/10 blur-[100px] rounded-full pointer-events-none -z-10" />
           <div>
-            <div className="eyebrow text-[0.625rem] text-[var(--color-brass-deep)]">
+            <div className="eyebrow text-[0.625rem] text-brass uppercase tracking-widest font-semibold">
               Organization dashboard
             </div>
             <h1 className="font-display mt-3.5 text-[clamp(2.15rem,4.2vw,3.15rem)] leading-[1.04] font-semibold tracking-[-0.022em] text-ink">
-              Welcome back, {org.name.split(" ")[0]} team.
+              Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-brass-light to-brass-deep">{org.name.split(" ")[0]}</span> team.
             </h1>
-            <p className="mt-4 max-w-[38rem] text-[1.025rem] leading-[1.72] text-warm-600">
+            <p className="mt-4 max-w-[38rem] text-[1.025rem] leading-[1.72] text-warm-500 font-light">
               You have{" "}
               <strong className="font-semibold text-ink">
                 {featured.length} active events
@@ -107,7 +108,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Stat strip */}
-        <div className="mt-10 grid gap-px overflow-hidden rounded-[15px] border border-[rgba(22,19,17,0.1)] bg-[rgba(22,19,17,0.1)] sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             {
               label: "Registrations (active events)",
@@ -134,18 +135,23 @@ export default async function DashboardPage() {
               icon: TriangleAlert,
             },
           ].map((item) => (
-            <div key={item.label} className="bg-paper p-7">
-              <div className="flex items-start justify-between gap-4">
-                <div className="eyebrow max-w-[13rem] text-[0.585rem] leading-[1.7] text-warm-400">
-                  {item.label}
+            <div key={item.label} className="group relative overflow-hidden rounded-[20px] border border-white/10 bg-[rgba(16,16,18,0.5)] backdrop-blur-xl p-7 shadow-xl shadow-black/40 transition-all hover:border-brass/30 hover:bg-[rgba(16,16,18,0.7)] hover:-translate-y-1">
+              <div className="absolute inset-0 bg-gradient-to-br from-brass/5 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+              <div className="relative z-10">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="eyebrow max-w-[13rem] text-[0.65rem] leading-[1.7] text-warm-400 font-semibold tracking-wider">
+                    {item.label}
+                  </div>
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/5 border border-white/10 text-brass">
+                    <item.icon size={18} strokeWidth={1.5} />
+                  </div>
                 </div>
-                <item.icon size={19} className="text-[var(--color-brass-deep)]" />
-              </div>
-              <div className="tnum font-display mt-4 text-[2.15rem] leading-none font-semibold text-ink">
-                {item.value}
-              </div>
-              <div className="mt-2.5 text-[0.8125rem] text-warm-500">
-                {item.detail}
+                <div className="tnum font-display mt-6 text-[2.25rem] leading-none font-semibold text-ink group-hover:text-brass-light transition-colors">
+                  {item.value}
+                </div>
+                <div className="mt-3 text-[0.85rem] text-warm-500 font-light">
+                  {item.detail}
+                </div>
               </div>
             </div>
           ))}
@@ -165,7 +171,7 @@ export default async function DashboardPage() {
           </Link>
         </div>
 
-        <div className="mt-9 overflow-hidden rounded-[15px] border border-[rgba(22,19,17,0.1)] bg-paper">
+        <div className="mt-9 overflow-hidden rounded-[20px] border border-white/10 bg-[rgba(16,16,18,0.5)] backdrop-blur-xl shadow-2xl shadow-black/50">
           <div className="overflow-x-auto">
             <table className="ledger">
               <thead>
@@ -281,8 +287,8 @@ export default async function DashboardPage() {
 
       {/* ---------- Readiness + activity ---------- */}
       <section className="grid gap-8 lg:grid-cols-[1.25fr_1fr]">
-        <div className="rounded-[15px] border border-[rgba(22,19,17,0.1)] bg-paper">
-          <div className="flex items-start justify-between gap-5 border-b border-[rgba(22,19,17,0.1)] px-7 py-6">
+        <div className="rounded-[15px] border border-[rgba(255,255,255,0.1)] bg-paper">
+          <div className="flex items-start justify-between gap-5 border-b border-[rgba(255,255,255,0.1)] px-7 py-6">
             <div>
               <div className="eyebrow text-[0.585rem] text-warm-400">
                 Event health {featured[0] ? `· ${featured[0].title}` : ""}
@@ -348,7 +354,7 @@ export default async function DashboardPage() {
             ].map((row) => (
               <li
                 key={row.label}
-                className="flex items-center gap-4 border-t border-[rgba(22,19,17,0.08)] px-7 py-4 first:border-t-0"
+                className="flex items-center gap-4 border-t border-[rgba(255,255,255,0.08)] px-7 py-4 first:border-t-0"
               >
                 <span
                   className={
@@ -382,7 +388,7 @@ export default async function DashboardPage() {
 
         <div className="space-y-8">
           {/* Ticket distribution — real seeded figures */}
-          <div className="rounded-[15px] border border-[rgba(22,19,17,0.1)] bg-paper p-7">
+          <div className="rounded-[15px] border border-[rgba(255,255,255,0.1)] bg-paper p-7">
             <div className="eyebrow text-[0.585rem] text-warm-400">
               Ticket distribution
             </div>
@@ -418,7 +424,7 @@ export default async function DashboardPage() {
             </div>
 
             {ticketDist.some(row => row.sold / row.capacity > 0.8) && (
-              <div className="mt-8 flex items-start gap-3 rounded-[11px] bg-[rgba(192,138,46,0.08)] p-4">
+              <div className="mt-8 flex items-start gap-3 rounded-[11px] bg-[rgba(226,192,115,0.08)] p-4">
                 <Radio
                   size={17}
                   className="mt-0.5 shrink-0 text-[var(--color-brass-deep)]"
@@ -432,8 +438,8 @@ export default async function DashboardPage() {
           </div>
 
           {/* Activity */}
-          <div className="rounded-[15px] border border-[rgba(22,19,17,0.1)] bg-paper">
-            <div className="flex items-center justify-between gap-4 border-b border-[rgba(22,19,17,0.1)] px-7 py-5">
+          <div className="rounded-[15px] border border-[rgba(255,255,255,0.1)] bg-paper">
+            <div className="flex items-center justify-between gap-4 border-b border-[rgba(255,255,255,0.1)] px-7 py-5">
               <h2 className="font-display text-[1.22rem] font-semibold text-ink">
                 Recent activity
               </h2>
@@ -443,7 +449,7 @@ export default async function DashboardPage() {
               {audit.slice(0, 6).map((entry) => (
                 <li
                   key={entry.id}
-                  className="flex items-start gap-3.5 border-t border-[rgba(22,19,17,0.08)] px-7 py-4 first:border-t-0"
+                  className="flex items-start gap-3.5 border-t border-[rgba(255,255,255,0.08)] px-7 py-4 first:border-t-0"
                 >
                   <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-brass)]" />
                   <div className="min-w-0">
@@ -481,7 +487,7 @@ export default async function DashboardPage() {
         <div className="mt-9 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           {openTasks.slice(0, 8).map((task, i) => (
             <Reveal key={task.id} delay={i * 0.05}>
-              <div className="flex h-full flex-col rounded-[13px] border border-[rgba(22,19,17,0.1)] bg-paper p-6">
+              <div className="flex h-full flex-col rounded-[13px] border border-[rgba(255,255,255,0.1)] bg-paper p-6">
                 <div className="flex items-start justify-between gap-3">
                   <span className="pill pill-neutral !text-[0.645rem]">
                     {task.category}
@@ -502,9 +508,9 @@ export default async function DashboardPage() {
                 </h3>
 
                 <div className="mt-auto pt-6">
-                  <div className="flex items-center justify-between border-t border-[rgba(22,19,17,0.09)] pt-4">
+                  <div className="flex items-center justify-between border-t border-[rgba(255,255,255,0.09)] pt-4">
                     <div className="flex items-center gap-2.5">
-                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[rgba(192,138,46,0.15)] text-[0.645rem] font-semibold text-[var(--color-brass-deep)]">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[rgba(226,192,115,0.15)] text-[0.645rem] font-semibold text-[var(--color-brass-deep)]">
                         {task.assignee
                           .split(" ")
                           .map((p) => p[0])
@@ -550,7 +556,7 @@ export default async function DashboardPage() {
               <h2 className="font-display mt-4 text-[clamp(1.85rem,3.4vw,2.55rem)] leading-[1.1] font-semibold">
                 Your next event is already half-built.
               </h2>
-              <p className="mt-5 max-w-[36rem] text-[1.005rem] leading-[1.78] text-[rgba(247,243,236,0.78)]">
+              <p className="mt-5 max-w-[36rem] text-[1.005rem] leading-[1.78] text-[rgba(255,255,255,0.78)]">
                 {blueprints.length} saved blueprints, {formatNumber(stats[0]?.s.sessionCount ?? 0)}{" "}
                 sessions, and custom questions you&apos;ve used — ready to start from, never applied without
                 your confirmation.
@@ -574,14 +580,14 @@ export default async function DashboardPage() {
               {blueprints.slice(0, 3).map((blueprint) => (
                 <div
                   key={blueprint.id}
-                  className="rounded-[13px] border border-[rgba(232,211,166,0.22)] bg-[rgba(247,243,236,0.07)] p-5"
+                  className="rounded-[13px] border border-[rgba(232,211,166,0.22)] bg-[rgba(255,255,255,0.07)] p-5"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <h3 className="text-[0.975rem] leading-snug font-semibold text-parchment">
                         {blueprint.name}
                       </h3>
-                      <p className="mt-1.5 text-[0.795rem] leading-[1.62] text-[rgba(247,243,236,0.68)]">
+                      <p className="mt-1.5 text-[0.795rem] leading-[1.62] text-[rgba(255,255,255,0.68)]">
                         {(blueprint.includes ?? []).slice(0, 3).join(" · ")}
                       </p>
                     </div>

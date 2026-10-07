@@ -41,7 +41,7 @@ export function CertificateForm({
         <div className="flex items-center gap-4">
           <Link
             href={`/dashboard/events/${eventId}`}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-[rgba(22,19,17,0.11)] transition-colors hover:bg-[rgba(22,19,17,0.04)]"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-[rgba(255,255,255,0.11)] transition-colors hover:bg-[rgba(255,255,255,0.04)]"
           >
             <ArrowLeft size={16} className="text-ink" />
           </Link>
@@ -71,7 +71,7 @@ export function CertificateForm({
         </div>
       )}
 
-      <div className="grid gap-8 rounded-[16px] border border-[rgba(22,19,17,0.09)] bg-paper p-7">
+      <div className="grid gap-8 rounded-[16px] border border-[rgba(255,255,255,0.09)] bg-paper p-7">
         <div className="flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brass/10 text-[var(--color-brass-deep)]">
             <Award size={24} />
@@ -86,7 +86,7 @@ export function CertificateForm({
           </div>
         </div>
 
-        <div className="mt-2 border-t border-[rgba(22,19,17,0.09)] pt-8">
+        <div className="mt-2 border-t border-[rgba(255,255,255,0.09)] pt-8">
           <Field
             label="Attendance Threshold (%)"
             description="Minimum percentage of sessions an attendee must check into to qualify. Set to 0 to disable certificates."
@@ -106,7 +106,7 @@ export function CertificateForm({
             </div>
           </Field>
           
-          <div className="mt-8 flex gap-3 rounded-lg bg-[rgba(22,19,17,0.03)] p-4 text-[0.875rem] text-warm-600">
+          <div className="mt-8 flex gap-3 rounded-lg bg-[rgba(255,255,255,0.03)] p-4 text-[0.875rem] text-warm-600">
             <Info size={16} className="mt-0.5 shrink-0 text-warm-400" />
             <p>
               When an attendee checks out of the final session, the system calculates their total attendance time against the event duration. If they meet the threshold, a PDF certificate is emailed to them automatically.

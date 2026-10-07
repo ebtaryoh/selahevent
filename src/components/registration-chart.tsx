@@ -23,7 +23,7 @@ export function RegistrationChart({ data }: { data: { date: string; count: numbe
               <stop offset="95%" stopColor="#c08a2e" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(22,19,17,0.1)" />
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.1)" />
           <XAxis 
             dataKey="displayDate" 
             axisLine={false} 
@@ -40,7 +40,7 @@ export function RegistrationChart({ data }: { data: { date: string; count: numbe
             contentStyle={{ 
               backgroundColor: "#ffffff", 
               borderRadius: "8px", 
-              border: "1px solid rgba(22,19,17,0.1)",
+              border: "1px solid rgba(255,255,255,0.1)",
               boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
             }}
             itemStyle={{ color: "#161311", fontWeight: "600" }}

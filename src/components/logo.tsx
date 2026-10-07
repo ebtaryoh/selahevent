@@ -5,8 +5,8 @@ export function SelahMark({
   className?: string;
   tone?: "dark" | "light";
 }) {
-  const body = tone === "dark" ? "#0e2a22" : "#f7f3ec";
-  const accent = tone === "dark" ? "#c08a2e" : "#e8d3a6";
+  const body = tone === "dark" ? "#161618" : "#fdfdfd";
+  const accent = tone === "dark" ? "#e2c073" : "#e8d3a6";
 
   return (
     <svg
@@ -56,14 +56,14 @@ export function SelahWordmark({
       <span className="leading-none">
         <span
           className="font-display block text-[1.32rem] font-semibold tracking-[-0.02em]"
-          style={{ color: tone === "dark" ? "#161311" : "#f7f3ec" }}
+          style={{ color: tone === "dark" ? "#fdfdfd" : "#161618" }}
         >
           Selah
         </span>
         <span
           className="eyebrow block text-[0.52rem] opacity-70"
           style={{
-            color: tone === "dark" ? "#8c8478" : "rgba(232,211,166,0.85)",
+            color: tone === "dark" ? "#e2c073" : "rgba(16,16,18,0.85)",
             letterSpacing: "0.28em",
           }}
         >

@@ -36,7 +36,7 @@ export function SiteHeader({ isSignedIn = false }: { isSignedIn?: boolean }) {
       className={cn(
         "fixed inset-x-0 top-0 z-50 transition-[background-color,box-shadow,backdrop-filter] duration-300",
         scrolled
-          ? "border-b border-[rgba(22,19,17,0.09)] bg-[rgba(247,243,236,0.88)] backdrop-blur-xl"
+          ? "border-b border-white/10 bg-[rgba(8,8,10,0.88)] backdrop-blur-xl"
           : "border-b border-transparent"
       )}
     >
@@ -81,7 +81,7 @@ export function SiteHeader({ isSignedIn = false }: { isSignedIn?: boolean }) {
 
         <button
           type="button"
-          className="flex h-11 w-11 items-center justify-center rounded-full border border-[rgba(22,19,17,0.14)] text-ink lg:hidden"
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 text-ink lg:hidden"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-label={open ? "Close menu" : "Open menu"}
@@ -105,7 +105,7 @@ export function SiteHeader({ isSignedIn = false }: { isSignedIn?: boolean }) {
                   key={link.label}
                   href={link.href}
                   onClick={() => setOpen(false)}
-                  className="font-display border-b border-[rgba(22,19,17,0.09)] py-4 text-[1.35rem] font-semibold text-ink"
+                  className="font-display border-b border-white/10 py-4 text-[1.35rem] font-semibold text-ink"
                 >
                   {link.label}
                 </Link>

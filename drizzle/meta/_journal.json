@@ -71,6 +71,13 @@
       "when": 1790932200000,
       "tag": "0009_payment_checkout_url",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790955292433,
+      "tag": "0010_spotty_wallop",
+      "breakpoints": true
     }
   ]
 }

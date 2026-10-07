@@ -33,7 +33,7 @@ export function CommunicationForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mt-6 rounded-[16px] border border-[rgba(22,19,17,0.09)] bg-paper p-7">
+    <form onSubmit={handleSubmit} className="mt-6 rounded-[16px] border border-[rgba(255,255,255,0.09)] bg-paper p-7">
       <h3 className="font-display text-[1.125rem] font-semibold text-ink mb-6">
         Draft new communication
       </h3>

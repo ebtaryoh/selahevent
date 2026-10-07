@@ -69,7 +69,7 @@ export function LoginForm() {
 
   return (
     <div className="space-y-6 max-w-md mx-auto w-full">
-      <div className="rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-paper p-6 sm:p-8 shadow-sm">
+      <div className="rounded-[16px] border border-[rgba(255,255,255,0.1)] bg-paper p-6 sm:p-8 shadow-sm">
 
         {step === "email" ? (
           <>
@@ -87,7 +87,7 @@ export function LoginForm() {
             <div className="mb-6">
               <a 
                 href={googleAuthHref}
-                className="btn !bg-white !text-ink !border-[rgba(22,19,17,0.15)] hover:!bg-warm-50 !w-full !px-8 !py-3.5 text-[1rem] flex items-center justify-center gap-3"
+                className="btn !bg-white !text-ink !border-[rgba(255,255,255,0.15)] hover:!bg-warm-50 !w-full !px-8 !py-3.5 text-[1rem] flex items-center justify-center gap-3"
               >
                 <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -100,9 +100,9 @@ export function LoginForm() {
               </a>
               
               <div className="mt-6 flex items-center justify-center text-sm text-warm-400">
-                <span className="h-px bg-[rgba(22,19,17,0.08)] flex-1"></span>
+                <span className="h-px bg-[rgba(255,255,255,0.08)] flex-1"></span>
                 <span className="px-3">or continue with email</span>
-                <span className="h-px bg-[rgba(22,19,17,0.08)] flex-1"></span>
+                <span className="h-px bg-[rgba(255,255,255,0.08)] flex-1"></span>
               </div>
             </div>
 

@@ -62,7 +62,7 @@ export function SpeakerForm({
         <div className="flex items-center gap-4">
           <Link
             href={`/dashboard/events/${eventId}/speakers`}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-[rgba(22,19,17,0.11)] transition-colors hover:bg-[rgba(22,19,17,0.04)]"
+            className="flex h-9 w-9 items-center justify-center rounded-full border border-[rgba(255,255,255,0.11)] transition-colors hover:bg-[rgba(255,255,255,0.04)]"
           >
             <ArrowLeft size={16} className="text-ink" />
           </Link>
@@ -102,7 +102,7 @@ export function SpeakerForm({
         </div>
       )}
 
-      <div className="grid gap-8 rounded-[16px] border border-[rgba(22,19,17,0.09)] bg-paper p-7">
+      <div className="grid gap-8 rounded-[16px] border border-[rgba(255,255,255,0.09)] bg-paper p-7">
         <h2 className="font-display text-[1.25rem] font-medium text-ink">
           Speaker Details
         </h2>

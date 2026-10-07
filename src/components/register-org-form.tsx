@@ -32,21 +32,21 @@ export function RegisterOrgForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 max-w-md mx-auto w-full">
-      <div className="rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-paper p-6 sm:p-8 shadow-sm">
+      <div className="rounded-[16px] border border-[rgba(255,255,255,0.1)] bg-paper p-6 sm:p-8 shadow-sm">
         <div className="grid grid-cols-2 gap-3 mb-6">
-          <a href="/api/auth/google" className="btn btn-ghost !border border-[rgba(22,19,17,0.1)] !bg-white !px-4 !py-2.5 flex items-center justify-center gap-2 text-[0.875rem] font-medium text-ink shadow-sm hover:!bg-parchment transition-colors">
+          <a href="/api/auth/google" className="btn btn-ghost !border border-[rgba(255,255,255,0.1)] !bg-white !px-4 !py-2.5 flex items-center justify-center gap-2 text-[0.875rem] font-medium text-ink shadow-sm hover:!bg-parchment transition-colors">
             <GoogleIcon className="h-5 w-5" />
             Google
           </a>
-          <button type="button" className="btn btn-ghost !border border-[rgba(22,19,17,0.1)] !bg-white !px-4 !py-2.5 flex items-center justify-center gap-2 text-[0.875rem] font-medium text-ink shadow-sm hover:!bg-parchment transition-colors">
+          <button type="button" className="btn btn-ghost !border border-[rgba(255,255,255,0.1)] !bg-white !px-4 !py-2.5 flex items-center justify-center gap-2 text-[0.875rem] font-medium text-ink shadow-sm hover:!bg-parchment transition-colors">
             <AppleIcon className="h-5 w-5" />
             Apple
           </button>
-          <button type="button" className="btn btn-ghost !border border-[rgba(22,19,17,0.1)] !bg-[#1877F2] !px-4 !py-2.5 flex items-center justify-center gap-2 text-[0.875rem] font-medium text-white shadow-sm hover:brightness-110 transition-all">
+          <button type="button" className="btn btn-ghost !border border-[rgba(255,255,255,0.1)] !bg-[#1877F2] !px-4 !py-2.5 flex items-center justify-center gap-2 text-[0.875rem] font-medium text-white shadow-sm hover:brightness-110 transition-all">
             <FacebookIcon className="h-5 w-5" />
             Facebook
           </button>
-          <button type="button" className="btn btn-ghost !border border-[rgba(22,19,17,0.1)] !bg-black !px-4 !py-2.5 flex items-center justify-center gap-2 text-[0.875rem] font-medium text-white shadow-sm hover:bg-zinc-800 transition-colors">
+          <button type="button" className="btn btn-ghost !border border-[rgba(255,255,255,0.1)] !bg-black !px-4 !py-2.5 flex items-center justify-center gap-2 text-[0.875rem] font-medium text-white shadow-sm hover:bg-zinc-800 transition-colors">
             <XIcon className="h-4 w-4" />
             X (Twitter)
           </button>
@@ -54,7 +54,7 @@ export function RegisterOrgForm() {
 
         <div className="relative mb-8">
           <div className="absolute inset-0 flex items-center" aria-hidden="true">
-            <div className="w-full border-t border-[rgba(22,19,17,0.1)]"></div>
+            <div className="w-full border-t border-[rgba(255,255,255,0.1)]"></div>
           </div>
           <div className="relative flex justify-center text-sm font-medium leading-6">
             <span className="bg-paper px-6 text-warm-500">Or continue with email</span>

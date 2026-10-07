@@ -65,7 +65,7 @@ export default async function TeamPage() {
       <div className="grid gap-8 lg:grid-cols-3">
         {/* Team List */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="overflow-hidden rounded-[15px] border border-[rgba(22,19,17,0.1)] bg-paper">
+          <div className="overflow-hidden rounded-[15px] border border-[rgba(255,255,255,0.1)] bg-paper">
             <table className="ledger w-full text-left">
               <thead>
                 <tr>
@@ -77,7 +77,7 @@ export default async function TeamPage() {
               </thead>
               <tbody>
                 {team.map((user) => (
-                  <tr key={user.id} className="border-b border-[rgba(22,19,17,0.05)] last:border-0">
+                  <tr key={user.id} className="border-b border-[rgba(255,255,255,0.05)] last:border-0">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="h-9 w-9 rounded-full bg-warm-100 flex items-center justify-center text-sm font-semibold text-warm-600">

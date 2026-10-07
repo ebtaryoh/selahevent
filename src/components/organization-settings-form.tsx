@@ -75,7 +75,7 @@ export function OrganizationSettingsForm({
 
       <div className="space-y-8">
         {/* Basic Info */}
-        <div className="rounded-[16px] border border-[rgba(22,19,17,0.09)] bg-paper p-7">
+        <div className="rounded-[16px] border border-[rgba(255,255,255,0.09)] bg-paper p-7">
           <h2 className="font-display flex items-center gap-2 text-[1.25rem] font-medium text-ink mb-6">
             <Building size={18} className="text-[var(--color-brass)]" />
             Basic Information
@@ -115,7 +115,7 @@ export function OrganizationSettingsForm({
         </div>
 
         {/* Contact Info */}
-        <div className="rounded-[16px] border border-[rgba(22,19,17,0.09)] bg-paper p-7">
+        <div className="rounded-[16px] border border-[rgba(255,255,255,0.09)] bg-paper p-7">
           <h2 className="font-display flex items-center gap-2 text-[1.25rem] font-medium text-ink mb-6">
             <Phone size={18} className="text-[var(--color-brass)]" />
             Contact Details
@@ -144,7 +144,7 @@ export function OrganizationSettingsForm({
         </div>
 
         {/* Localization */}
-        <div className="rounded-[16px] border border-[rgba(22,19,17,0.09)] bg-paper p-7">
+        <div className="rounded-[16px] border border-[rgba(255,255,255,0.09)] bg-paper p-7">
           <h2 className="font-display flex items-center gap-2 text-[1.25rem] font-medium text-ink mb-6">
             <Globe size={18} className="text-[var(--color-brass)]" />
             Localization
@@ -184,7 +184,7 @@ export function OrganizationSettingsForm({
         </div>
 
         {/* Branding & Logo */}
-        <div className="rounded-[16px] border border-[rgba(22,19,17,0.09)] bg-paper p-7">
+        <div className="rounded-[16px] border border-[rgba(255,255,255,0.09)] bg-paper p-7">
           <h2 className="font-display flex items-center gap-2 text-[1.25rem] font-medium text-ink mb-6">
             <Palette size={18} className="text-[var(--color-brass)]" />
             Branding & Logo
@@ -205,7 +205,7 @@ export function OrganizationSettingsForm({
                   <Building size={32} className="text-warm-300" />
                 )}
               </div>
-              <div className="relative flex flex-1 flex-col items-center justify-center rounded-[12px] border-2 border-dashed border-[rgba(22,19,17,0.15)] bg-parchment py-6 transition-colors hover:border-[var(--color-brass)] hover:bg-[rgba(192,138,46,0.05)]">
+              <div className="relative flex flex-1 flex-col items-center justify-center rounded-[12px] border-2 border-dashed border-[rgba(255,255,255,0.15)] bg-parchment py-6 transition-colors hover:border-[var(--color-brass)] hover:bg-[rgba(226,192,115,0.05)]">
                 <UploadCloud size={24} className="mb-2 text-brass-light" />
                 <p className="mb-1 text-xs font-semibold text-ink">
                   Click to upload a new logo

@@ -252,12 +252,14 @@ export default async function EventPage({ params }: Params) {
                 >
                   View tickets
                 </a>
-                <a
-                  href="#schedule"
-                  className="btn btn-light !px-7 !py-4 !text-[0.95rem]"
-                >
-                  See the schedule
-                </a>
+                {sessions.length > 0 && (
+                  <a
+                    href="#schedule"
+                    className="btn btn-light !px-7 !py-4 !text-[0.95rem]"
+                  >
+                    See the schedule
+                  </a>
+                )}
               </div>
             </div>
 

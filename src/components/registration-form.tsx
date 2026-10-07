@@ -319,6 +319,7 @@ export function RegistrationForm({
       setEmailVerified(true);
       setOtpMode(false);
       setOtpLoading(false);
+      setOtpError(null);
       
       const profile = await getAttendeeProfile();
       if (profile) {
@@ -346,7 +347,7 @@ export function RegistrationForm({
     <div className="grid gap-8 lg:grid-cols-[1.25fr_0.85fr] lg:items-start">
       <div className="card overflow-hidden">
         {/* Stepper */}
-        <div className="border-b border-[rgba(22,19,17,0.1)] px-6 pt-7 pb-6 sm:px-9">
+        <div className="border-b border-white/10 px-6 pt-7 pb-6 sm:px-9">
           <div className="flex items-center justify-between gap-3">
             {STEPS.map((s, i) => (
               <div key={s.n} className="flex flex-1 items-center gap-3">
@@ -357,10 +358,10 @@ export function RegistrationForm({
                   className={cn(
                     "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-[0.8rem] font-semibold transition-colors",
                     s.n === step
-                      ? "border-transparent bg-cypress text-brass-light"
+                      ? "border-transparent bg-brass text-black"
                       : s.n < step
-                        ? "border-[rgba(192,138,46,0.45)] bg-[rgba(192,138,46,0.12)] text-[var(--color-brass-deep)]"
-                        : "border-[rgba(22,19,17,0.14)] bg-transparent text-warm-400"
+                        ? "border-brass/30 bg-brass/10 text-brass"
+                        : "border-white/10 bg-transparent text-warm-500"
                   )}
                   aria-current={s.n === step ? "step" : undefined}
                 >
@@ -376,7 +377,7 @@ export function RegistrationForm({
                     {s.label}
                   </div>
                   {i < STEPS.length - 1 ? (
-                    <div className="mt-2 h-[2px] w-full overflow-hidden rounded-full bg-[rgba(22,19,17,0.09)]">
+                    <div className="mt-2 h-[2px] w-full overflow-hidden rounded-full bg-white/10">
                       <div
                         className="h-full rounded-full bg-[var(--color-brass)] transition-[width] duration-500"
                         style={{ width: s.n < step ? "100%" : "0%" }}
@@ -443,14 +444,24 @@ export function RegistrationForm({
                             placeholder="000000"
                           />
                         </Field>
-                        <button
-                          type="button"
-                          className="btn btn-primary w-full justify-center"
-                          onClick={handleVerifyOTP}
-                          disabled={otpLoading || otpCode.length < 6}
-                        >
-                          {otpLoading ? <Loader2 className="animate-spin h-5 w-5" /> : "Verify Code"}
-                        </button>
+                        <div className="flex flex-col gap-2">
+                          <button
+                            type="button"
+                            className="btn btn-primary w-full justify-center"
+                            onClick={handleVerifyOTP}
+                            disabled={otpLoading || otpCode.length < 6}
+                          >
+                            {otpLoading ? <Loader2 className="animate-spin h-5 w-5" /> : "Verify Code"}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-secondary w-full justify-center"
+                            onClick={handleRequestOTP}
+                            disabled={otpLoading}
+                          >
+                            {otpLoading ? <Loader2 className="animate-spin h-5 w-5" /> : "Resend Code"}
+                          </button>
+                        </div>
                         <div className="text-center pt-2">
                           <button
                             type="button"
@@ -471,7 +482,7 @@ export function RegistrationForm({
                       hint="Verified"
                     >
                       <input
-                        className="input bg-[rgba(22,19,17,0.03)] text-warm-400 border-transparent shadow-none"
+                        className="input bg-[rgba(255,255,255,0.03)] text-warm-400 border-transparent shadow-none"
                         type="email"
                         value={form.email}
                         readOnly
@@ -579,8 +590,8 @@ export function RegistrationForm({
                         className={cn(
                           "flex cursor-pointer items-start gap-4 rounded-[13px] border p-5 transition-colors",
                           active
-                            ? "border-[var(--color-brass-deep)] bg-[rgba(192,138,46,0.09)]"
-                            : "border-[rgba(22,19,17,0.13)] bg-paper hover:border-[rgba(192,138,46,0.5)]"
+                            ? "border-[var(--color-brass-deep)] bg-[rgba(226,192,115,0.09)]"
+                            : "border-[rgba(255,255,255,0.13)] bg-paper hover:border-[rgba(226,192,115,0.5)]"
                         )}
                       >
                         <span
@@ -588,7 +599,7 @@ export function RegistrationForm({
                             "mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2",
                             active
                               ? "border-[var(--color-brass-deep)]"
-                              : "border-[rgba(22,19,17,0.24)]"
+                              : "border-[rgba(255,255,255,0.24)]"
                           )}
                           aria-hidden="true"
                         >
@@ -693,7 +704,7 @@ export function RegistrationForm({
               </div>
 
               {event.customQuestions && event.customQuestions.length > 0 && (
-                <div className="mt-8 border-t border-[rgba(22,19,17,0.1)] pt-8">
+                <div className="mt-8 border-t border-white/10 pt-8">
                   <h3 className="mb-5 text-[1.05rem] font-semibold text-ink">
                     Additional Information
                   </h3>
@@ -731,7 +742,7 @@ export function RegistrationForm({
                 </div>
               )}
 
-              <div className="mt-8 rounded-[13px] border border-[rgba(192,138,46,0.28)] bg-[rgba(192,138,46,0.07)] p-5">
+              <div className="mt-8 rounded-[13px] border border-[rgba(226,192,115,0.28)] bg-[rgba(226,192,115,0.07)] p-5">
                 <div className="flex items-start gap-3">
                   <ShieldCheck
                     size={19}
@@ -814,7 +825,7 @@ export function RegistrationForm({
                 subtitle="Check the details below — you can go back to change anything."
               />
 
-              <dl className="mt-7 overflow-hidden rounded-[13px] border border-[rgba(22,19,17,0.11)]">
+              <dl className="mt-7 overflow-hidden rounded-[13px] border border-[rgba(255,255,255,0.11)]">
                 {[
                   ["Name", `${form.firstName} ${form.lastName}`],
                   ["Email", form.email],
@@ -849,7 +860,7 @@ export function RegistrationForm({
                     className={cn(
                       "flex flex-col gap-1 px-5 py-3.5 sm:flex-row sm:items-center sm:justify-between",
                       i % 2 === 0
-                        ? "bg-[rgba(22,19,17,0.028)]"
+                        ? "bg-[rgba(255,255,255,0.028)]"
                         : "bg-paper"
                     )}
                   >
@@ -863,7 +874,7 @@ export function RegistrationForm({
                 ))}
               </dl>
 
-              <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-[13px] border border-[rgba(22,19,17,0.11)] bg-[rgba(192,138,46,0.08)] p-5">
+              <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-[13px] border border-[rgba(255,255,255,0.11)] bg-[rgba(226,192,115,0.08)] p-5">
                 <div>
                   <div className="eyebrow text-[0.565rem] text-warm-500">
                     Total due
@@ -903,7 +914,7 @@ export function RegistrationForm({
         </div>
 
         {/* Actions */}
-        <div className="flex flex-col-reverse gap-3 border-t border-[rgba(22,19,17,0.1)] bg-[rgba(22,19,17,0.022)] px-6 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-9">
+        <div className="flex flex-col-reverse gap-3 border-t border-white/10 bg-[rgba(255,255,255,0.022)] px-6 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-9">
           {step > 1 ? (
             <button type="button" onClick={back} className="btn btn-ghost">
               <ArrowLeft size={16} /> Back
@@ -948,7 +959,7 @@ export function RegistrationForm({
 
       {/* Summary rail */}
       <aside className="space-y-6">
-        <div className="overflow-hidden rounded-[16px] border border-[rgba(22,19,17,0.11)] bg-cypress text-parchment">
+        <div className="overflow-hidden rounded-[16px] border border-[rgba(255,255,255,0.11)] bg-cypress text-parchment">
           <div className="relative h-[168px] w-full overflow-hidden bg-cypress/10 flex items-center justify-center">
             {event.coverImage ? (
               <Image
@@ -974,12 +985,12 @@ export function RegistrationForm({
               {event.title}
             </h2>
             <div className="mt-4 space-y-3">
-              <div className="flex items-start gap-2.5 text-[0.845rem] text-[rgba(247,243,236,0.78)]">
+              <div className="flex items-start gap-2.5 text-[0.845rem] text-[rgba(255,255,255,0.78)]">
                 <Ticket size={15} className="mt-0.5 shrink-0 text-brass-light" />
                 {formatRange(event.startsAt, event.endsAt)} ·{" "}
                 {formatTime(event.startsAt)}
               </div>
-              <div className="flex items-start gap-2.5 text-[0.845rem] text-[rgba(247,243,236,0.78)]">
+              <div className="flex items-start gap-2.5 text-[0.845rem] text-[rgba(255,255,255,0.78)]">
                 <MapPin
                   size={15}
                   className="mt-0.5 shrink-0 text-brass-light"
@@ -1022,7 +1033,7 @@ export function RegistrationForm({
           </div>
 
           {selectedTicket?.benefits?.length ? (
-            <ul className="mt-5 space-y-2 border-t border-[rgba(22,19,17,0.09)] pt-5">
+            <ul className="mt-5 space-y-2 border-t border-[rgba(255,255,255,0.09)] pt-5">
               {selectedTicket.benefits.map((b) => (
                 <li
                   key={b}
@@ -1039,7 +1050,7 @@ export function RegistrationForm({
           ) : null}
         </div>
 
-        <div className="flex items-start gap-3 rounded-[13px] border border-[rgba(22,19,17,0.11)] bg-paper p-5">
+        <div className="flex items-start gap-3 rounded-[13px] border border-[rgba(255,255,255,0.11)] bg-paper p-5">
           <ShieldCheck
             size={18}
             className="mt-0.5 shrink-0 text-[var(--color-brass-deep)]"
@@ -1125,8 +1136,8 @@ function Toggle({
       className={cn(
         "flex cursor-pointer items-start gap-4 rounded-[13px] border p-5 transition-colors",
         checked
-          ? "border-[var(--color-brass-deep)] bg-[rgba(192,138,46,0.08)]"
-          : "border-[rgba(22,19,17,0.13)] bg-paper"
+          ? "border-[var(--color-brass-deep)] bg-[rgba(226,192,115,0.08)]"
+          : "border-[rgba(255,255,255,0.13)] bg-paper"
       )}
     >
       <input
@@ -1138,7 +1149,7 @@ function Toggle({
       <span
         className={cn(
           "mt-0.5 flex h-6 w-11 shrink-0 items-center rounded-full p-[3px] transition-colors",
-          checked ? "bg-[var(--color-brass-deep)]" : "bg-[rgba(22,19,17,0.18)]"
+          checked ? "bg-[var(--color-brass-deep)]" : "bg-[rgba(255,255,255,0.18)]"
         )}
         aria-hidden="true"
       >
@@ -1216,7 +1227,7 @@ function ConfirmationPanel({
             <h2 className="font-display mt-6 text-[clamp(2rem,4.5vw,2.85rem)] leading-[1.08] font-semibold">
               You&apos;re registered.
             </h2>
-            <p className="mx-auto mt-4 max-w-[30rem] text-[1.025rem] leading-[1.72] text-[rgba(247,243,236,0.82)]">
+            <p className="mx-auto mt-4 max-w-[30rem] text-[1.025rem] leading-[1.72] text-[rgba(255,255,255,0.82)]">
               A confirmation has been prepared for{" "}
               <strong className="font-semibold text-brass-light">{email}</strong>
               . Your ticket code is{" "}
@@ -1260,7 +1271,7 @@ function ConfirmationPanel({
               ].map(([term, value]) => (
                 <div
                   key={term}
-                  className="flex flex-col gap-1 border-t border-[rgba(22,19,17,0.1)] py-3.5 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-1 border-t border-white/10 py-3.5 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <dt className="text-[0.755rem] font-semibold tracking-[0.11em] text-warm-400 uppercase">
                     {term}
@@ -1329,8 +1340,8 @@ function ConfirmationPanel({
             </div>
           </div>
 
-          <div className="flex flex-col items-center justify-center gap-4 border-t border-[rgba(22,19,17,0.1)] bg-[rgba(192,138,46,0.07)] px-8 py-10 md:border-t-0 md:border-l">
-            <div className="rounded-[14px] border border-[rgba(22,19,17,0.12)] bg-white p-4">
+          <div className="flex flex-col items-center justify-center gap-4 border-t border-white/10 bg-[rgba(226,192,115,0.07)] px-8 py-10 md:border-t-0 md:border-l">
+            <div className="rounded-[14px] border border-[rgba(255,255,255,0.12)] bg-white p-4">
               <QRCodeSVG
                 value={`SELAH:${confirmation.ticketCode}`}
                 size={168}
