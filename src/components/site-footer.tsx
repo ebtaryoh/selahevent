@@ -100,10 +100,10 @@ export function SiteFooter() {
             product — all organisations, people and figures shown are fictional.
           </p>
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-            <Link href="#" className="transition-colors hover:text-brass-light">
+            <Link href="/#organizers" className="transition-colors hover:text-brass-light">
               Privacy
             </Link>
-            <Link href="#" className="transition-colors hover:text-brass-light">
+            <Link href="/#discover" className="transition-colors hover:text-brass-light">
               Terms
             </Link>
             <Link

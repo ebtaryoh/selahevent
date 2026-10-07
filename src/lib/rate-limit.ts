@@ -9,8 +9,12 @@ function hashKey(value: string) {
 }
 
 export function getClientAddress(request: Request) {
-  const forwarded = request.headers.get("x-forwarded-for");
-  const realIp = request.headers.get("x-real-ip");
+  return getClientAddressFromHeaders(request.headers);
+}
+
+export function getClientAddressFromHeaders(headers: Headers) {
+  const forwarded = headers.get("x-forwarded-for");
+  const realIp = headers.get("x-real-ip");
   const ip = forwarded?.split(",")[0]?.trim() || realIp?.trim() || "unknown";
   return ip.slice(0, 128);
 }

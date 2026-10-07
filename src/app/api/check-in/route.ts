@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { getOrganization, requirePermission } from "@/lib/data";
+import { enforceRateLimit, getClientAddress, rateLimitHeaders } from "@/lib/rate-limit";
 import { checkIns, events, registrations, ticketTypes } from "@/db/schema";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +34,13 @@ export async function POST(request: Request) {
   // Check-in is an organizer operation. The event must belong to the authenticated organization.
   const staffUser = await requirePermission("checkin.write");
   const org = await getOrganization();
+  const scanLimit = await enforceRateLimit("checkin-ip", getClientAddress(request), 180, 60);
+  if (!scanLimit.allowed) {
+    return NextResponse.json(
+      { ok: false, error: "Too many check-in attempts. Please slow down." },
+      { status: 429, headers: rateLimitHeaders(scanLimit) },
+    );
+  }
   if (!staffUser || !org) {
     return NextResponse.json(
       { ok: false, error: "Unauthorized." },
@@ -67,7 +75,8 @@ export async function POST(request: Request) {
     .where(
       and(
         eq(registrations.eventId, eventId),
-        eq(registrations.ticketCode, rawCode)
+        eq(registrations.ticketCode, rawCode),
+        eq(registrations.status, "confirmed")
       )
     )
     .limit(1)
@@ -129,16 +138,36 @@ export async function POST(request: Request) {
     );
   }
 
-  const [record] = await db
-    .insert(checkIns)
-    .values({
-      eventId,
-      registrationId: attendee.registration.id,
-      method: String(payload.method ?? "qr") === "manual" ? "manual" : "qr",
-      staffName,
-      gate,
-    })
-    .returning();
+  let record;
+  try {
+    [record] = await db
+      .insert(checkIns)
+      .values({
+        eventId,
+        registrationId: attendee.registration.id,
+        method: String(payload.method ?? "qr") === "manual" ? "manual" : "qr",
+        staffName,
+        gate,
+        scannedBy: staffUser.id,
+      })
+      .returning();
+  } catch (error) {
+    const pgError = error as { code?: string };
+    if (pgError.code === "23505") {
+      return NextResponse.json({
+        ok: true,
+        status: "already_checked_in",
+        attendee: {
+          firstName: attendee.registration.firstName,
+          lastName: attendee.registration.lastName,
+          ticketCode: attendee.registration.ticketCode,
+          ticketName: attendee.ticketName ?? "General admission",
+          city: attendee.registration.city,
+        },
+      });
+    }
+    throw error;
+  }
 
   return NextResponse.json({
     ok: true,

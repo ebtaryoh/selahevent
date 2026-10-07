@@ -30,5 +30,11 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Security regression checks
+        run: npm run security:check
+
+      - name: Migration consistency
+        run: npm run db:check
+
       - name: Dependency audit
         run: npm audit --audit-level=high

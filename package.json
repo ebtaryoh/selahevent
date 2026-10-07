@@ -6,7 +6,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "security:check": "node scripts/security-regression.mjs",
+    "db:check": "drizzle-kit check --dialect=postgresql --out=./drizzle"
   },
   "dependencies": {
     "@react-email/components": "^1.0.12",

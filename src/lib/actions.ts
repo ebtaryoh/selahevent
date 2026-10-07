@@ -28,6 +28,9 @@ import { put } from "@vercel/blob";
 import path from "path";
 import { ensureSeed } from "./seed";
 import { hashOtp, normalizeOtpEmail } from "./otp";
+import { headers } from "next/headers";
+import { enforceRateLimit, getClientAddressFromHeaders, rateLimitHeaders } from "./rate-limit";
+import { MAX_MEDIA_FILES, mediaFilename, validateMediaFile } from "./media";
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                              */
@@ -61,27 +64,6 @@ function writeFileToDisk(filepath: string, buffer: Buffer): boolean {
     console.warn("[selah] Skipped local file write (likely on Vercel read-only filesystem):", e);
     return false;
   }
-}
-
-const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
-const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
-const MAX_MEDIA_FILES = 8;
-const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
-const ALLOWED_VIDEO_TYPES = new Set(["video/mp4", "video/webm", "video/quicktime"]);
-
-function validateMediaFile(file: File) {
-  if (!file || file.size <= 0) return "Empty media files are not allowed.";
-  const isImage = ALLOWED_IMAGE_TYPES.has(file.type);
-  const isVideo = ALLOWED_VIDEO_TYPES.has(file.type);
-  if (!isImage && !isVideo) return "Unsupported media type. Use JPG, PNG, WebP, GIF, MP4, WebM, or MOV.";
-  if (isImage && file.size > MAX_IMAGE_BYTES) return "Images must be 10 MB or smaller.";
-  if (isVideo && file.size > MAX_VIDEO_BYTES) return "Videos must be 100 MB or smaller.";
-  return null;
-}
-
-function mediaFilename(file: File) {
-  const ext = file.name.includes(".") ? file.name.split(".").pop()!.toLowerCase().replace(/[^a-z0-9]/g, "") : "bin";
-  return Date.now() + "-" + randomInt(1_000_000, 9_999_999) + "." + ext;
 }
 
 /** Insert an audit log entry — fire-and-forget (errors are non-fatal). */
@@ -142,12 +124,19 @@ for (const file of mediaFiles) {
       const filename = mediaFilename(file);
       const type = file.type.startsWith("video/") ? "video" : "image";
 
+      if (!process.env.BLOB_READ_WRITE_TOKEN && process.env.NODE_ENV === "production") {
+        return { error: "Media uploads are temporarily unavailable. Please configure storage and try again." };
+      }
+
       if (process.env.BLOB_READ_WRITE_TOKEN) {
         try {
           const blob = await put(filename, file, { access: "public", multipart: true });
           mediaPaths.push({ type, url: blob.url });
         } catch (error) {
           console.error("Vercel Blob upload failed:", error);
+          if (process.env.NODE_ENV === "production") {
+            return { error: "Media upload failed. Please try again." };
+          }
           const buffer = Buffer.from(await file.arrayBuffer());
           const filepath = path.join(process.cwd(), "public", "uploads", filename);
           if (writeFileToDisk(filepath, buffer)) {
@@ -398,7 +387,7 @@ for (const file of mediaFiles) {
         visibility: visibility || "public",
         updatedAt: new Date(),
       })
-      .where(eq(events.id, eventId));
+      .where(and(eq(events.id, eventId), eq(events.organizationId, org.id)));
 
     revalidatePath("/");
     revalidatePath("/dashboard");
@@ -419,6 +408,12 @@ for (const file of mediaFiles) {
 
 export async function registerOrganization(formData: FormData) {
   await ensureSeed();
+
+  const headerStore = await headers();
+  const registrationLimit = await enforceRateLimit("org-registration-ip", getClientAddressFromHeaders(headerStore), 5, 600);
+  if (!registrationLimit.allowed) {
+    return { error: "Too many workspace registration attempts. Please try again later.", rateLimit: rateLimitHeaders(registrationLimit) };
+  }
 
   const name = (formData.get("name") as string).trim();
   const email = (formData.get("email") as string).toLowerCase().trim();
@@ -484,6 +479,12 @@ export async function registerOrganization(formData: FormData) {
 export async function loginOrganization(formData: FormData) {
   await ensureSeed();
 
+  const headerStore = await headers();
+  const ipLimit = await enforceRateLimit("org-login-ip", getClientAddressFromHeaders(headerStore), 10, 600);
+  if (!ipLimit.allowed) {
+    return { error: "Too many login attempts. Please try again later.", rateLimit: rateLimitHeaders(ipLimit) };
+  }
+
   const email = normalizeOtpEmail((formData.get("email") as string));
 
   const recentOtp = await db.query.otps.findFirst({
@@ -502,7 +503,7 @@ export async function loginOrganization(formData: FormData) {
     .limit(1);
 
   if (!org) {
-    throw new Error("No organization found with this email. Check the address or register a new workspace.");
+    return { error: "We could not sign you in with those details. Please check the email or register a new workspace." };
   }
 
   // Generate 6-digit OTP
@@ -531,6 +532,12 @@ export async function loginOrganization(formData: FormData) {
  * Step 2 of org login — verify the OTP code and create a signed session.
  */
 export async function verifyOrgOTP(formData: FormData) {
+  const headerStore = await headers();
+  const ipLimit = await enforceRateLimit("org-otp-verify-ip", getClientAddressFromHeaders(headerStore), 10, 600);
+  if (!ipLimit.allowed) {
+    return { error: "Too many verification attempts. Please try again later.", rateLimit: rateLimitHeaders(ipLimit) };
+  }
+
   const email = normalizeOtpEmail((formData.get("email") as string));
   const code = (formData.get("code") as string).trim();
 
@@ -1005,7 +1012,7 @@ export async function resolvePaymentCapacityReview(registrationId: string, event
 
   const event = await db.query.events.findFirst({
     where: and(eq(events.id, eventId), eq(events.organizationId, org.id)),
-    columns: { id: true },
+    columns: { id: true, title: true, startsAt: true, venueName: true, city: true },
   });
   if (!event) return { error: "Event not found or unauthorized" };
 
@@ -1033,7 +1040,16 @@ export async function resolvePaymentCapacityReview(registrationId: string, event
       });
       if (!ticket) throw new Error("TICKET_NOT_FOUND");
 
-      if (ticket.capacity > 0 && ticket.sold >= ticket.capacity) {
+      const activeReservations = await tx.execute(sql`
+        SELECT COUNT(*)::int AS count
+        FROM ticket_reservations
+        WHERE ticket_type_id = ${registration.ticketTypeId}
+          AND status = 'reserved'
+          AND expires_at > NOW()
+      `);
+      const reservedCount = Number((activeReservations.rows[0] as { count: number | string }).count);
+
+      if (ticket.capacity > 0 && ticket.sold + reservedCount >= ticket.capacity) {
         throw new Error("TICKET_CAPACITY");
       }
 
@@ -1056,13 +1072,34 @@ export async function resolvePaymentCapacityReview(registrationId: string, event
       }
 
       await tx.update(ticketTypes)
-        .set({ sold: sql.raw('"sold" + 1') })
+        .set({ sold: sql`${ticketTypes.sold} + 1` })
         .where(eq(ticketTypes.id, ticket.id));
 
       await tx.update(registrations)
         .set({ status: "confirmed" })
         .where(eq(registrations.id, registrationId));
     });
+
+    const confirmedRegistration = await db.query.registrations.findFirst({
+      where: and(eq(registrations.id, registrationId), eq(registrations.eventId, eventId)),
+    });
+
+    if (confirmedRegistration) {
+      const confirmedTicket = confirmedRegistration.ticketTypeId
+        ? await db.query.ticketTypes.findFirst({ where: eq(ticketTypes.id, confirmedRegistration.ticketTypeId) })
+        : null;
+
+      await sendTicketConfirmation(confirmedRegistration.email, {
+        attendeeName: confirmedRegistration.firstName,
+        eventName: event.title,
+        ticketName: confirmedTicket?.name || "General Admission",
+        ticketCode: confirmedRegistration.ticketCode,
+        startsAt: new Date(event.startsAt).toLocaleString("en-US", {
+          weekday: "short", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "numeric",
+        }),
+        venueName: event.venueName || event.city || "Virtual Event",
+      });
+    }
 
     revalidatePath(`/dashboard/events/${eventId}`);
     revalidatePath(`/dashboard/events/${eventId}/command`);

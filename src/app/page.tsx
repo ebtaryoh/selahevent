@@ -34,11 +34,20 @@ export default async function HomePage({
 
   const publicEvents = await getAllPublicEvents(queryParams);
   const session = await getOrgSession();
+  const websiteJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Selah",
+    url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://selahevent.vercel.app",
+    description: "The Christian Event Operating System for churches and ministries.",
+  };
 
   return (
     <div className="min-h-screen bg-parchment selection:bg-brass selection:text-black">
       <SiteHeader isSignedIn={!!session} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
 
+      <main id="main-content">
       {/* Hero Section */}
       <section className="relative isolate overflow-hidden pt-[140px] pb-32">
         <div className="absolute inset-0 -z-10 bg-parchment-deep">
@@ -128,6 +137,93 @@ export default async function HomePage({
             ))}
           </div>
         </Reveal>
+      </section>
+
+
+      {/* Product story */}
+      <section id="organizers" className="scroll-mt-24 border-y border-black/[0.07] bg-paper">
+        <div className="mx-auto grid max-w-[1240px] grid-cols-2 gap-px bg-black/[0.07] sm:grid-cols-4">
+          {[
+            ["Plan", "Start from a proven event structure."],
+            ["Promote", "Publish a page built to convert interest."],
+            ["Run", "Coordinate people and check-in live."],
+            ["Remember", "Reuse the work your team already did."],
+          ].map(([title, body]) => (
+            <div key={title} className="bg-paper px-5 py-7 sm:px-7">
+              <div className="eyebrow text-[0.54rem] text-brass-deep">{title}</div>
+              <p className="mt-2 text-[0.8rem] leading-[1.55] text-warm-500">{body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section id="lifecycle" className="scroll-mt-24 bg-parchment py-24 sm:py-32">
+        <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
+          <SectionHead
+            index="01"
+            eyebrow="The full event lifecycle"
+            title={<>One operating system for the whole gathering.</>}
+            description="Selah is designed around the work an event team actually does, not a collection of disconnected tools."
+          />
+          <div className="mt-12 grid gap-px overflow-hidden rounded-[20px] border border-black/[0.08] bg-black/[0.08] md:grid-cols-5">
+            {[
+              ["01", "Plan", "Build from a blueprint instead of a blank screen.", Compass],
+              ["02", "Promote", "Give every event a polished public home.", Sparkles],
+              ["03", "Register", "Tickets, forms, payments and confirmations.", Ticket],
+              ["04", "Run", "Teams, sessions and QR check-in in one command center.", QrCode],
+              ["05", "Remember", "Keep what worked and reuse it next time.", CheckCircle2],
+            ].map(([step, title, body, Icon], i) => (
+              <Reveal key={step as string} delay={i * 0.05}>
+                <div className="group motion-lift h-full bg-paper p-6 transition-colors duration-300 hover:bg-brass-wash sm:p-7">
+                  <span className="tnum font-display text-[1.05rem] font-semibold text-brass-deep">{step as string}</span>
+                  <div className="mt-10">
+                    <Icon size={19} className="text-warm-300 transition-colors group-hover:text-brass-deep" />
+                  </div>
+                  <h3 className="font-display mt-5 text-[1.3rem] font-semibold text-ink">{title as string}</h3>
+                  <p className="mt-3 text-[0.81rem] leading-[1.7] text-warm-500">{body as string}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="overflow-hidden bg-cypress py-24 text-parchment sm:py-32">
+        <div className="mx-auto grid max-w-[1240px] items-center gap-14 px-5 sm:px-8 lg:grid-cols-[0.85fr_1.15fr]">
+          <Reveal>
+            <SectionHead
+              index="02"
+              eyebrow="Organization memory"
+              title={<>Your next event should not start from zero.</>}
+              description="Turn a successful conference, retreat, convention or training program into a reusable blueprint. Keep the learning. Change the details."
+              tone="light"
+            />
+          </Reveal>
+          <Reveal delay={0.12} y={28}>
+            <div className="motion-sheen rounded-[24px] border border-brass-light/15 bg-white/[0.05] p-3 shadow-2xl">
+              <div className="rounded-[18px] bg-paper p-6 text-ink sm:p-8">
+                <div className="flex items-center justify-between gap-4 border-b border-black/[0.08] pb-5">
+                  <div>
+                    <span className="eyebrow text-[0.55rem] text-brass-deep">Blueprint</span>
+                    <h3 className="font-display mt-2 text-[1.55rem] font-semibold">Annual Convention</h3>
+                  </div>
+                  <span className="pill pill-brass">Used 6×</span>
+                </div>
+                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                  {["Registration & tickets", "Speaker profiles", "Volunteer structure", "Communication timeline", "Check-in gates", "Certificate rules"].map((item) => (
+                    <div key={item} className="flex items-center gap-3 rounded-[11px] bg-parchment p-3.5 text-[0.78rem] font-medium text-warm-600">
+                      <CheckCircle2 size={15} className="shrink-0 text-signal-green" />{item}
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-5 flex items-center justify-between rounded-[12px] bg-cypress px-4 py-3 text-parchment">
+                  <span className="text-[0.76rem] text-parchment/60">Next reuse</span>
+                  <span className="text-[0.78rem] font-semibold text-brass-light">Create event <ArrowRight size={13} className="ml-1 inline" /></span>
+                </div>
+              </div>
+            </div>
+          </Reveal>
+        </div>
       </section>
 
       {/* Events Grid Section */}
@@ -246,6 +342,7 @@ export default async function HomePage({
         </div>
       </section>
 
+      </main>
       <SiteFooter />
     </div>
   );

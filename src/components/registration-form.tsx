@@ -17,7 +17,7 @@ import {
   Ticket,
 } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { cn, formatMoney, formatRange, formatTime } from "@/lib/format";
 import { requestAttendeeOTP, verifyAttendeeOTP, getAttendeeProfile } from "@/lib/attendee";
@@ -109,6 +109,8 @@ export function RegistrationForm({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const idempotencyKeyRef = useRef<string>(crypto.randomUUID());
+
   const [confirmation, setConfirmation] = useState<null | {
     code: string;
     ticketCode: string;
@@ -235,6 +237,7 @@ export function RegistrationForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           eventSlug: event.slug,
+          idempotencyKey: idempotencyKeyRef.current,
           ticketTypeId: form.ticketTypeId || null,
           firstName: form.firstName,
           lastName: form.lastName,

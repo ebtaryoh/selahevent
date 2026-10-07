@@ -9,8 +9,8 @@ import { cn } from "@/lib/format";
 
 const links = [
   { href: "/", label: "Discover Events" },
-  { href: "#", label: "For Churches" },
-  { href: "#", label: "Pricing" },
+  { href: "/#organizers", label: "For Churches" },
+  { href: "/#lifecycle", label: "How it works" },
 ];
 
 export function SiteHeader({ isSignedIn = false }: { isSignedIn?: boolean }) {
