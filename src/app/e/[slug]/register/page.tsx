@@ -45,6 +45,7 @@ export default async function RegisterPage({ params, searchParams }: Params) {
     benefits: t.benefits,
     capacity: t.capacity,
     remaining: t.capacity - t.sold,
+    isDonation: t.isDonation,
   }));
 
   const isRegistrationUpcoming =
@@ -102,6 +103,7 @@ export default async function RegisterPage({ params, searchParams }: Params) {
               endsAt: event.endsAt?.toISOString() || new Date().toISOString(),
               coverImage: event.coverImage,
               customQuestions: event.customQuestions,
+              attendeeTypes: event.attendeeTypes,
             }}
             tickets={tickets}
             initialTicketId={initialTicketId}

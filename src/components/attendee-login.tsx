@@ -44,10 +44,10 @@ export function AttendeeLogin({ orgId }: { orgId: string }) {
   return (
     <div className="max-w-md mx-auto card p-6 sm:p-8">
       <div className="mb-8">
-        <h2 className="font-display text-2xl font-semibold text-ink">
+        <h2 className="font-display text-2xl font-semibold text-white">
           Access your wallet
         </h2>
-        <p className="mt-2 text-[0.875rem] text-warm-500">
+        <p className="mt-2 text-[0.875rem] text-white/60">
           Sign in to view your tickets and manage your registrations.
         </p>
       </div>
@@ -55,7 +55,7 @@ export function AttendeeLogin({ orgId }: { orgId: string }) {
       {!otpMode ? (
         <form onSubmit={handleRequestOTP} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-[0.795rem] font-medium text-ink">
+            <label className="text-[0.795rem] font-medium text-white">
               Email address
             </label>
             <input
@@ -79,7 +79,7 @@ export function AttendeeLogin({ orgId }: { orgId: string }) {
       ) : (
         <form onSubmit={handleVerifyOTP} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-[0.795rem] font-medium text-ink">
+            <label className="text-[0.795rem] font-medium text-white">
               Verification Code
             </label>
             <input
@@ -91,7 +91,7 @@ export function AttendeeLogin({ orgId }: { orgId: string }) {
               placeholder="000000"
               required
             />
-            <p className="text-xs text-warm-500">
+            <p className="text-xs text-white/60">
               We sent a 6-digit code to {email}
             </p>
           </div>

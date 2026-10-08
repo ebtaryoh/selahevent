@@ -201,16 +201,30 @@ export async function POST(req: Request) {
           }
 
           try {
+            const startsAtFormatted = new Date(eventRecord.startsAt).toLocaleString("en-US", {
+              weekday: "short", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "numeric",
+            });
+            const venueFormatted = eventRecord.venueName || eventRecord.city || "Virtual Event";
+            
+            const { generateTicketPdf } = await import("@/lib/pdf-ticket");
+            const pdfBuffer = await generateTicketPdf(
+              updatedRegistration.code,
+              updatedRegistration.ticketCode,
+              `${updatedRegistration.firstName} ${updatedRegistration.lastName}`,
+              eventRecord.title,
+              startsAtFormatted,
+              venueFormatted,
+              ticketName
+            );
+
             await sendTicketConfirmation(updatedRegistration.email, {
               attendeeName: updatedRegistration.firstName,
               eventName: eventRecord.title,
               ticketName,
               ticketCode: updatedRegistration.ticketCode,
-              startsAt: new Date(eventRecord.startsAt).toLocaleString("en-US", {
-                weekday: "short", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "numeric",
-              }),
-              venueName: eventRecord.venueName || eventRecord.city || "Virtual Event",
-            });
+              startsAt: startsAtFormatted,
+              venueName: venueFormatted,
+            }, pdfBuffer);
           } catch (emailError) {
             console.error("[selah] payment confirmation email failed:", emailError);
           }

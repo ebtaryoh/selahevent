@@ -211,12 +211,20 @@ export default async function DashboardLayout({
             {formatDate(new Date())}
           </div>
         </div>
-        <Link
-          href={commandHref}
-          className="pill pill-live"
-        >
-          <QrCode size={12} /> Command
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href={latestEvent ? `/dashboard/events/${latestEvent.id}/scanner` : "/dashboard/events"}
+            className="pill border-[rgba(226,192,115,0.5)] bg-[rgba(226,192,115,0.15)] text-[var(--color-brass-light)]"
+          >
+            <QrCode size={12} /> Scan
+          </Link>
+          <Link
+            href={commandHref}
+            className="pill pill-live"
+          >
+            <QrCode size={12} /> Command
+          </Link>
+        </div>
       </div>
 
       <div className="lg:pl-[252px]">
@@ -254,6 +262,12 @@ export default async function DashboardLayout({
             </div>
             <Link href="/" className="btn btn-ghost !px-4.5 !py-2.5 !text-[0.8125rem]">
               View public site
+            </Link>
+            <Link
+              href={latestEvent ? `/dashboard/events/${latestEvent.id}/scanner` : "/dashboard/events"}
+              className="btn btn-brass !px-4.5 !py-2.5 !text-[0.8125rem]"
+            >
+              <QrCode size={15} /> Scan
             </Link>
             <Link
               href="/dashboard/events/new"

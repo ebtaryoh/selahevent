@@ -69,17 +69,17 @@ export function LoginForm() {
 
   return (
     <div className="space-y-6 max-w-md mx-auto w-full">
-      <div className="rounded-[16px] border border-[rgba(255,255,255,0.1)] bg-paper p-6 sm:p-8 shadow-sm">
+      <div className="rounded-[20px] border border-white/10 bg-[rgba(16,16,18,0.7)] backdrop-blur-2xl p-6 sm:p-8 shadow-2xl shadow-black/50">
 
         {step === "email" ? (
           <>
             {/* Email step */}
             <div className="mb-6 text-center">
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-brass-wash mb-4">
-                <Mail size={22} className="text-brass-deep" />
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-brass/10 border border-brass/20 mb-4">
+                <Mail size={22} className="text-brass" />
               </div>
-              <h2 className="font-display text-xl font-semibold text-ink">Enter your workspace email</h2>
-              <p className="mt-1.5 text-[0.875rem] text-warm-500">
+              <h2 className="font-display text-xl font-semibold text-white">Enter your workspace email</h2>
+              <p className="mt-1.5 text-[0.875rem] text-white/60">
                 We&apos;ll send a one-time code to verify it&apos;s you.
               </p>
             </div>
@@ -87,7 +87,7 @@ export function LoginForm() {
             <div className="mb-6">
               <a 
                 href={googleAuthHref}
-                className="btn !bg-white !text-ink !border-[rgba(255,255,255,0.15)] hover:!bg-warm-50 !w-full !px-8 !py-3.5 text-[1rem] flex items-center justify-center gap-3"
+                className="btn !bg-white !text-[#08080a] border border-transparent hover:!bg-white/90 !w-full !px-8 !py-3.5 text-[1rem] flex items-center justify-center gap-3 transition-colors"
               >
                 <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -99,22 +99,22 @@ export function LoginForm() {
                 Sign in with Google
               </a>
               
-              <div className="mt-6 flex items-center justify-center text-sm text-warm-400">
-                <span className="h-px bg-[rgba(255,255,255,0.08)] flex-1"></span>
+              <div className="mt-6 flex items-center justify-center text-sm text-white/40">
+                <span className="h-px bg-white/10 flex-1"></span>
                 <span className="px-3">or continue with email</span>
-                <span className="h-px bg-[rgba(255,255,255,0.08)] flex-1"></span>
+                <span className="h-px bg-white/10 flex-1"></span>
               </div>
             </div>
 
             <form onSubmit={(e) => { setEmail((e.currentTarget.elements.namedItem("email") as HTMLInputElement).value); handleEmailSubmit(e); }} className="space-y-5">
               {error && (
-                <div className="p-3 text-sm text-[var(--color-signal-red)] bg-red-50 border border-red-200 rounded-md">
+                <div className="p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md">
                   {error}
                 </div>
               )}
 
               <div>
-                <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-ink">
+                <label htmlFor="email" className="mb-1.5 block text-sm font-medium text-white/80">
                   Workspace Email
                 </label>
                 <input
@@ -152,31 +152,31 @@ export function LoginForm() {
           <>
             {/* OTP step */}
             <div className="mb-6 text-center">
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-brass-wash mb-4">
-                <KeyRound size={22} className="text-brass-deep" />
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-brass/10 border border-brass/20 mb-4">
+                <KeyRound size={22} className="text-brass" />
               </div>
-              <h2 className="font-display text-xl font-semibold text-ink">Check your inbox</h2>
-              <p className="mt-1.5 text-[0.875rem] text-warm-500">
+              <h2 className="font-display text-xl font-semibold text-white">Check your inbox</h2>
+              <p className="mt-1.5 text-[0.875rem] text-white/60">
                 We sent a 6-digit code to{" "}
-                <span className="font-semibold text-ink">{email}</span>.{" "}
+                <span className="font-semibold text-white">{email}</span>.{" "}
                 Enter it below to sign in.
               </p>
               {process.env.NODE_ENV !== "production" && (
-                <p className="mt-2 text-xs text-warm-400">
-                  Dev mode: check server console, or use <span className="font-mono font-semibold">000000</span> to skip.
+                <p className="mt-2 text-xs text-white/40">
+                  Dev mode: check server console, or use <span className="font-mono font-semibold text-brass">000000</span> to skip.
                 </p>
               )}
             </div>
 
             <form onSubmit={handleOTPSubmit} className="space-y-5">
               {error && (
-                <div className="p-3 text-sm text-[var(--color-signal-red)] bg-red-50 border border-red-200 rounded-md">
+                <div className="p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-md">
                   {error}
                 </div>
               )}
 
               <div>
-                <label htmlFor="code" className="mb-1.5 block text-sm font-medium text-ink">
+                <label htmlFor="code" className="mb-1.5 block text-sm font-medium text-white/80">
                   Verification Code
                 </label>
                 <input
@@ -215,7 +215,7 @@ export function LoginForm() {
               <button
                 type="button"
                 onClick={handleBack}
-                className="flex items-center justify-center gap-1.5 w-full text-[0.8rem] font-medium text-warm-500 hover:text-ink transition-colors pt-1"
+                className="flex items-center justify-center gap-1.5 w-full text-[0.8rem] font-medium text-white/40 hover:text-white transition-colors pt-1"
               >
                 <RefreshCcw size={13} />
                 Use a different email or resend code
@@ -225,9 +225,9 @@ export function LoginForm() {
         )}
       </div>
 
-      <p className="text-center text-[0.875rem] text-warm-500">
+      <p className="text-center text-[0.875rem] text-white/60">
         Don&apos;t have a workspace?{" "}
-        <Link href="/register" className="font-semibold text-brass hover:text-brass-deep transition-colors">
+        <Link href="/register" className="font-semibold text-brass hover:text-brass-light transition-colors">
           Create one
         </Link>
       </p>

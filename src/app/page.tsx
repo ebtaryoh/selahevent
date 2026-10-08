@@ -1,12 +1,13 @@
 import Image from "next/image";
 import { headers } from "next/headers";
 import Link from "next/link";
-import { ArrowRight, CalendarDays, MapPin, Sparkles, Ticket, Globe, Shield, Star } from "lucide-react";
+import { ArrowRight, CalendarDays, MapPin, Sparkles, Ticket, Globe, Shield, Star, Compass, QrCode, CheckCircle2, AlertTriangle } from "lucide-react";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
-import { Reveal } from "@/components/ui";
+import { Reveal, SectionHead } from "@/components/ui";
 import { getAllPublicEvents } from "@/lib/data";
 import { EventSearch } from "@/components/event-search";
+import { CategoryGrid } from "@/components/category-grid";
 import { formatMoney } from "@/lib/format";
 import { getOrgSession } from "@/lib/session";
 
@@ -62,6 +63,11 @@ export default async function HomePage({
           {/* Deep radial gradient to fade out edges into the dark background */}
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(8,8,10,0.3)_0%,rgba(8,8,10,1)_85%)]" />
           <div className="grain pointer-events-none absolute inset-0 opacity-[0.25]" />
+          
+          {/* Floating Glowing Orbs */}
+          <div className="absolute top-[20%] left-[10%] w-[300px] h-[300px] bg-purple-600/20 blur-[100px] rounded-full animate-float mix-blend-screen pointer-events-none" />
+          <div className="absolute bottom-[20%] right-[10%] w-[400px] h-[400px] bg-brass/20 blur-[120px] rounded-full animate-float mix-blend-screen pointer-events-none" style={{ animationDelay: "2s" }} />
+          <div className="absolute top-[60%] left-[50%] w-[250px] h-[250px] bg-blue-600/10 blur-[90px] rounded-full animate-float mix-blend-screen pointer-events-none" style={{ animationDelay: "4s" }} />
         </div>
 
         <div className="mx-auto w-full max-w-[1240px] px-5 sm:px-8 text-center relative z-10">
@@ -103,8 +109,32 @@ export default async function HomePage({
         <div className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-[rgba(226,192,115,0.08)] blur-[120px] rounded-full pointer-events-none -z-10" />
       </section>
 
+      {/* Infinite Marquee Strip */}
+      <div className="relative z-10 w-full overflow-hidden bg-black/40 border-y border-white/5 py-5 backdrop-blur-md flex -mt-16 mb-24">
+        <div className="animate-marquee whitespace-nowrap flex items-center gap-12">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="flex items-center gap-12 text-[0.85rem] font-bold tracking-[0.25em] uppercase text-brass/60">
+              <span>Worship</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-brass/30" />
+              <span>Word</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-brass/30" />
+              <span>Fire</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-brass/30" />
+              <span>Encounter</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-brass/30" />
+              <span>Community</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-brass/30" />
+              <span>Prayer</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-brass/30" />
+              <span>Revival</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-brass/30" />
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Features Showcase */}
-      <section className="relative z-20 -mt-16 mx-auto max-w-[1240px] px-5 sm:px-8 pb-32">
+      <section className="relative z-20 mx-auto max-w-[1240px] px-5 sm:px-8 pb-32">
         <Reveal delay={0.4}>
           <div className="grid gap-6 md:grid-cols-3">
             {[
@@ -116,7 +146,7 @@ export default async function HomePage({
               {
                 icon: Globe,
                 title: "Global Reach",
-                desc: "Accept payments anywhere with Paystack and Stripe perfectly integrated."
+                desc: "Accept payments locally and internationally with our secure Paystack integration."
               },
               {
                 icon: Shield,
@@ -140,96 +170,15 @@ export default async function HomePage({
       </section>
 
 
-      {/* Product story */}
-      <section id="organizers" className="scroll-mt-24 border-y border-black/[0.07] bg-paper">
-        <div className="mx-auto grid max-w-[1240px] grid-cols-2 gap-px bg-black/[0.07] sm:grid-cols-4">
-          {[
-            ["Plan", "Start from a proven event structure."],
-            ["Promote", "Publish a page built to convert interest."],
-            ["Run", "Coordinate people and check-in live."],
-            ["Remember", "Reuse the work your team already did."],
-          ].map(([title, body]) => (
-            <div key={title} className="bg-paper px-5 py-7 sm:px-7">
-              <div className="eyebrow text-[0.54rem] text-brass-deep">{title}</div>
-              <p className="mt-2 text-[0.8rem] leading-[1.55] text-warm-500">{body}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section id="lifecycle" className="scroll-mt-24 bg-parchment py-24 sm:py-32">
-        <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
-          <SectionHead
-            index="01"
-            eyebrow="The full event lifecycle"
-            title={<>One operating system for the whole gathering.</>}
-            description="Selah is designed around the work an event team actually does, not a collection of disconnected tools."
-          />
-          <div className="mt-12 grid gap-px overflow-hidden rounded-[20px] border border-black/[0.08] bg-black/[0.08] md:grid-cols-5">
-            {[
-              ["01", "Plan", "Build from a blueprint instead of a blank screen.", Compass],
-              ["02", "Promote", "Give every event a polished public home.", Sparkles],
-              ["03", "Register", "Tickets, forms, payments and confirmations.", Ticket],
-              ["04", "Run", "Teams, sessions and QR check-in in one command center.", QrCode],
-              ["05", "Remember", "Keep what worked and reuse it next time.", CheckCircle2],
-            ].map(([step, title, body, Icon], i) => (
-              <Reveal key={step as string} delay={i * 0.05}>
-                <div className="group motion-lift h-full bg-paper p-6 transition-colors duration-300 hover:bg-brass-wash sm:p-7">
-                  <span className="tnum font-display text-[1.05rem] font-semibold text-brass-deep">{step as string}</span>
-                  <div className="mt-10">
-                    <Icon size={19} className="text-warm-300 transition-colors group-hover:text-brass-deep" />
-                  </div>
-                  <h3 className="font-display mt-5 text-[1.3rem] font-semibold text-ink">{title as string}</h3>
-                  <p className="mt-3 text-[0.81rem] leading-[1.7] text-warm-500">{body as string}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="overflow-hidden bg-cypress py-24 text-parchment sm:py-32">
-        <div className="mx-auto grid max-w-[1240px] items-center gap-14 px-5 sm:px-8 lg:grid-cols-[0.85fr_1.15fr]">
-          <Reveal>
-            <SectionHead
-              index="02"
-              eyebrow="Organization memory"
-              title={<>Your next event should not start from zero.</>}
-              description="Turn a successful conference, retreat, convention or training program into a reusable blueprint. Keep the learning. Change the details."
-              tone="light"
-            />
-          </Reveal>
-          <Reveal delay={0.12} y={28}>
-            <div className="motion-sheen rounded-[24px] border border-brass-light/15 bg-white/[0.05] p-3 shadow-2xl">
-              <div className="rounded-[18px] bg-paper p-6 text-ink sm:p-8">
-                <div className="flex items-center justify-between gap-4 border-b border-black/[0.08] pb-5">
-                  <div>
-                    <span className="eyebrow text-[0.55rem] text-brass-deep">Blueprint</span>
-                    <h3 className="font-display mt-2 text-[1.55rem] font-semibold">Annual Convention</h3>
-                  </div>
-                  <span className="pill pill-brass">Used 6×</span>
-                </div>
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                  {["Registration & tickets", "Speaker profiles", "Volunteer structure", "Communication timeline", "Check-in gates", "Certificate rules"].map((item) => (
-                    <div key={item} className="flex items-center gap-3 rounded-[11px] bg-parchment p-3.5 text-[0.78rem] font-medium text-warm-600">
-                      <CheckCircle2 size={15} className="shrink-0 text-signal-green" />{item}
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-5 flex items-center justify-between rounded-[12px] bg-cypress px-4 py-3 text-parchment">
-                  <span className="text-[0.76rem] text-parchment/60">Next reuse</span>
-                  <span className="text-[0.78rem] font-semibold text-brass-light">Create event <ArrowRight size={13} className="ml-1 inline" /></span>
-                </div>
-              </div>
-            </div>
-          </Reveal>
-        </div>
-      </section>
 
       {/* Events Grid Section */}
-      <section id="events" className="relative pb-40">
+      <section id="events" className="relative pb-40 bg-[#08080a] pt-32 mt-[-2px]">
         <div className="mx-auto w-full max-w-[1240px] px-5 sm:px-8">
           
+          <Reveal>
+             <CategoryGrid />
+          </Reveal>
+
           <Reveal>
              <div className="mb-20">
                <EventSearch defaultGeoCity={geoCity} />
@@ -239,8 +188,8 @@ export default async function HomePage({
           <Reveal>
             <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-white/10 pb-6 mb-14 gap-6">
               <div>
-                <h2 className="font-display text-[2.5rem] leading-none font-semibold text-ink">The Collection</h2>
-                <p className="mt-3 text-[1.1rem] text-warm-500 font-light">Handpicked upcoming events near you.</p>
+                <h2 className="font-display text-[2.5rem] leading-none font-semibold text-white">The Collection</h2>
+                <p className="mt-3 text-[1.1rem] text-white/60 font-light">Handpicked upcoming events near you.</p>
               </div>
               <div className="flex">
                 <span className="inline-flex items-center gap-2 rounded-full border border-brass/20 bg-brass/10 px-4 py-1.5 text-[0.8rem] text-brass uppercase tracking-widest font-semibold">
@@ -254,8 +203,8 @@ export default async function HomePage({
             <Reveal delay={0.2}>
               <div className="mt-8 flex flex-col items-center justify-center rounded-3xl border border-white/10 bg-[rgba(16,16,18,0.4)] py-24 text-center backdrop-blur-md">
                 <CalendarDays size={48} className="text-white/20 mb-6" strokeWidth={1} />
-                <h3 className="font-display text-2xl font-semibold text-ink">No events found</h3>
-                <p className="mt-3 text-warm-500 max-w-sm font-light">We couldn't find any events matching your criteria right now. Check back later.</p>
+                <h3 className="font-display text-2xl font-semibold text-white">No events found</h3>
+                <p className="mt-3 text-white/60 max-w-sm font-light">We couldn't find any events matching your criteria right now. Check back later.</p>
               </div>
             </Reveal>
           ) : (
@@ -291,7 +240,7 @@ export default async function HomePage({
                       </div>
                       
                       {/* Price Tag Overlay */}
-                      <div className="absolute top-5 right-5 rounded-full bg-white/10 px-4 py-1.5 backdrop-blur-md border border-white/10">
+                      <div className="absolute top-5 right-5 rounded-full bg-white/90 px-4 py-1.5 backdrop-blur-md border border-white/10 shadow-lg">
                         <span className="text-[0.7rem] font-semibold text-ink">
                           {minPrice === 0 ? "Free" : `From ${formatMoney(minPrice, event.currency)}`}
                         </span>
@@ -303,11 +252,11 @@ export default async function HomePage({
                         {organization.name}
                       </div>
                       
-                      <h3 className="font-display mb-4 text-[1.5rem] leading-[1.2] font-semibold text-ink transition-colors duration-300 group-hover:text-brass-light">
+                      <h3 className="font-display mb-4 text-[1.5rem] leading-[1.2] font-semibold text-white/90 transition-colors duration-300 group-hover:text-brass-light">
                         {event.title}
                       </h3>
                       
-                      <p className="mb-8 line-clamp-2 text-[0.95rem] leading-[1.6] text-warm-500 font-light">
+                      <p className="mb-8 line-clamp-2 text-[0.95rem] leading-[1.6] text-white/60 font-light">
                         {event.tagline || event.description}
                       </p>
 
@@ -339,6 +288,97 @@ export default async function HomePage({
               ))}
             </div>
           )}
+        </div>
+      </section>
+
+      <section id="lifecycle" className="scroll-mt-24 bg-parchment py-24 sm:py-32">
+        <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
+          <SectionHead
+            index="01"
+            eyebrow="The full event lifecycle"
+            title={<>One operating system for the whole gathering.</>}
+            description="Selah is designed around the work an event team actually does, not a collection of disconnected tools."
+          />
+          <div className="mt-12 grid gap-px overflow-hidden rounded-[20px] border border-black/[0.08] bg-black/[0.08] md:grid-cols-5">
+            {[
+              ["01", "Plan", "Build from a blueprint instead of a blank screen.", Compass],
+              ["02", "Promote", "Give every event a polished public home.", Sparkles],
+              ["03", "Register", "Tickets, forms, payments and confirmations.", Ticket],
+              ["04", "Run", "Teams, sessions and QR check-in in one command center.", QrCode],
+              ["05", "Remember", "Keep what worked and reuse it next time.", CheckCircle2],
+            ].map(([step, title, body, Icon], i) => (
+              <Reveal key={step as string} delay={i * 0.05}>
+                <div className="group motion-lift h-full bg-paper p-6 transition-colors duration-300 hover:bg-brass-wash sm:p-7">
+                  <span className="tnum font-display text-[1.05rem] font-semibold text-brass-deep">{step as string}</span>
+                  <div className="mt-10">
+                    <Icon size={19} className="text-warm-300 transition-colors group-hover:text-brass-deep" />
+                  </div>
+                  <h3 className="font-display mt-5 text-[1.3rem] font-semibold text-ink">{title as string}</h3>
+                  <p className="mt-3 text-[0.81rem] leading-[1.7] text-warm-500">{body as string}</p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="relative overflow-hidden bg-parchment-deep py-24 text-ink sm:py-32 border-t border-white/5">
+        {/* Floating Glowing Orbs for this section */}
+        <div className="absolute top-[30%] left-[20%] w-[350px] h-[350px] bg-brass/10 blur-[120px] rounded-full animate-float mix-blend-screen pointer-events-none" />
+        <div className="absolute bottom-[20%] right-[10%] w-[300px] h-[300px] bg-purple-600/10 blur-[100px] rounded-full animate-float mix-blend-screen pointer-events-none" style={{ animationDelay: "3s" }} />
+
+        <div className="relative z-10 mx-auto grid max-w-[1240px] items-center gap-14 px-5 sm:px-8 lg:grid-cols-[0.85fr_1.15fr]">
+          <Reveal>
+            <SectionHead
+              index="02"
+              eyebrow="Organization memory"
+              title={<>Your next event should not start from zero.</>}
+              description="Turn a successful conference, retreat, convention or training program into a reusable blueprint. Keep the learning. Change the details."
+            />
+          </Reveal>
+          <Reveal delay={0.12} y={28}>
+            <div className="motion-sheen rounded-[24px] border border-brass-light/15 bg-white/[0.05] p-3 shadow-2xl backdrop-blur-md">
+              <div className="rounded-[18px] bg-[#111113] p-6 text-ink sm:p-8">
+                <div className="flex items-center justify-between gap-4 border-b border-white/[0.08] pb-5">
+                  <div>
+                    <span className="eyebrow text-[0.55rem] text-brass-deep">Blueprint</span>
+                    <h3 className="font-display mt-2 text-[1.55rem] font-semibold text-white">Annual Convention</h3>
+                  </div>
+                  <span className="pill pill-brass">Used 6×</span>
+                </div>
+                <div className="mt-6 flex flex-col border border-white/10 rounded-[14px] bg-[#0c0c0e] overflow-hidden">
+                  {[
+                    { title: "Registration & tickets", status: "ready" },
+                    { title: "Speaker profiles", status: "ready" },
+                    { title: "Volunteer structure", status: "warning" },
+                    { title: "Accommodation", status: "ready" },
+                    { title: "Transportation", status: "warning" },
+                    { title: "Communication timeline", status: "ready" },
+                  ].map((item, idx, arr) => (
+                    <div 
+                      key={item.title} 
+                      className={`flex items-center gap-4 px-5 py-4 ${idx !== arr.length - 1 ? 'border-b border-white/5' : ''}`}
+                    >
+                      {item.status === 'ready' ? (
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-signal-green/10 text-signal-green">
+                          <CheckCircle2 size={16} strokeWidth={2.5} />
+                        </div>
+                      ) : (
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-signal-amber/10 text-signal-amber">
+                          <AlertTriangle size={15} strokeWidth={2.5} />
+                        </div>
+                      )}
+                      <span className="text-[0.95rem] font-medium text-white/90">{item.title}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-5 flex items-center justify-between rounded-[12px] bg-brass/10 border border-brass/20 px-4 py-3 text-brass">
+                  <span className="text-[0.76rem] text-brass/70">Next reuse</span>
+                  <span className="text-[0.78rem] font-semibold text-brass-light">Create event <ArrowRight size={13} className="ml-1 inline" /></span>
+                </div>
+              </div>
+            </div>
+          </Reveal>
         </div>
       </section>
 

@@ -110,50 +110,27 @@ export function SessionForm({
             Basic Information
           </h3>
           <div className="grid gap-6">
-            <Field
-              label="Session Title"
-              name="title"
-              defaultValue={session?.title}
-              placeholder="e.g. Morning Worship"
-              required
-            />
-            <Field
-              label="Description"
-              name="description"
-              defaultValue={session?.description}
-              placeholder="Brief description of what will happen in this session..."
-            />
+            <Field label="Session Title">
+              <input className="input" name="title" defaultValue={session?.title} placeholder="e.g. Morning Worship" required />
+            </Field>
+            <Field label="Description">
+              <input className="input" name="description" defaultValue={session?.description} placeholder="Brief description of what will happen in this session..." />
+            </Field>
             <div className="grid grid-cols-2 gap-6">
-              <Field
-                label="Day"
-                name="day"
-                type="number"
-                min="1"
-                defaultValue={session?.day ?? 1}
-                required
-              />
-              <Field
-                label="Track"
-                name="track"
-                defaultValue={session?.track ?? "Main"}
-                placeholder="e.g. Main, Breakout A"
-              />
+              <Field label="Day">
+                <input className="input" name="day" type="number" min="1" defaultValue={session?.day ?? 1} required />
+              </Field>
+              <Field label="Track">
+                <input className="input" name="track" defaultValue={session?.track ?? "Main"} placeholder="e.g. Main, Breakout A" />
+              </Field>
             </div>
             <div className="grid grid-cols-2 gap-6">
-              <Field
-                label="Starts At"
-                name="startsAt"
-                type="datetime-local"
-                defaultValue={toDatetimeLocal(session?.startsAt)}
-                required
-              />
-              <Field
-                label="Ends At"
-                name="endsAt"
-                type="datetime-local"
-                defaultValue={toDatetimeLocal(session?.endsAt)}
-                required
-              />
+              <Field label="Starts At">
+                <input className="input" name="startsAt" type="datetime-local" defaultValue={toDatetimeLocal(session?.startsAt)} required />
+              </Field>
+              <Field label="Ends At">
+                <input className="input" name="endsAt" type="datetime-local" defaultValue={toDatetimeLocal(session?.endsAt)} required />
+              </Field>
             </div>
           </div>
         </div>
@@ -163,18 +140,12 @@ export function SessionForm({
             Details
           </h3>
           <div className="grid gap-6">
-            <Field
-              label="Speaker Name (Optional)"
-              name="speakerName"
-              defaultValue={session?.speakerName}
-              placeholder="e.g. John Doe"
-            />
-            <Field
-              label="Venue"
-              name="venue"
-              defaultValue={session?.venue ?? "Main Hall"}
-              placeholder="e.g. Main Hall, Room 101"
-            />
+            <Field label="Speaker Name (Optional)">
+              <input className="input" name="speakerName" defaultValue={session?.speakerName} placeholder="e.g. John Doe" />
+            </Field>
+            <Field label="Venue">
+              <input className="input" name="venue" defaultValue={session?.venue ?? "Main Hall"} placeholder="e.g. Main Hall, Room 101" />
+            </Field>
             <div>
               <label className="mb-2 block text-[0.8125rem] font-medium text-ink">
                 Session Type

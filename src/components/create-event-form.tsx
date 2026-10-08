@@ -19,6 +19,9 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>(initialData?.customQuestions || []);
+  const [attendeeTypes, setAttendeeTypes] = useState<string>(
+    initialData?.attendeeTypes ? initialData.attendeeTypes.join(", ") : "Delegate, Student, Minister / clergy, Volunteer, Speaker, Guest"
+  );
   const [selectedBlueprintId, setSelectedBlueprintId] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
@@ -71,6 +74,10 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
       if (isEditing) {
         // Update existing event
         formData.append("customQuestions", JSON.stringify(customQuestions));
+        formData.append(
+          "attendeeTypes",
+          JSON.stringify(attendeeTypes.split(",").map((t) => t.trim()).filter(Boolean))
+        );
         const res = await updateEvent(initialData.id, formData);
         
         if (res && res.error) {
@@ -104,6 +111,10 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
       } else {
         // Create new from scratch
         formData.append("customQuestions", JSON.stringify(customQuestions));
+        formData.append(
+          "attendeeTypes",
+          JSON.stringify(attendeeTypes.split(",").map((t) => t.trim()).filter(Boolean))
+        );
         const res = await createEvent(formData);
         
         // createEvent redirects on success, so if it returns it's usually an error
@@ -127,11 +138,11 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
       <div className="space-y-6">
         
         {!isEditing && blueprints && blueprints.length > 0 && (
-          <div className="rounded-[16px] border border-white/10 bg-brass/5 p-6 shadow-sm">
-            <h2 className="font-display mb-2 flex items-center gap-2 text-lg font-semibold text-ink">
+          <div className="rounded-[16px] border border-white/10 bg-brass/10 backdrop-blur-md p-6 shadow-sm">
+            <h2 className="font-display mb-2 flex items-center gap-2 text-lg font-semibold text-white">
               <Copy size={18} className="text-brass" /> Start from Blueprint
             </h2>
-            <p className="mb-4 text-sm text-warm-500">
+            <p className="mb-4 text-sm text-white/60">
               Save time by copying ticket tiers, custom questions, and sessions from a past event.
             </p>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -139,7 +150,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                 className={`relative flex cursor-pointer rounded-xl border p-4 transition-all ${
                   selectedBlueprintId === ""
                     ? "border-brass bg-brass/10 shadow-sm"
-                    : "border-white/10 bg-paper hover:border-brass/40"
+                    : "border-white/10 bg-[rgba(16,16,18,0.5)] backdrop-blur-md hover:border-brass/40"
                 }`}
               >
                 <input
@@ -151,8 +162,8 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                   onChange={() => setSelectedBlueprintId("")}
                 />
                 <div className="flex flex-col">
-                  <span className="font-semibold text-ink">Start from scratch</span>
-                  <span className="text-xs text-warm-500 mt-1">Empty canvas.</span>
+                  <span className="font-semibold text-white">Start from scratch</span>
+                  <span className="text-xs text-white/60 mt-1">Empty canvas.</span>
                 </div>
               </label>
               
@@ -162,7 +173,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                   className={`relative flex cursor-pointer rounded-xl border p-4 transition-all ${
                     selectedBlueprintId === bp.id
                       ? "border-brass bg-brass/10 shadow-sm"
-                      : "border-white/10 bg-paper hover:border-brass/40"
+                      : "border-white/10 bg-[rgba(16,16,18,0.5)] backdrop-blur-md hover:border-brass/40"
                   }`}
                 >
                   <input
@@ -174,8 +185,8 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                     onChange={() => setSelectedBlueprintId(bp.id)}
                   />
                   <div className="flex flex-col">
-                    <span className="font-semibold text-ink">{bp.name}</span>
-                    <span className="text-xs text-warm-500 mt-1">
+                    <span className="font-semibold text-white">{bp.name}</span>
+                    <span className="text-xs text-white/60 mt-1">
                       {bp.includes.join(" • ")}
                     </span>
                   </div>
@@ -186,14 +197,14 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
         )}
 
         {/* Basic Details */}
-        <div className="rounded-[16px] border border-white/10 bg-paper p-6 shadow-sm">
-          <h2 className="font-display mb-4 flex items-center gap-2 text-lg font-semibold text-ink">
+        <div className="rounded-[16px] border border-white/10 bg-[rgba(16,16,18,0.5)] backdrop-blur-md p-6 shadow-sm">
+          <h2 className="font-display mb-4 flex items-center gap-2 text-lg font-semibold text-white">
             <Tag size={18} className="text-brass" /> Basic Details
           </h2>
           
           <div className="space-y-4">
             <div>
-              <label htmlFor="title" className="mb-1.5 block text-sm font-medium text-ink">
+              <label htmlFor="title" className="mb-1.5 block text-sm font-medium text-white">
                 Event Title
               </label>
               <input
@@ -208,7 +219,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
             </div>
             
             <div>
-              <label htmlFor="eventType" className="mb-1.5 block text-sm font-medium text-ink">
+              <label htmlFor="eventType" className="mb-1.5 block text-sm font-medium text-white">
                 Event Type
               </label>
               <select
@@ -229,8 +240,8 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
             </div>
 
             <div>
-              <label htmlFor="theme" className="mb-1.5 block text-sm font-medium text-ink">
-                Theme <span className="text-warm-400 font-normal">(Optional)</span>
+              <label htmlFor="theme" className="mb-1.5 block text-sm font-medium text-white">
+                Theme <span className="text-white/40 font-normal">(Optional)</span>
               </label>
               <input
                 id="theme"
@@ -243,8 +254,8 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
             </div>
 
             <div>
-              <label htmlFor="tagline" className="mb-1.5 block text-sm font-medium text-ink">
-                Tagline <span className="text-warm-400 font-normal">(Optional)</span>
+              <label htmlFor="tagline" className="mb-1.5 block text-sm font-medium text-white">
+                Tagline <span className="text-white/40 font-normal">(Optional)</span>
               </label>
               <input
                 id="tagline"
@@ -257,7 +268,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
             </div>
 
             <div>
-              <label htmlFor="description" className="mb-1.5 block text-sm font-medium text-ink">
+              <label htmlFor="description" className="mb-1.5 block text-sm font-medium text-white">
                 Description
               </label>
               <textarea
@@ -272,7 +283,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
             </div>
 
             <div>
-              <label htmlFor="capacity" className="mb-1.5 block text-sm font-medium text-ink">
+              <label htmlFor="capacity" className="mb-1.5 block text-sm font-medium text-white">
                 Capacity (0 for unlimited)
               </label>
               <input
@@ -289,14 +300,14 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
         </div>
 
         {/* Date & Time */}
-        <div className="rounded-[16px] border border-white/10 bg-paper p-6 shadow-sm">
-          <h2 className="font-display mb-4 flex items-center gap-2 text-lg font-semibold text-ink">
+        <div className="rounded-[16px] border border-white/10 bg-[rgba(16,16,18,0.5)] backdrop-blur-md p-6 shadow-sm">
+          <h2 className="font-display mb-4 flex items-center gap-2 text-lg font-semibold text-white">
             <CalendarDays size={18} className="text-brass" /> Date & Time
           </h2>
           
           <div className="space-y-4">
             <div>
-              <label htmlFor="timezone" className="mb-1.5 block text-sm font-medium text-ink">
+              <label htmlFor="timezone" className="mb-1.5 block text-sm font-medium text-white">
                 Timezone
               </label>
               <select
@@ -314,7 +325,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label htmlFor="startsAt" className="mb-1.5 block text-sm font-medium text-ink">
+                <label htmlFor="startsAt" className="mb-1.5 block text-sm font-medium text-white">
                   Event Start Date & Time
                 </label>
                 <input
@@ -327,7 +338,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                 />
               </div>
               <div>
-                <label htmlFor="endsAt" className="mb-1.5 block text-sm font-medium text-ink">
+                <label htmlFor="endsAt" className="mb-1.5 block text-sm font-medium text-white">
                   Event End Date & Time
                 </label>
                 <input
@@ -340,8 +351,8 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                 />
               </div>
               <div>
-                <label htmlFor="registrationOpensAt" className="mb-1.5 block text-sm font-medium text-ink">
-                  Registration Opens <span className="text-warm-400 font-normal">(Optional)</span>
+                <label htmlFor="registrationOpensAt" className="mb-1.5 block text-sm font-medium text-white">
+                  Registration Opens <span className="text-white/40 font-normal">(Optional)</span>
                 </label>
                 <input
                   id="registrationOpensAt"
@@ -352,8 +363,8 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                 />
               </div>
               <div>
-                <label htmlFor="registrationClosesAt" className="mb-1.5 block text-sm font-medium text-ink">
-                  Registration Closes <span className="text-warm-400 font-normal">(Optional)</span>
+                <label htmlFor="registrationClosesAt" className="mb-1.5 block text-sm font-medium text-white">
+                  Registration Closes <span className="text-white/40 font-normal">(Optional)</span>
                 </label>
                 <input
                   id="registrationClosesAt"
@@ -368,16 +379,16 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
         </div>
 
         {/* Branding */}
-        <div className={`rounded-[16px] border border-white/10 bg-paper p-6 shadow-sm transition-opacity duration-300 ${selectedBlueprintId ? 'opacity-50 pointer-events-none hidden' : ''}`}>
-          <h2 className="font-display mb-4 flex items-center gap-2 text-lg font-semibold text-ink">
+        <div className={`rounded-[16px] border border-white/10 bg-[rgba(16,16,18,0.5)] backdrop-blur-md p-6 shadow-sm transition-opacity duration-300 ${selectedBlueprintId ? 'opacity-50 pointer-events-none hidden' : ''}`}>
+          <h2 className="font-display mb-4 flex items-center gap-2 text-lg font-semibold text-white">
             <Palette size={18} className="text-brass" /> Branding
           </h2>
           
           <div>
-            <label htmlFor="brandColor" className="mb-1.5 block text-sm font-medium text-ink">
+            <label htmlFor="brandColor" className="mb-1.5 block text-sm font-medium text-white">
               Brand Color
             </label>
-            <p className="mb-3 text-xs text-warm-500">
+            <p className="mb-3 text-xs text-white/60">
               Select a primary color for your event page. This will adapt buttons, borders, and accents to match your brand.
             </p>
             <div className="flex items-center gap-3">
@@ -392,20 +403,20 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                   if (span) span.textContent = e.target.value;
                 }}
               />
-              <span className="text-sm text-warm-500 font-mono">#c08a2e</span>
+              <span className="text-sm text-white/60 font-mono">#c08a2e</span>
             </div>
           </div>
         </div>
 
         {/* Location */}
-        <div className="rounded-[16px] border border-white/10 bg-paper p-6 shadow-sm">
-          <h2 className="font-display mb-4 flex items-center gap-2 text-lg font-semibold text-ink">
+        <div className="rounded-[16px] border border-white/10 bg-[rgba(16,16,18,0.5)] backdrop-blur-md p-6 shadow-sm">
+          <h2 className="font-display mb-4 flex items-center gap-2 text-lg font-semibold text-white">
             <MapPin size={18} className="text-brass" /> Location
           </h2>
           
           <div className="space-y-4">
             <div>
-              <label htmlFor="mode" className="mb-1.5 block text-sm font-medium text-ink">
+              <label htmlFor="mode" className="mb-1.5 block text-sm font-medium text-white">
                 Event Mode
               </label>
               <select
@@ -422,8 +433,8 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <label htmlFor="venueName" className="mb-1.5 block text-sm font-medium text-ink">
-                  Venue Name <span className="text-warm-400 font-normal">(if physical)</span>
+                <label htmlFor="venueName" className="mb-1.5 block text-sm font-medium text-white">
+                  Venue Name <span className="text-white/40 font-normal">(if physical)</span>
                 </label>
                 <input
                   id="venueName"
@@ -435,8 +446,8 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                 />
               </div>
               <div className="sm:col-span-2">
-                <label htmlFor="venueAddress" className="mb-1.5 block text-sm font-medium text-ink">
-                  Venue Address <span className="text-warm-400 font-normal">(Optional)</span>
+                <label htmlFor="venueAddress" className="mb-1.5 block text-sm font-medium text-white">
+                  Venue Address <span className="text-white/40 font-normal">(Optional)</span>
                 </label>
                 <input
                   id="venueAddress"
@@ -448,7 +459,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                 />
               </div>
               <div>
-                <label htmlFor="city" className="mb-1.5 block text-sm font-medium text-ink">
+                <label htmlFor="city" className="mb-1.5 block text-sm font-medium text-white">
                   City
                 </label>
                 <input
@@ -462,7 +473,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                 />
               </div>
               <div>
-                <label htmlFor="country" className="mb-1.5 block text-sm font-medium text-ink">
+                <label htmlFor="country" className="mb-1.5 block text-sm font-medium text-white">
                   Country
                 </label>
                 <input
@@ -480,12 +491,12 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
         </div>
 
         {/* Visibility */}
-        <div className="rounded-[16px] border border-white/10 bg-paper p-6 shadow-sm">
-          <h2 className="font-display mb-4 flex items-center gap-2 text-lg font-semibold text-ink">
+        <div className="rounded-[16px] border border-white/10 bg-[rgba(16,16,18,0.5)] backdrop-blur-md p-6 shadow-sm">
+          <h2 className="font-display mb-4 flex items-center gap-2 text-lg font-semibold text-white">
             <ShieldCheck size={18} className="text-brass" /> Visibility
           </h2>
           <div>
-            <label htmlFor="visibility" className="mb-1.5 block text-sm font-medium text-ink">
+            <label htmlFor="visibility" className="mb-1.5 block text-sm font-medium text-white">
               Event Privacy
             </label>
             <select
@@ -502,9 +513,9 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
         </div>
 
         {/* Custom Registration Questions */}
-        <div className={`rounded-[16px] border border-white/10 bg-paper p-6 shadow-sm transition-opacity duration-300 ${selectedBlueprintId ? 'opacity-50 pointer-events-none hidden' : ''}`}>
+        <div className={`rounded-[16px] border border-white/10 bg-[rgba(16,16,18,0.5)] backdrop-blur-md p-6 shadow-sm transition-opacity duration-300 ${selectedBlueprintId ? 'opacity-50 pointer-events-none hidden' : ''}`}>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-display flex items-center gap-2 text-lg font-semibold text-ink">
+            <h2 className="font-display flex items-center gap-2 text-lg font-semibold text-white">
               <ListTodo size={18} className="text-brass" /> Custom Questions
             </h2>
             <button
@@ -515,13 +526,13 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
               <Plus size={16} className="mr-1" /> Add Question
             </button>
           </div>
-          <p className="mb-6 text-sm text-warm-500">
+          <p className="mb-6 text-sm text-white/60">
             Ask attendees for specific information during registration (e.g. Dietary Restrictions, Job Title).
           </p>
 
           <div className="space-y-4">
             {customQuestions.length === 0 ? (
-              <div className="text-center py-6 border border-dashed rounded-xl border-warm-200 text-warm-500 text-sm">
+              <div className="text-center py-6 border border-dashed rounded-xl border-warm-200 text-white/60 text-sm">
                 No custom questions added.
               </div>
             ) : (
@@ -530,13 +541,13 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                   <button
                     type="button"
                     onClick={() => removeQuestion(q.id)}
-                    className="absolute right-3 top-3 text-warm-400 hover:text-red-500 transition-colors"
+                    className="absolute right-3 top-3 text-white/40 hover:text-red-500 transition-colors"
                   >
                     <X size={18} />
                   </button>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="sm:col-span-2">
-                      <label className="mb-1.5 block text-xs font-medium text-ink">Question Label</label>
+                      <label className="mb-1.5 block text-xs font-medium text-white">Question Label</label>
                       <input
                         type="text"
                         value={q.label}
@@ -547,7 +558,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                       />
                     </div>
                     <div>
-                      <label className="mb-1.5 block text-xs font-medium text-ink">Answer Type</label>
+                      <label className="mb-1.5 block text-xs font-medium text-white">Answer Type</label>
                       <select
                         value={q.type}
                         onChange={(e) => updateQuestion(q.id, "type", e.target.value)}
@@ -558,7 +569,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                       </select>
                     </div>
                     <div className="flex items-center pt-6">
-                      <label className="flex items-center gap-2 cursor-pointer text-sm text-ink">
+                      <label className="flex items-center gap-2 cursor-pointer text-sm text-white">
                         <input
                           type="checkbox"
                           checked={q.required}
@@ -570,7 +581,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                     </div>
                     {q.type === "select" && (
                       <div className="sm:col-span-2">
-                        <label className="mb-1.5 block text-xs font-medium text-ink">Dropdown Options (comma separated)</label>
+                        <label className="mb-1.5 block text-xs font-medium text-white">Dropdown Options (comma separated)</label>
                         <input
                           type="text"
                           value={q.options?.join(", ") || ""}
@@ -585,20 +596,41 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                 </div>
               ))
             )}
+        </div>
+      </div>
+
+        {/* Attendee Types */}
+        <div className={`rounded-[16px] border border-white/10 bg-[rgba(16,16,18,0.5)] backdrop-blur-md p-6 shadow-sm transition-opacity duration-300 ${selectedBlueprintId ? 'opacity-50 pointer-events-none hidden' : ''}`}>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-display flex items-center gap-2 text-lg font-semibold text-white">
+              <ListTodo size={18} className="text-brass" /> Attendee Types
+            </h2>
+          </div>
+          <p className="mb-6 text-sm text-white/60">
+            Define the options attendees can choose from when asked "I am attending as..." (comma separated).
+          </p>
+          <div>
+            <input
+              type="text"
+              value={attendeeTypes}
+              onChange={(e) => setAttendeeTypes(e.target.value)}
+              placeholder="e.g. Delegate, Student, Minister, Volunteer, Guest"
+              className="input !w-full"
+            />
           </div>
         </div>
 
         {/* Media Upload */}
-        <div className="rounded-[16px] border border-white/10 bg-paper p-6 shadow-sm">
-          <h2 className="font-display mb-4 flex items-center gap-2 text-lg font-semibold text-ink">
+        <div className="rounded-[16px] border border-white/10 bg-[rgba(16,16,18,0.5)] backdrop-blur-md p-6 shadow-sm">
+          <h2 className="font-display mb-4 flex items-center gap-2 text-lg font-semibold text-white">
             <ImageIcon size={18} className="text-brass" /> Event Media
           </h2>
           
           <div className="mb-8">
-            <label className="mb-1.5 block text-sm font-medium text-ink">
+            <label className="mb-1.5 block text-sm font-medium text-white">
               Main Event Flyer (Cover Image)
             </label>
-            <p className="mb-4 text-sm text-warm-500">
+            <p className="mb-4 text-sm text-white/60">
               This is the primary image shown on event cards and headers. Use the focus tool to ensure it looks great in any aspect ratio.
             </p>
             <FocusImageUpload
@@ -610,10 +642,10 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
           </div>
 
           <div className="mb-8">
-            <label htmlFor="videoUrl" className="mb-1.5 block text-sm font-medium text-ink">
+            <label htmlFor="videoUrl" className="mb-1.5 block text-sm font-medium text-white">
               Event Trailer (YouTube or Vimeo Link)
             </label>
-            <p className="mb-4 text-sm text-warm-500">
+            <p className="mb-4 text-sm text-white/60">
               Paste a link to your event&apos;s promo video. We&apos;ll automatically embed it beautifully on your event page.
             </p>
             <input
@@ -629,16 +661,16 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
           <hr className="my-8 border-t border-[rgba(255,255,255,0.08)]" />
 
           <div>
-            <label htmlFor="media" className="mb-1.5 block text-sm font-medium text-ink">
+            <label htmlFor="media" className="mb-1.5 block text-sm font-medium text-white">
               Additional Photos & Videos (Gallery)
             </label>
-            <p className="mb-4 text-sm text-warm-500">
+            <p className="mb-4 text-sm text-white/60">
               Add more photos to showcase your event or past events.
             </p>
             
             <div className="relative flex flex-col items-center justify-center rounded-[12px] border-2 border-dashed border-[rgba(255,255,255,0.15)] bg-black/20 py-8 transition-colors hover:border-[var(--color-brass)] hover:bg-[rgba(226,192,115,0.05)]">
               <UploadCloud size={24} className="mb-2 text-brass-light" />
-              <p className="mb-1 text-sm font-semibold text-ink">
+              <p className="mb-1 text-sm font-semibold text-white">
                 Click to upload additional media
               </p>
               <input

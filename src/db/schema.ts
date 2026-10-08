@@ -93,6 +93,7 @@ export const events = pgTable(
     country: text("country").default("NG").notNull(),
     mode: text("mode").default("in_person").notNull(),
     capacity: integer("capacity").default(500).notNull(),
+    hasWaitlist: boolean("has_waitlist").default(false).notNull(),
     coverImage: text("cover_image"),
     media: jsonb("media").$type<{ type: "image" | "video", url: string, focus?: {x: number, y: number} }[]>().default([]),
     currency: text("currency").default("NGN").notNull(),
@@ -112,6 +113,7 @@ export const events = pgTable(
       options?: string[];
       required: boolean;
     }[]>().default([]),
+    attendeeTypes: jsonb("attendee_types").$type<string[]>().default(["Delegate", "Student", "Minister / clergy", "Volunteer", "Speaker", "Guest"]),
     brandColor: text("brand_color").default("#c08a2e").notNull(),
     certificateThreshold: integer("certificate_threshold").default(0).notNull(),
     commsPlan: jsonb("comms_plan").$type<{
@@ -121,6 +123,8 @@ export const events = pgTable(
       status: "draft" | "scheduled" | "sent";
       sendAt?: Date;
     }[]>(),
+    metaPixelId: text("meta_pixel_id"),
+    googleAnalyticsId: text("google_analytics_id"),
     createdAt: createdAt(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
@@ -145,6 +149,8 @@ export const ticketTypes = pgTable(
     currency: text("currency").default("NGN").notNull(),
     capacity: integer("capacity").default(100).notNull(),
     sold: integer("sold").default(0).notNull(),
+    hasWaitlist: boolean("has_waitlist").default(true).notNull(),
+    isDonation: boolean("is_donation").default(false).notNull(),
     benefits: jsonb("benefits").$type<string[]>(),
     badge: text("badge"),
     requiresApproval: boolean("requires_approval").default(false).notNull(),

@@ -32,6 +32,7 @@ export type TicketOption = {
   benefits: string[] | null;
   capacity: number;
   remaining: number;
+  isDonation?: boolean;
 };
 
 export type EventSummary = {
@@ -51,6 +52,7 @@ export type EventSummary = {
     options?: string[];
     required: boolean;
   }[] | null;
+  attendeeTypes?: string[] | null;
 };
 
 type FormState = {
@@ -69,6 +71,7 @@ type FormState = {
   emergencyName: string;
   emergencyPhone: string;
   consent: boolean;
+  donationAmount: string;
 };
 
 const initial = (firstTicketId: string): FormState => ({
@@ -87,6 +90,7 @@ const initial = (firstTicketId: string): FormState => ({
   emergencyName: "",
   emergencyPhone: "",
   consent: false,
+  donationAmount: "",
 });
 
 const STEPS = [
@@ -120,6 +124,7 @@ export function RegistrationForm({
     currency: string;
     paymentRequired: boolean;
     paymentMessage: string | null;
+    status?: string;
   }>(null);
 
   const [form, setForm] = useState<FormState>(() =>
@@ -252,6 +257,7 @@ export function RegistrationForm({
           dietary: form.dietary,
           emergencyName: form.emergencyName,
           emergencyPhone: form.emergencyPhone,
+          donationAmount: form.donationAmount ? parseFloat(form.donationAmount) : undefined,
           customAnswers,
         }),
       });
@@ -281,6 +287,7 @@ export function RegistrationForm({
         currency: data.registration.currency,
         paymentRequired: data.payment.required,
         paymentMessage: data.payment.message,
+        status: data.registration.status,
       });
 
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -629,7 +636,7 @@ export function RegistrationForm({
                               ? "Unlimited places available"
                               : ticket.remaining > 0
                               ? `${ticket.remaining.toLocaleString()} places remaining`
-                              : "At capacity"}
+                              : "Waitlist available"}
                           </span>
                         </span>
                         <span className="tnum shrink-0 text-[1.02rem] font-semibold text-ink">
@@ -643,6 +650,21 @@ export function RegistrationForm({
                 </div>
               </fieldset>
 
+              {tickets.find((t) => t.id === form.ticketTypeId)?.isDonation && (
+                <div className="mt-8">
+                  <Field label="Name your price (Optional)" hint={`Minimum is ${formatMoney(tickets.find((t) => t.id === form.ticketTypeId)!.price, tickets.find((t) => t.id === form.ticketTypeId)!.currency)}`}>
+                    <input
+                      type="number"
+                      min={tickets.find((t) => t.id === form.ticketTypeId)?.price || 0}
+                      className="input"
+                      value={form.donationAmount}
+                      onChange={(e) => update("donationAmount", e.target.value)}
+                      placeholder="Enter amount"
+                    />
+                  </Field>
+                </div>
+              )}
+
               <div className="mt-8 grid gap-5 sm:grid-cols-2">
                 <Field label="I am attending as">
                   <select
@@ -650,12 +672,9 @@ export function RegistrationForm({
                     value={form.attendeeType}
                     onChange={(e) => update("attendeeType", e.target.value)}
                   >
-                    <option value="delegate">Delegate</option>
-                    <option value="student">Student</option>
-                    <option value="minister">Minister / clergy</option>
-                    <option value="volunteer">Volunteer</option>
-                    <option value="speaker">Speaker</option>
-                    <option value="guest">Guest</option>
+                    {(event.attendeeTypes || ["Delegate", "Student", "Minister / clergy", "Volunteer", "Speaker", "Guest"]).map((type) => (
+                      <option key={type} value={type.toLowerCase()}>{type}</option>
+                    ))}
                   </select>
                 </Field>
                 <Field label="Church or organisation">
@@ -1213,6 +1232,7 @@ function ConfirmationPanel({
     currency: string;
     paymentRequired: boolean;
     paymentMessage: string | null;
+    status?: string;
   };
   email: string;
 }) {
@@ -1228,16 +1248,20 @@ function ConfirmationPanel({
               <CheckCircle2 size={30} className="text-brass-light" />
             </span>
             <h2 className="font-display mt-6 text-[clamp(2rem,4.5vw,2.85rem)] leading-[1.08] font-semibold">
-              You&apos;re registered.
+              {confirmation.status === "waitlisted" ? "You're on the waitlist." : "You're registered."}
             </h2>
             <p className="mx-auto mt-4 max-w-[30rem] text-[1.025rem] leading-[1.72] text-[rgba(255,255,255,0.82)]">
-              A confirmation has been prepared for{" "}
-              <strong className="font-semibold text-brass-light">{email}</strong>
-              . Your ticket code is{" "}
-              <strong className="tnum font-semibold text-brass-light">
-                {confirmation.code}
-              </strong>
-              .
+              {confirmation.status === "waitlisted" ? (
+                <>
+                  A confirmation has been prepared for <strong className="font-semibold text-brass-light">{email}</strong>. 
+                  You will be notified if a spot opens up for this event.
+                </>
+              ) : (
+                <>
+                  A confirmation has been prepared for <strong className="font-semibold text-brass-light">{email}</strong>.
+                  Your ticket code is <strong className="tnum font-semibold text-brass-light">{confirmation.code}</strong>.
+                </>
+              )}
             </p>
           </div>
         </div>

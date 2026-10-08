@@ -179,6 +179,16 @@ for (const file of mediaFiles) {
     }
   }
 
+  const attendeeTypesRaw = formData.get("attendeeTypes") as string;
+  let attendeeTypes = ["Delegate", "Student", "Minister / clergy", "Volunteer", "Speaker", "Guest"];
+  if (attendeeTypesRaw) {
+    try {
+      attendeeTypes = JSON.parse(attendeeTypesRaw);
+    } catch (e) {
+      console.error("Failed to parse attendee types", e);
+    }
+  }
+
   let redirectUrl = "";
   try {
     // Insert Event
@@ -205,6 +215,7 @@ for (const file of mediaFiles) {
         coverImage,
         media: mediaPaths,
         customQuestions,
+        attendeeTypes,
         brandColor: (formData.get("brandColor") as string) || "#c08a2e",
         status: "published",
         visibility: visibility || "public",
@@ -360,6 +371,16 @@ for (const file of mediaFiles) {
     }
   }
 
+  const attendeeTypesRaw = formData.get("attendeeTypes") as string;
+  let attendeeTypes = existingEvent.attendeeTypes;
+  if (attendeeTypesRaw) {
+    try {
+      attendeeTypes = JSON.parse(attendeeTypesRaw);
+    } catch (e) {
+      console.error("Failed to parse attendee types", e);
+    }
+  }
+
   let redirectUrl = "";
   try {
     await db
@@ -383,6 +404,7 @@ for (const file of mediaFiles) {
         coverImage,
         media: mediaPaths,
         customQuestions,
+        attendeeTypes,
         brandColor: (formData.get("brandColor") as string) || existingEvent.brandColor,
         visibility: visibility || "public",
         updatedAt: new Date(),
@@ -728,6 +750,7 @@ export async function saveEventAsBlueprint(eventId: string, name: string, descri
     brandColor: event.brandColor,
     media: event.media || [],
     customQuestions: event.customQuestions || [],
+    attendeeTypes: event.attendeeTypes || null,
     ticketTypes: event.ticketTypes.map((t: any) => ({
       name: t.name,
       description: t.description,
@@ -814,6 +837,7 @@ export async function createEventFromBlueprint(blueprintId: string, overrides: {
     brandColor: s.brandColor,
     media: overrides.media || s.media,
     customQuestions: s.customQuestions,
+    attendeeTypes: s.attendeeTypes || ["Delegate", "Student", "Minister / clergy", "Volunteer", "Speaker", "Guest"],
   }).returning();
 
   // Create ticket types

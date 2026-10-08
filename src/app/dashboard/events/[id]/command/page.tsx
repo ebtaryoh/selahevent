@@ -27,20 +27,20 @@ export default async function CommandPage({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <Link
           href={`/dashboard/events/${event.id}`}
-          className="inline-flex items-center gap-2 text-[0.85rem] font-semibold text-warm-500 transition-colors hover:text-ink"
+          className="inline-flex items-center gap-2 text-[0.85rem] font-semibold text-white/60 transition-colors hover:text-white"
         >
           <ArrowLeft size={16} /> Back to event dashboard
         </Link>
         
-        <div className="flex items-center gap-4 bg-white border border-[rgba(22,19,17,0.1)] rounded-full px-5 py-2 shadow-sm">
+        <div className="flex items-center gap-4 bg-[rgba(16,16,18,0.5)] backdrop-blur-md border border-white/10 rounded-full px-5 py-2 shadow-sm">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-[var(--color-signal-green)] animate-pulse" />
-            <span className="text-[0.85rem] font-medium text-ink">Live Check-ins</span>
+            <span className="text-[0.85rem] font-medium text-white">Live Check-ins</span>
           </div>
-          <div className="w-[1px] h-4 bg-warm-200" />
-          <div className="flex items-center gap-2 text-[0.85rem] text-warm-500">
+          <div className="w-[1px] h-4 bg-white/10" />
+          <div className="flex items-center gap-2 text-[0.85rem] text-white/60">
             <Users size={15} />
-            <span className="font-semibold text-ink">{formatNumber(stats.checkedIn)}</span> 
+            <span className="font-semibold text-white">{formatNumber(stats.checkedIn)}</span> 
             <span>/ {formatNumber(stats.registered)}</span>
           </div>
         </div>

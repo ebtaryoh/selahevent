@@ -4,8 +4,7 @@ import { db } from "@/db";
 import { sessions, events } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { requirePermission } from "./auth";
-import { getOrganization } from "../data";
+import { requirePermission, getOrganization } from "../data";
 
 export async function createSession(eventId: string, formData: FormData) {
   const actor = await requirePermission("events.update");

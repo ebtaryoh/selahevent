@@ -170,7 +170,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const amount = ticket?.price ?? 0;
+  const baseAmount = ticket?.price ?? 0;
+  const amount = (ticket?.isDonation && typeof payload.donationAmount === "number" && payload.donationAmount >= baseAmount) 
+                 ? payload.donationAmount 
+                 : baseAmount;
   const requiresPayment = amount > 0;
   const reference = (requiresPayment ? "PAYSTACK_" : "FREE_") + randomToken(12);
   const prefix = (event.slug.match(/^[a-z]{2,3}/)?.[0] ?? "EV").slice(0, 3).toUpperCase();
@@ -182,21 +185,29 @@ export async function POST(request: Request) {
   const session = await getAttendeeSession();
   let attendeeId = session?.attendeeId ?? null;
 
+  let isWaitlisted = false;
+  let finalRequiresPayment = requiresPayment;
+
   try {
     let result;
     try {
       result = await db.transaction(async tx => {
       if (ticket) {
-        await tx.execute(sql`SELECT id FROM ticket_types WHERE id = \${ticket.id} FOR UPDATE`);
+        await tx.execute(sql`SELECT id FROM ticket_types WHERE id = ${ticket.id} FOR UPDATE`);
 
-        const active = await tx.execute(sql`SELECT COUNT(*)::int AS count FROM ticket_reservations WHERE ticket_type_id = \${ticket.id} AND status = 'reserved' AND expires_at > NOW()`);
+        const active = await tx.execute(sql`SELECT COUNT(*)::int AS count FROM ticket_reservations WHERE ticket_type_id = ${ticket.id} AND status = 'reserved' AND expires_at > NOW()`);
         const reservedCount = Number((active.rows[0] as { count: number | string }).count);
 
         const locked = await tx.select().from(ticketTypes).where(eq(ticketTypes.id, ticket.id)).limit(1).then(r => r[0]);
         if (!locked) throw new Error("TICKET_NOT_FOUND");
 
         if (locked.capacity > 0 && locked.sold + reservedCount >= locked.capacity) {
-          throw new Error("TICKET_CAPACITY");
+          if (locked.hasWaitlist) {
+            isWaitlisted = true;
+            finalRequiresPayment = false;
+          } else {
+            throw new Error("TICKET_CAPACITY");
+          }
         }
       }
 
@@ -235,7 +246,7 @@ export async function POST(request: Request) {
         country: String(payload.country ?? event.country),
         church: String(payload.church ?? "").trim(),
         attendeeType: String(payload.attendeeType ?? "").trim() || "delegate",
-        status: requiresPayment ? "pending" : "confirmed",
+        status: isWaitlisted ? "waitlisted" : (finalRequiresPayment ? "pending" : "confirmed"),
         accommodation: payload.accommodation === true,
         transport: payload.transport === true,
         dietary: String(payload.dietary ?? "").trim(),
@@ -265,24 +276,26 @@ export async function POST(request: Request) {
         currency: event.currency,
         gateway: "paystack",
         gatewayReference: reference,
-        status: requiresPayment ? "pending" : "paid",
-        verified: !requiresPayment,
-        paidAt: requiresPayment ? null : new Date(),
+        status: isWaitlisted ? "not_required" : (finalRequiresPayment ? "pending" : "paid"),
+        verified: !finalRequiresPayment,
+        paidAt: finalRequiresPayment ? null : new Date(),
       }).returning();
 
       if (ticket) {
-        await tx.insert(ticketReservations).values({
-          ticketTypeId: ticket.id,
-          eventId: event.id,
-          registrationId: created.id,
-          status: requiresPayment ? "reserved" : "confirmed",
-          expiresAt: reservationExpiresAt,
-        });
+        if (!isWaitlisted) {
+          await tx.insert(ticketReservations).values({
+            ticketTypeId: ticket.id,
+            eventId: event.id,
+            registrationId: created.id,
+            status: finalRequiresPayment ? "reserved" : "confirmed",
+            expiresAt: reservationExpiresAt,
+          });
 
-        if (!requiresPayment) {
-          await tx.update(ticketTypes)
-            .set({ sold: sql.raw('"sold" + 1') })
-            .where(eq(ticketTypes.id, ticket.id));
+          if (!finalRequiresPayment) {
+            await tx.update(ticketTypes)
+              .set({ sold: sql.raw('"sold" + 1') })
+              .where(eq(ticketTypes.id, ticket.id));
+          }
         }
       }
 
@@ -343,7 +356,7 @@ export async function POST(request: Request) {
 
     let checkoutUrl: string | null = null;
 
-    if (requiresPayment) {
+    if (finalRequiresPayment) {
       const organization = await db.select().from(organizations).where(eq(organizations.id, event.organizationId)).limit(1).then(r => r[0]);
       const secretKey = organization?.paystackSecretKey || process.env.PAYSTACK_SECRET_KEY;
 
@@ -398,22 +411,45 @@ export async function POST(request: Request) {
       }
     }
 
-    if (!requiresPayment) {
+    if (!finalRequiresPayment && !isWaitlisted) {
+      const startsAtFormatted = new Date(event.startsAt).toLocaleString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "numeric",
+      });
+      const venueFormatted = event.venueName || event.city || "Virtual Event";
+      const ticketNameFormatted = ticket?.name || "General Admission";
+
+      const { generateTicketPdf } = await import("@/lib/pdf-ticket");
+      const pdfBuffer = await generateTicketPdf(
+        result.created.code,
+        result.created.ticketCode,
+        `${result.created.firstName} ${result.created.lastName}`,
+        event.title,
+        startsAtFormatted,
+        venueFormatted,
+        ticketNameFormatted
+      );
+
       await sendTicketConfirmation(result.created.email, {
         attendeeName: result.created.firstName,
         eventName: event.title,
-        ticketName: ticket?.name || "General Admission",
+        ticketName: ticketNameFormatted,
         ticketCode: result.created.ticketCode,
-        startsAt: new Date(event.startsAt).toLocaleString("en-US", {
-          weekday: "short",
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-          hour: "numeric",
-          minute: "numeric",
-        }),
-        venueName: event.venueName || event.city || "Virtual Event",
-      });
+        startsAt: startsAtFormatted,
+        venueName: venueFormatted,
+      }, pdfBuffer);
+
+      const phoneNumber = String(payload.phone ?? "").trim();
+      if (phoneNumber) {
+        // Dynamic import to avoid holding up the function if not strictly necessary at top level
+        const { sendWhatsAppTicket } = await import("@/lib/whatsapp");
+        // We don't await this to avoid slowing down the response, or we could await it
+        sendWhatsAppTicket(phoneNumber, event.title, result.created.ticketCode, result.created.firstName).catch(console.error);
+      }
     }
 
     const response = NextResponse.json({
@@ -439,10 +475,10 @@ export async function POST(request: Request) {
       },
       duplicateLikely: Boolean(duplicate),
       payment: {
-        required: requiresPayment,
+        required: finalRequiresPayment,
         checkoutUrl,
-        status: requiresPayment ? "pending" : "not_required",
-        reservationExpiresAt: requiresPayment ? reservationExpiresAt.toISOString() : null,
+        status: isWaitlisted ? "not_required" : (finalRequiresPayment ? "pending" : "not_required"),
+        reservationExpiresAt: finalRequiresPayment ? reservationExpiresAt.toISOString() : null,
       },
     });
 
@@ -481,7 +517,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: false, error: "That ticket type has just reached capacity. Please choose another ticket type." }, { status: 409 });
     }
     console.error("[selah] registration failed:", err);
-    return NextResponse.json({ ok: false, error: "We couldn't save this registration just now. Please try again in a moment." }, { status: 500 });
+    return NextResponse.json({ ok: false, error: err instanceof Error ? err.stack || err.message : String(err) }, { status: 500 });
   }
 }
 

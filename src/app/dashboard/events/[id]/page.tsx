@@ -181,6 +181,7 @@ export default async function EventManagePage({
                 >
                   <Ticket size={16} /> Tickets
                 </Link>
+
                 <Link
                   href={`/dashboard/events/${event.id}/schedule`}
                   className="btn btn-light"

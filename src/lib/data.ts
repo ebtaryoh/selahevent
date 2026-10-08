@@ -76,11 +76,18 @@ export async function getEventsForOrganization(orgId: string) {
 export async function getEventBySlug(slug: string) {
   await ensureSeed();
   return db
-    .select()
+    .select({
+      event: events,
+      organization: organizations,
+    })
     .from(events)
+    .innerJoin(organizations, eq(events.organizationId, organizations.id))
     .where(eq(events.slug, slug))
     .limit(1)
-    .then((r) => r[0] ?? null);
+    .then((r) => {
+      if (!r[0]) return null;
+      return { ...r[0].event, organization: r[0].organization };
+    });
 }
 
 export async function getEventById(id: string) {

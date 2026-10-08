@@ -10,6 +10,9 @@ import {
   Share2,
   ShieldCheck,
   Users,
+  Phone,
+  Mail,
+  Globe,
 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -788,6 +791,62 @@ export default async function EventPage({ params }: Params) {
           </div>
         </div>
       </section>
+
+      {/* ------------- Organizer ------------- */}
+      {event.organization && (
+        <section className="bg-parchment py-18">
+          <div className="mx-auto w-full max-w-[700px] px-5 sm:px-8 text-center">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-[rgba(22,19,17,0.1)] bg-paper shadow-sm">
+              {event.organization.logoUrl ? (
+                <Image
+                  src={event.organization.logoUrl}
+                  alt={event.organization.name}
+                  width={80}
+                  height={80}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <Building2 size={32} className="text-[var(--color-brass-deep)] opacity-50" />
+              )}
+            </div>
+            <h2 className="font-display mt-5 text-[1.65rem] font-semibold text-ink">
+              Hosted by {event.organization.name}
+            </h2>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              {event.organization.website && (
+                <a
+                  href={event.organization.website.startsWith('http') ? event.organization.website : `https://${event.organization.website}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn btn-light !px-6 !py-3 !text-[0.9rem]"
+                >
+                  <Globe size={16} />
+                  Visit Website
+                </a>
+              )}
+              {event.organization.email && (
+                <a
+                  href={`mailto:${event.organization.email}`}
+                  className="btn btn-light !px-6 !py-3 !text-[0.9rem]"
+                >
+                  <Mail size={16} />
+                  Email
+                </a>
+              )}
+              {event.organization.phone && (
+                <a
+                  href={`tel:${event.organization.phone.replace(/[^0-9+]/g, '')}`}
+                  className="btn btn-light !px-6 !py-3 !text-[0.9rem]"
+                >
+                  <Phone size={16} />
+                  Call
+                </a>
+              )}
+            </div>
+          </div>
+        </section>
+      )}
+
 
       {/* ------------- Final CTA ------------- */}
       <section className="relative isolate overflow-hidden">

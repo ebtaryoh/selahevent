@@ -513,3 +513,32 @@ select.input {
   scrollbar-width: thin;
   scrollbar-color: var(--color-warm-500) transparent;
 }
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 40s linear infinite;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px) rotate(0deg) scale(1); }
+  50% { transform: translateY(-30px) rotate(3deg) scale(1.05); }
+  100% { transform: translateY(0px) rotate(0deg) scale(1); }
+}
+
+.animate-float {
+  animation: float 8s ease-in-out infinite;
+}
+
+.glow-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.4;
+  mix-blend-mode: screen;
+}

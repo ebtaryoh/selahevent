@@ -71,7 +71,8 @@ export async function sendTicketConfirmation(
     ticketCode: string;
     startsAt: string;
     venueName: string;
-  }
+  },
+  pdfBuffer?: Buffer
 ) {
   if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
     console.warn("⚠️ GMAIL_USER or GMAIL_APP_PASSWORD not found. Skipping ticket email dispatch.");
@@ -85,6 +86,13 @@ export async function sendTicketConfirmation(
       to: email,
       subject: `Your Ticket: ${ticketProps.eventName}`,
       html: html,
+      attachments: pdfBuffer ? [
+        {
+          filename: `${ticketProps.ticketCode}.pdf`,
+          content: pdfBuffer,
+          contentType: 'application/pdf'
+        }
+      ] : undefined
     });
     return { data: info };
   } catch (err) {

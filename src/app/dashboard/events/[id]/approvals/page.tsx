@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/db";
 import { events, registrations, ticketTypes } from "@/db/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { formatDate } from "@/lib/format";
 
@@ -33,7 +33,7 @@ export default async function ApprovalsPage({
     .where(
       and(
         eq(registrations.eventId, id),
-        eq(registrations.status, "under_review")
+        sql`${registrations.status} IN ('under_review', 'waitlisted')`
       )
     )
     .orderBy(desc(registrations.createdAt));
@@ -78,8 +78,12 @@ export default async function ApprovalsPage({
             <ShieldAlert className="text-[var(--color-brass)]" /> Ticket Approvals
           </h1>
           <p className="mt-2 text-warm-500 text-sm max-w-2xl">
-            Review and approve attendees who registered for ticket types requiring approval.
+            Review and approve attendees who registered for ticket types requiring approval or who were placed on the waitlist.
           </p>
+          <div className="mt-3 rounded-lg bg-amber-50 p-3 text-amber-800 text-xs flex items-start gap-2 border border-amber-200 max-w-2xl">
+            <ShieldAlert size={14} className="mt-0.5 shrink-0" />
+            <p><strong>Note:</strong> Approving a waitlisted attendee for a paid ticket currently bypasses the payment gateway and confirms them immediately. Automatic payment link generation will be added soon.</p>
+          </div>
         </div>
       </section>
 

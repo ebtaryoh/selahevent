@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { useParams } from "next/navigation";
 import { CheckCircle2, QrCode, XCircle } from "lucide-react";
-import { SectionHead } from "@/components/ui";
+
 
 export default function ScannerPage() {
   const params = useParams();
@@ -75,28 +75,27 @@ export default function ScannerPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-5 py-8 sm:px-8">
-      <SectionHead 
-        title="Scan Tickets" 
-        description="Use your camera to check in attendees." 
-        eyebrow="Scanner"
-      />
+      <div className="mb-8">
+        <h1 className="font-display text-3xl font-semibold text-white">Scan Tickets</h1>
+        <p className="mt-2 text-white/60">Use your camera to check in attendees.</p>
+      </div>
 
-      <div className="mt-8 rounded-[16px] border border-[rgba(22,19,17,0.1)] bg-white p-6 shadow-sm">
+      <div className="mt-8 rounded-[24px] border border-white/10 bg-[rgba(16,16,18,0.7)] backdrop-blur-2xl p-6 shadow-2xl">
         
         {/* State Indicators */}
-        <div className={`mb-6 flex flex-col items-center justify-center p-4 rounded-xl text-center transition-colors
-          ${scanResult.status === "idle" ? "bg-parchment text-ink" : ""}
-          ${scanResult.status === "scanning" ? "bg-blue-50 text-blue-700" : ""}
-          ${scanResult.status === "success" ? "bg-green-50 text-green-700" : ""}
-          ${scanResult.status === "error" ? "bg-red-50 text-red-700" : ""}
+        <div className={`mb-6 flex flex-col items-center justify-center p-4 rounded-xl text-center transition-colors border
+          ${scanResult.status === "idle" ? "border-white/10 bg-white/5 text-white/80" : ""}
+          ${scanResult.status === "scanning" ? "border-blue-500/30 bg-blue-500/10 text-blue-400" : ""}
+          ${scanResult.status === "success" ? "border-green-500/30 bg-green-500/10 text-green-400" : ""}
+          ${scanResult.status === "error" ? "border-red-500/30 bg-red-500/10 text-red-400" : ""}
         `}>
-          {scanResult.status === "success" && <CheckCircle2 size={32} className="mb-2 text-green-600" />}
-          {scanResult.status === "error" && <XCircle size={32} className="mb-2 text-red-600" />}
+          {scanResult.status === "success" && <CheckCircle2 size={32} className="mb-2 text-green-400" />}
+          {scanResult.status === "error" && <XCircle size={32} className="mb-2 text-red-400" />}
           
           <h3 className="font-semibold text-lg">{scanResult.message}</h3>
           
           {scanResult.ticketDetails && (
-            <div className="mt-2 text-sm text-green-800">
+            <div className="mt-2 text-sm text-green-300">
               <p><strong>Name:</strong> {scanResult.ticketDetails.attendeeName}</p>
               <p><strong>Type:</strong> {scanResult.ticketDetails.ticketType}</p>
             </div>
@@ -104,8 +103,8 @@ export default function ScannerPage() {
         </div>
 
         {/* Scanner Container */}
-        <div className="overflow-hidden rounded-xl border-2 border-dashed border-warm-200">
-          <div id="qr-reader" className="w-full"></div>
+        <div className="overflow-hidden rounded-xl border-2 border-dashed border-white/20 bg-black/40">
+          <div id="qr-reader" className="w-full text-white [&_button]:btn [&_button]:btn-brass [&_button]:!py-2 [&_button]:!px-4 [&_button]:mt-4 [&_select]:bg-black/80 [&_select]:text-white [&_select]:border [&_select]:border-white/20 [&_select]:rounded-lg [&_select]:p-2"></div>
         </div>
 
       </div>
