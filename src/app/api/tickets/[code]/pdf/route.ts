@@ -51,7 +51,7 @@ export async function GET(
     ticketType.name
   );
 
-  return new NextResponse(pdfBuffer, {
+  return new NextResponse(pdfBuffer as any, {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",
