@@ -2,14 +2,9 @@
 
 import { useEffect, useState, useRef } from "react";
 import { Html5QrcodeScanner } from "html5-qrcode";
-import { useParams } from "next/navigation";
-import { CheckCircle2, QrCode, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle } from "lucide-react";
 
-
-export default function ScannerPage() {
-  const params = useParams();
-  const eventId = params.id as string;
-  
+export function PublicScanner({ eventId, magicToken }: { eventId: string, magicToken: string }) {
   const [scanResult, setScanResult] = useState<{
     status: "idle" | "scanning" | "success" | "error";
     message: string;
@@ -19,11 +14,8 @@ export default function ScannerPage() {
   const isScanningRef = useRef(false);
 
   useEffect(() => {
-    // Ensure this only runs in browser
     if (typeof window === "undefined") return;
 
-
-    // Helper to play a beep sound using Web Audio API
     const playBeep = (type: "success" | "error") => {
       try {
         const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -64,7 +56,7 @@ export default function ScannerPage() {
         const res = await fetch(`/api/events/${eventId}/scan`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ticketId: decodedText }),
+          body: JSON.stringify({ ticketId: decodedText, magicToken }),
         });
 
         const data = await res.json();
@@ -72,7 +64,6 @@ export default function ScannerPage() {
         if (!res.ok) {
           playBeep("error");
           setScanResult({ status: "error", message: data.error || "Invalid ticket." });
-          // Reset after 3 seconds
           setTimeout(() => {
             setScanResult({ status: "idle", message: "Point your camera at a ticket QR code." });
             isScanningRef.current = false;
@@ -87,12 +78,10 @@ export default function ScannerPage() {
           ticketDetails: data
         });
 
-        // Reset after 4 seconds
         setTimeout(() => {
           setScanResult({ status: "idle", message: "Point your camera at a ticket QR code." });
           isScanningRef.current = false;
         }, 4000);
-
       } catch (err) {
         playBeep("error");
         setScanResult({ status: "error", message: "Network error verifying ticket." });
@@ -103,16 +92,15 @@ export default function ScannerPage() {
       }
     }
 
-    function onScanFailure(error: any) {
-      // Ignore background scan failures
-    }
+    function onScanFailure(error: any) {}
 
     let scanner: Html5QrcodeScanner | null = null;
     
-    // Use a small timeout to avoid React Strict Mode double-mount bugs duplicating the UI
+    // We use a small timeout to let React Strict Mode's rapid mount/unmount cycle settle.
+    // Otherwise, the async scanner.clear() overlaps with the next scanner.render() and duplicates the UI.
     const timeoutId = setTimeout(() => {
       scanner = new Html5QrcodeScanner(
-        "qr-reader",
+        "public-qr-reader",
         { fps: 10, qrbox: { width: 250, height: 250 } },
         false
       );
@@ -125,66 +113,46 @@ export default function ScannerPage() {
         scanner.clear().catch(console.error);
       }
     };
-  }, [eventId]);
-
-  const [isCopied, setIsCopied] = useState(false);
-
-  const handleCopyLink = async () => {
-    try {
-      const { generateScannerLink } = await import("@/lib/actions/scanner");
-      const link = await generateScannerLink(eventId);
-      await navigator.clipboard.writeText(link);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
-    } catch (e) {
-      console.error(e);
-      alert("Failed to generate link");
-    }
-  };
+  }, [eventId, magicToken]);
 
   return (
-    <div className="mx-auto max-w-2xl px-5 py-8 sm:px-8">
-      <div className="mb-8 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl font-semibold text-white">Scan Tickets</h1>
-          <p className="mt-2 text-white/60">Use your camera to check in attendees.</p>
-        </div>
+    <div className="card p-6 shadow-xl">
+      <div className={`mb-6 flex flex-col items-center justify-center p-4 rounded-xl text-center transition-colors border
+        ${scanResult.status === "idle" ? "border-warm-200 bg-warm-100 text-warm-600" : ""}
+        ${scanResult.status === "scanning" ? "border-blue-200 bg-blue-50 text-blue-700" : ""}
+        ${scanResult.status === "success" ? "border-green-200 bg-green-50 text-green-700" : ""}
+        ${scanResult.status === "error" ? "border-red-200 bg-red-50 text-red-700" : ""}
+      `}>
+        {scanResult.status === "success" && <CheckCircle2 size={32} className="mb-2 text-green-500" />}
+        {scanResult.status === "error" && <XCircle size={32} className="mb-2 text-red-500" />}
         
-        <button 
-          onClick={handleCopyLink}
-          className="btn btn-brass shrink-0"
-        >
-          {isCopied ? "Link Copied!" : "Copy Volunteer Scanner Link"}
-        </button>
+        <h3 className="font-semibold text-lg">{scanResult.message}</h3>
+        
+        {scanResult.ticketDetails && (
+          <div className="mt-2 text-sm text-green-800 font-medium">
+            <p><strong>Name:</strong> {scanResult.ticketDetails.attendeeName}</p>
+            <p><strong>Type:</strong> {scanResult.ticketDetails.ticketType}</p>
+          </div>
+        )}
       </div>
+      
+      <style dangerouslySetInnerHTML={{__html: `
+        #public-qr-reader, #public-qr-reader * {
+          color: #161311 !important;
+        }
+        #public-qr-reader a {
+          color: var(--color-brass-deep) !important;
+          text-decoration: underline !important;
+          font-weight: 600 !important;
+          cursor: pointer !important;
+        }
+        #public-qr-reader a:hover {
+          color: #161311 !important;
+        }
+      `}} />
 
-      <div className="mt-8 rounded-[24px] border border-white/10 bg-[rgba(16,16,18,0.7)] backdrop-blur-2xl p-6 shadow-2xl">
-        
-        {/* State Indicators */}
-        <div className={`mb-6 flex flex-col items-center justify-center p-4 rounded-xl text-center transition-colors border
-          ${scanResult.status === "idle" ? "border-white/10 bg-white/5 text-white/80" : ""}
-          ${scanResult.status === "scanning" ? "border-blue-500/30 bg-blue-500/10 text-blue-400" : ""}
-          ${scanResult.status === "success" ? "border-green-500/30 bg-green-500/10 text-green-400" : ""}
-          ${scanResult.status === "error" ? "border-red-500/30 bg-red-500/10 text-red-400" : ""}
-        `}>
-          {scanResult.status === "success" && <CheckCircle2 size={32} className="mb-2 text-green-400" />}
-          {scanResult.status === "error" && <XCircle size={32} className="mb-2 text-red-400" />}
-          
-          <h3 className="font-semibold text-lg">{scanResult.message}</h3>
-          
-          {scanResult.ticketDetails && (
-            <div className="mt-2 text-sm text-green-300">
-              <p><strong>Name:</strong> {scanResult.ticketDetails.attendeeName}</p>
-              <p><strong>Type:</strong> {scanResult.ticketDetails.ticketType}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Scanner Container */}
-        <div className="overflow-hidden rounded-xl border-2 border-dashed border-white/20 bg-black/40">
-          <div id="qr-reader" className="w-full text-white [&_button]:btn [&_button]:btn-brass [&_button]:!py-2 [&_button]:!px-4 [&_button]:mt-4 [&_select]:bg-black/80 [&_select]:text-white [&_select]:border [&_select]:border-white/20 [&_select]:rounded-lg [&_select]:p-2"></div>
-        </div>
-
+      <div className="overflow-hidden rounded-xl border-2 border-dashed border-[rgba(22,19,17,0.2)] bg-white p-2">
+        <div id="public-qr-reader" className="w-full [&_button]:btn [&_button]:btn-brass [&_button]:!py-2 [&_button]:!px-4 [&_button]:mt-4 [&_select]:bg-white [&_select]:text-ink [&_select]:border [&_select]:border-[rgba(22,19,17,0.2)] [&_select]:rounded-lg [&_select]:p-2"></div>
       </div>
     </div>
   );

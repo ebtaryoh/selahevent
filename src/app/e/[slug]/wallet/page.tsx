@@ -5,7 +5,7 @@ import { AttendeeLogin } from "@/components/attendee-login";
 import { db } from "@/db";
 import { registrations, events as eventsTable } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
-import { Ticket, Calendar, MapPin } from "lucide-react";
+import { Ticket, Calendar, MapPin, Download } from "lucide-react";
 import { formatTime, formatRange } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -136,6 +136,17 @@ export default async function WalletPage({ params }: Params) {
                       <p className="text-xs text-warm-500 mt-1 max-w-[200px] text-left sm:text-right">
                         Present this code or your email at the event check-in desk.
                       </p>
+                      
+                      <a 
+                        href={`/api/tickets/${registration.ticketCode}/pdf`}
+                        className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--color-brass-deep)] hover:text-ink transition-colors bg-[rgba(226,192,115,0.1)] px-3 py-1.5 rounded-full"
+                        target="_blank"
+                        rel="noreferrer"
+                        download
+                      >
+                        <Download size={13} />
+                        Download PDF Ticket
+                      </a>
                     </div>
                   </div>
                 </div>

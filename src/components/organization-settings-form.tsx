@@ -257,6 +257,52 @@ export function OrganizationSettingsForm({
             </Field>
           </div>
         </div>
+
+        {/* Payment Integrations */}
+        <div className="rounded-[16px] border border-[rgba(255,255,255,0.09)] bg-[rgba(16,16,18,0.5)] backdrop-blur-md p-7">
+          <h2 className="font-display flex items-center gap-2 text-[1.25rem] font-medium text-white mb-6">
+            <DollarSign size={18} className="text-[var(--color-brass)]" />
+            Payment Integration
+          </h2>
+          <p className="mb-6 text-sm text-white/60">
+            Configure your Paystack API keys to accept payments for ticket sales. You can find these in your Paystack dashboard.
+          </p>
+
+          <div className="grid gap-6">
+            <Field label="Payment Gateway">
+              <select name="paymentGateway" defaultValue={org.paymentGateway} className="input bg-parchment">
+                <option value="paystack">Paystack</option>
+              </select>
+            </Field>
+
+            <Field label="Gateway Mode">
+              <select name="paymentGatewayMode" defaultValue={org.paymentGatewayMode} className="input bg-parchment">
+                <option value="test">Test Mode (Transactions won't be charged)</option>
+                <option value="live">Live Mode (Real payments)</option>
+              </select>
+            </Field>
+
+            <Field label="Paystack Public Key" description="Starts with pk_test_ or pk_live_">
+              <input
+                type="text"
+                name="paystackPublicKey"
+                defaultValue={org.paystackPublicKey || ""}
+                className="input font-mono"
+                placeholder="pk_..."
+              />
+            </Field>
+
+            <Field label="Paystack Secret Key" description="Starts with sk_test_ or sk_live_ (Keep this secret!)">
+              <input
+                type="password"
+                name="paystackSecretKey"
+                defaultValue={org.paystackSecretKey || ""}
+                className="input font-mono"
+                placeholder="sk_..."
+              />
+            </Field>
+          </div>
+        </div>
       </div>
     </form>
   );

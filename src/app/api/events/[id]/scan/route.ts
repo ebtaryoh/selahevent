@@ -4,16 +4,39 @@ import { registrations, checkIns, events } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getOrganization, requirePermission } from "@/lib/data";
 import { enforceRateLimit, getClientAddress, rateLimitHeaders } from "@/lib/rate-limit";
+import { createHmac } from "crypto";
 
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const actor = await requirePermission("checkin.write");
-    const org = await getOrganization();
-    if (!actor || !org) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { id: eventId } = await params;
+    const body = await req.json();
+    const { ticketId, magicToken } = body;
+
+    let actor = null;
+    let isMagic = false;
+
+    // Verify magic token if provided
+    if (magicToken) {
+      const expectedToken = createHmac("sha256", process.env.AUTH_SECRET || "default_secret")
+        .update(eventId)
+        .digest("hex");
+      
+      if (magicToken === expectedToken) {
+        isMagic = true;
+        actor = { id: null, name: "Volunteer (Magic Link)" };
+      } else {
+        return NextResponse.json({ error: "Invalid or expired scanner link." }, { status: 401 });
+      }
+    } else {
+      // Fallback to normal session auth
+      actor = await requirePermission("checkin.write");
+      const org = await getOrganization();
+      if (!actor || !org) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      }
     }
 
     const scanLimit = await enforceRateLimit("scanner-ip", getClientAddress(req), 120, 60);
@@ -24,18 +47,24 @@ export async function POST(
       );
     }
 
-    const { id: eventId } = await params;
-    const body = await req.json();
-    const { ticketId } = body;
-
     if (!ticketId) {
       return NextResponse.json({ error: "No ticket code provided" }, { status: 400 });
     }
 
-    const event = await db.query.events.findFirst({
-      where: and(eq(events.id, eventId), eq(events.organizationId, org.id)),
-      columns: { id: true },
-    });
+    let event;
+    if (isMagic) {
+      event = await db.query.events.findFirst({
+        where: eq(events.id, eventId),
+        columns: { id: true },
+      });
+    } else {
+      const org = await getOrganization();
+      event = await db.query.events.findFirst({
+        where: and(eq(events.id, eventId), eq(events.organizationId, org!.id)),
+        columns: { id: true },
+      });
+    }
+
     if (!event) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 });
     }

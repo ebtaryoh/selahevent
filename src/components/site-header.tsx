@@ -9,7 +9,7 @@ import { cn } from "@/lib/format";
 
 const links = [
   { href: "/", label: "Discover Events" },
-  { href: "/#organizers", label: "For Churches" },
+  { href: "/for-ministries", label: "For Ministries" },
   { href: "/#lifecycle", label: "How it works" },
 ];
 

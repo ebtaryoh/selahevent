@@ -41,6 +41,11 @@ export async function updateOrganizationSettings(orgId: string, formData: FormDa
   const accentColor = formData.get("accentColor") as string;
   const orgType = formData.get("orgType") as string;
   
+  const paymentGateway = formData.get("paymentGateway") as string;
+  const paymentGatewayMode = formData.get("paymentGatewayMode") as string;
+  const paystackPublicKey = formData.get("paystackPublicKey") as string;
+  const paystackSecretKey = formData.get("paystackSecretKey") as string;
+  
   let logoUrl = sessionOrg.logoUrl;
   const avatarFile = formData.get("avatar") as File | null;
   if (avatarFile && avatarFile.size > 0) {
@@ -103,6 +108,10 @@ export async function updateOrganizationSettings(orgId: string, formData: FormDa
         primaryColor,
         accentColor,
         orgType,
+        paymentGateway: paymentGateway || "paystack",
+        paymentGatewayMode: paymentGatewayMode || "test",
+        paystackPublicKey: paystackPublicKey || null,
+        paystackSecretKey: paystackSecretKey || null,
         logoUrl,
       })
       .where(eq(organizations.id, orgId));
