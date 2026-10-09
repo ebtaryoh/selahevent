@@ -59,7 +59,7 @@ export default async function ForMinistriesPage() {
             
             <Reveal delay={0.2}>
               <p className="mx-auto mt-8 max-w-2xl text-[clamp(1.05rem,1.5vw,1.25rem)] leading-[1.7] text-warm-500 font-light">
-                Generic event platforms weren't built for church logistics. Selah brings your ticketing, check-ins, volunteers, and reporting into one beautiful, unified command center.
+                Generic event platforms weren&apos;t built for church logistics. Selah brings your ticketing, check-ins, volunteers, and reporting into one beautiful, unified command center.
               </p>
             </Reveal>
 
@@ -144,7 +144,7 @@ export default async function ForMinistriesPage() {
             <Reveal>
               <div className="mx-auto max-w-4xl text-center">
                 <h2 className="font-display text-[clamp(1.8rem,4vw,3rem)] leading-[1.2] font-semibold text-[var(--color-brass-light)]">
-                  "Our vision is to equip every ministry with the technology they need to host life-changing gatherings, without the administrative chaos."
+                  &quot;Our vision is to equip every ministry with the technology they need to host life-changing gatherings, without the administrative chaos.&quot;
                 </h2>
                 <div className="mt-10 flex flex-col items-center justify-center gap-4">
                   <div className="h-16 w-16 overflow-hidden rounded-full border-2 border-[var(--color-brass-deep)]">

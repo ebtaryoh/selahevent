@@ -607,7 +607,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
             </h2>
           </div>
           <p className="mb-6 text-sm text-white/60">
-            Define the options attendees can choose from when asked "I am attending as..." (comma separated).
+            Define the options attendees can choose from when asked &quot;I am attending as...&quot; (comma separated).
           </p>
           <div>
             <input

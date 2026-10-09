@@ -204,7 +204,7 @@ export default async function HomePage({
               <div className="mt-8 flex flex-col items-center justify-center rounded-3xl border border-white/10 bg-[rgba(16,16,18,0.4)] py-24 text-center backdrop-blur-md">
                 <CalendarDays size={48} className="text-white/20 mb-6" strokeWidth={1} />
                 <h3 className="font-display text-2xl font-semibold text-white">No events found</h3>
-                <p className="mt-3 text-white/60 max-w-sm font-light">We couldn't find any events matching your criteria right now. Check back later.</p>
+                <p className="mt-3 text-white/60 max-w-sm font-light">We couldn&apos;t find any events matching your criteria right now. Check back later.</p>
               </div>
             </Reveal>
           ) : (

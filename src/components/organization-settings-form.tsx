@@ -277,7 +277,7 @@ export function OrganizationSettingsForm({
 
             <Field label="Gateway Mode">
               <select name="paymentGatewayMode" defaultValue={org.paymentGatewayMode} className="input bg-parchment">
-                <option value="test">Test Mode (Transactions won't be charged)</option>
+                <option value="test">Test Mode (Transactions won&apos;t be charged)</option>
                 <option value="live">Live Mode (Real payments)</option>
               </select>
             </Field>

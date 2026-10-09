@@ -18,7 +18,7 @@ const CATEGORIES = [
 export function CategoryGrid() {
   return (
     <div className="mb-20 text-center">
-      <h2 className="font-display text-4xl font-semibold text-white">There's something here for everyone</h2>
+      <h2 className="font-display text-4xl font-semibold text-white">There&apos;s something here for everyone</h2>
       <p className="mt-3 text-lg text-white/60 font-light">Explore Christian events across categories that matter to you</p>
       
       <div className="mt-12 flex flex-nowrap items-center justify-start sm:justify-center gap-4 overflow-x-auto pb-6 scrollbar-hide snap-x">
