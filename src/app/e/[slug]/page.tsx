@@ -1,5 +1,6 @@
 import Image from "next/image";
 import {
+  AlertTriangle,
   ArrowUpRight,
   Building2,
   CalendarDays,
@@ -33,10 +34,14 @@ import {
   formatTime,
   percent,
 } from "@/lib/format";
+import { getEventTag, isSeatedEvent, getEventTypeLabel } from "@/lib/event-tags";
 
 export const dynamic = "force-dynamic";
 
-type Params = { params: Promise<{ slug: string }> };
+type Params = {
+  params: Promise<{ slug: string }>;
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+};
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
@@ -68,8 +73,10 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
-export default async function EventPage({ params }: Params) {
+export default async function EventPage({ params, searchParams }: Params) {
   const { slug } = await params;
+  const search = searchParams ? await searchParams : {};
+  const isEmbed = search?.embed === "true";
   const event = await getEventBySlug(slug);
   if (!event || event.visibility === "private") notFound();
 
@@ -82,10 +89,15 @@ export default async function EventPage({ params }: Params) {
   const totalSold = tickets.reduce((sum, t) => sum + t.sold, 0);
   const fillRate = percent(totalSold, event.capacity);
 
+  const isCancelled = event.status === "cancelled";
+  const isPostponed = event.status === "postponed";
+
   const isRegistrationUpcoming =
-    event.registrationOpensAt && new Date(event.registrationOpensAt) > new Date();
+    !isCancelled && !isPostponed && event.registrationOpensAt && new Date(event.registrationOpensAt) > new Date();
 
   const isRegistrationClosed =
+    isCancelled ||
+    isPostponed ||
     (event.registrationClosesAt && new Date(event.registrationClosesAt) < new Date()) ||
     new Date(event.endsAt) < new Date();
 
@@ -96,7 +108,11 @@ export default async function EventPage({ params }: Params) {
     description: event.tagline ?? event.description,
     startDate: event.startsAt.toISOString(),
     endDate: event.endsAt.toISOString(),
-    eventStatus: "https://schema.org/EventScheduled",
+    eventStatus: isCancelled
+      ? "https://schema.org/EventCancelled"
+      : isPostponed
+      ? "https://schema.org/EventPostponed"
+      : "https://schema.org/EventScheduled",
     eventAttendanceMode:
       event.mode === "online"
         ? "https://schema.org/OnlineEventAttendanceMode"
@@ -136,6 +152,35 @@ export default async function EventPage({ params }: Params) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+
+      {/* Cancellation / Postponement Notice Banner */}
+      {isCancelled && (
+        <div className="relative z-20 border-b border-red-500/30 bg-[#3b1212] px-5 py-5 text-white sm:px-8 shadow-md">
+          <div className="mx-auto flex max-w-[1180px] items-start gap-4">
+            <AlertTriangle className="h-6 w-6 text-red-400 shrink-0 mt-0.5" />
+            <div>
+              <h2 className="font-display text-lg font-semibold text-white">This event has been cancelled</h2>
+              <p className="mt-1 text-sm text-red-200 leading-relaxed max-w-3xl">
+                {event.cancellationReason || "This program has been cancelled by the organizers. If you have already registered or purchased tickets, please check your email or contact the organizers for refund details."}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isPostponed && (
+        <div className="relative z-20 border-b border-amber-500/30 bg-[#3b2b10] px-5 py-5 text-white sm:px-8 shadow-md">
+          <div className="mx-auto flex max-w-[1180px] items-start gap-4">
+            <Clock className="h-6 w-6 text-amber-300 shrink-0 mt-0.5" />
+            <div>
+              <h2 className="font-display text-lg font-semibold text-white">This event has been postponed</h2>
+              <p className="mt-1 text-sm text-amber-200 leading-relaxed max-w-3xl">
+                {event.cancellationReason || "This program has been postponed. The organizers will communicate the rescheduled dates soon. Existing registrations will remain reserved."}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ------------- Hero ------------- */}
       <section className="relative isolate overflow-hidden pt-[72px]">
@@ -177,8 +222,8 @@ export default async function EventPage({ params }: Params) {
               Selah
             </Link>
             <span className="text-[rgba(232,211,166,0.45)]">/</span>
-            <span className="eyebrow text-[0.58rem] text-[rgba(232,211,166,0.75)]">
-              {event.eventType}
+            <span className="eyebrow text-[0.58rem] text-[rgba(232,211,166,0.75)] uppercase">
+              {getEventTag(event.eventType)}
             </span>
           </nav>
 
@@ -186,7 +231,15 @@ export default async function EventPage({ params }: Params) {
           <div className="grid gap-10 lg:grid-cols-[1.35fr_1fr] lg:items-end">
             <div>
               <div className="flex flex-wrap items-center gap-2.5">
-                {isRegistrationClosed ? (
+                {isCancelled ? (
+                  <span className="pill border-red-500/40 bg-red-950/70 text-red-200 font-medium">
+                    Event Cancelled
+                  </span>
+                ) : isPostponed ? (
+                  <span className="pill border-amber-500/40 bg-amber-950/70 text-amber-200 font-medium">
+                    Event Postponed
+                  </span>
+                ) : isRegistrationClosed ? (
                   <span className="pill border-[rgba(232,211,166,0.28)] bg-[rgba(232,211,166,0.12)] text-[rgba(232,211,166,0.8)]">
                     Registration closed
                   </span>
@@ -205,6 +258,11 @@ export default async function EventPage({ params }: Params) {
                 <span className="pill border-[rgba(247,243,236,0.18)] bg-[rgba(247,243,236,0.08)] text-[rgba(247,243,236,0.8)]">
                   <Users size={12} /> {formatNumber(totalSold)} registered
                 </span>
+                {isSeatedEvent(event.eventType) && (
+                  <span className="pill border-brass/50 bg-brass/15 text-brass-light font-medium shadow-sm">
+                    🍽️ {getEventTypeLabel(event.eventType)} • Table Seating
+                  </span>
+                )}
               </div>
 
               <h1 className="font-display mt-6 text-[clamp(2.35rem,5.6vw,4.25rem)] leading-[1.02] font-semibold tracking-[-0.026em] text-parchment">
@@ -652,7 +710,21 @@ export default async function EventPage({ params }: Params) {
                 Choose what fits.
               </h2>
             </div>
-            {isRegistrationClosed ? (
+            {isCancelled ? (
+              <button
+                disabled
+                className="btn bg-red-950/40 border border-red-500/30 text-red-200 opacity-80 cursor-not-allowed !px-7 !py-4"
+              >
+                Event Cancelled
+              </button>
+            ) : isPostponed ? (
+              <button
+                disabled
+                className="btn bg-amber-950/40 border border-amber-500/30 text-amber-200 opacity-80 cursor-not-allowed !px-7 !py-4"
+              >
+                Event Postponed
+              </button>
+            ) : isRegistrationClosed ? (
               <button
                 disabled
                 className="btn btn-primary opacity-50 cursor-not-allowed !px-7 !py-4"

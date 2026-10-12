@@ -13,6 +13,7 @@ import {
   Info,
   Loader2,
   MapPin,
+  MessageSquare,
   ShieldCheck,
   Ticket,
 } from "lucide-react";
@@ -21,6 +22,7 @@ import { useMemo, useState, useEffect, useRef } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { cn, formatMoney, formatRange, formatTime } from "@/lib/format";
 import { requestAttendeeOTP, verifyAttendeeOTP, getAttendeeProfile } from "@/lib/attendee";
+import { generateWhatsAppTicketLink } from "@/lib/whatsapp";
 
 export type TicketOption = {
   id: string;
@@ -104,10 +106,12 @@ export function RegistrationForm({
   event,
   tickets,
   initialTicketId,
+  isStaff,
 }: {
   event: EventSummary;
   tickets: TicketOption[];
   initialTicketId?: string;
+  isStaff?: boolean;
 }) {
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
@@ -349,6 +353,7 @@ export function RegistrationForm({
         event={event}
         confirmation={confirmation}
         email={form.email}
+        phone={form.phone}
       />
     );
   }
@@ -1221,6 +1226,7 @@ function ConfirmationPanel({
   event,
   confirmation,
   email,
+  phone,
 }: {
   event: EventSummary;
   confirmation: {
@@ -1235,8 +1241,25 @@ function ConfirmationPanel({
     status?: string;
   };
   email: string;
+  phone?: string;
 }) {
   const [copied, setCopied] = useState(false);
+
+  const siteUrl =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : process.env.NEXT_PUBLIC_SITE_URL || "https://selahevent.vercel.app";
+
+  const whatsappUrl = generateWhatsAppTicketLink({
+    phone: phone || null,
+    eventTitle: event.title,
+    attendeeName: confirmation.name,
+    ticketCode: confirmation.ticketCode,
+    ticketTier: confirmation.ticketName,
+    venueName: event.venueName,
+    eventDate: formatRange(event.startsAt, event.endsAt),
+    passUrl: `${siteUrl}/my-tickets/${confirmation.ticketCode}`,
+  });
 
   return (
     <div className="mx-auto max-w-[52rem]">
@@ -1322,7 +1345,34 @@ function ConfirmationPanel({
               </div>
             ) : null}
 
-            <div className="mt-8 flex flex-wrap gap-3">
+            {/* Instant WhatsApp Delivery Banner */}
+            <div className="mt-8 rounded-[16px] border border-emerald-600/30 bg-gradient-to-br from-emerald-500/[0.09] to-emerald-500/[0.03] p-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-3.5">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#25D366] text-white shadow-sm ring-4 ring-emerald-500/15">
+                    <MessageSquare size={22} />
+                  </div>
+                  <div>
+                    <h4 className="text-[0.935rem] font-semibold text-ink">
+                      Save Pass to WhatsApp
+                    </h4>
+                    <p className="mt-0.5 text-[0.825rem] leading-snug text-warm-500">
+                      Tap below to receive your digital badge, seat details, and QR entrance pass directly into WhatsApp.
+                    </p>
+                  </div>
+                </div>
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-2.5 text-[0.875rem] font-semibold text-white shadow-sm transition-all hover:bg-[#20ba5a] hover:shadow-md active:scale-[0.98]"
+                >
+                  <MessageSquare size={16} /> Save to WhatsApp
+                </a>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3">
               <a
                 href={`data:text/calendar;charset=utf-8,${encodeURIComponent(
                   buildIcs(event)
@@ -1388,12 +1438,30 @@ function ConfirmationPanel({
                 Show this at the entrance. It contains no personal information.
               </p>
             </div>
-            <Link
-              href={`/e/${event.slug}`}
-              className="btn btn-ghost w-full !py-2.5 !text-[0.825rem]"
-            >
-              Back to event
-            </Link>
+
+            <div className="mt-1 flex w-full flex-col gap-2">
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-2.5 text-[0.845rem] font-semibold text-white shadow-sm transition-all hover:bg-[#20ba5a]"
+              >
+                <MessageSquare size={16} /> Save Pass to WhatsApp
+              </a>
+              <a
+                href={`/api/tickets/${confirmation.ticketCode}/pdf`}
+                download
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/60 px-4 py-2 text-[0.825rem] font-medium text-ink transition-all hover:bg-white"
+              >
+                <Download size={14} /> Download PDF Ticket
+              </a>
+              <Link
+                href={`/e/${event.slug}`}
+                className="btn btn-ghost w-full !py-2.5 !text-[0.825rem]"
+              >
+                Back to event
+              </Link>
+            </div>
           </div>
         </div>
       </div>

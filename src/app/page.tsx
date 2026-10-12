@@ -5,11 +5,13 @@ import { ArrowRight, CalendarDays, MapPin, Sparkles, Ticket, Globe, Shield, Star
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { Reveal, SectionHead } from "@/components/ui";
+import { AnimatedHeroTitle } from "@/components/animated-hero-title";
 import { getAllPublicEvents } from "@/lib/data";
 import { EventSearch } from "@/components/event-search";
 import { CategoryGrid } from "@/components/category-grid";
 import { formatMoney } from "@/lib/format";
 import { getOrgSession } from "@/lib/session";
+import { getEventTag, isSeatedEvent } from "@/lib/event-tags";
 
 type SearchParams = {
   query?: string;
@@ -80,11 +82,7 @@ export default async function HomePage({
             </div>
           </Reveal>
           
-          <Reveal delay={0.1}>
-            <h1 className="font-display mx-auto max-w-5xl text-[clamp(3.2rem,8vw,6.5rem)] leading-[1.02] font-semibold tracking-[-0.03em] text-ink">
-              Curated experiences for the <span className="italic font-light text-brass-light px-1">modern</span> church.
-            </h1>
-          </Reveal>
+          <AnimatedHeroTitle className="font-display mx-auto max-w-5xl text-[clamp(3.2rem,8vw,6.5rem)] leading-[1.02] font-semibold tracking-[-0.03em] text-ink" />
           
           <Reveal delay={0.2}>
             <p className="mx-auto mt-8 max-w-2xl text-[clamp(1.0625rem,1.7vw,1.35rem)] leading-[1.7] text-warm-500 font-light">
@@ -233,10 +231,15 @@ export default async function HomePage({
                       <div className="absolute inset-0 bg-gradient-to-t from-[#08080a] via-black/20 to-transparent opacity-90 transition-opacity duration-300" />
                       
                       {/* Floating Event Tag */}
-                      <div className="absolute top-5 left-5 rounded-full bg-black/40 px-4 py-1.5 backdrop-blur-md border border-white/10">
+                      <div className="absolute top-5 left-5 rounded-full bg-black/50 px-3.5 py-1.5 backdrop-blur-md border border-white/10 flex items-center gap-2">
                         <span className="text-[0.65rem] font-bold text-brass tracking-widest uppercase">
-                          {event.eventType}
+                          {getEventTag(event.eventType)}
                         </span>
+                        {isSeatedEvent(event.eventType) && (
+                          <span className="text-[0.62rem] text-brass-light/90 font-medium border-l border-white/20 pl-2">
+                            Table Seating
+                          </span>
+                        )}
                       </div>
                       
                       {/* Price Tag Overlay */}

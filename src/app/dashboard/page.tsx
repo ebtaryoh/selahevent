@@ -229,9 +229,13 @@ export default async function DashboardPage() {
                           className={
                             event.status === "published"
                               ? "pill pill-live"
+                              : event.status === "cancelled"
+                              ? "pill border-red-500/30 bg-red-500/10 text-red-700 font-medium"
+                              : event.status === "postponed"
+                              ? "pill border-amber-500/30 bg-amber-500/10 text-amber-700 font-medium"
                               : event.status === "completed"
-                                ? "pill pill-neutral"
-                                : "pill pill-warn"
+                              ? "pill pill-neutral"
+                              : "pill pill-warn"
                           }
                         >
                           {titleCase(event.status)}

@@ -17,6 +17,9 @@ import {
   TriangleAlert,
   Users,
   Ticket,
+  Printer,
+  Globe,
+  Radio,
 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -33,7 +36,11 @@ import {
   getEventRegistrationHistory,
 } from "@/lib/data";
 import { SaveBlueprintButton } from "./save-blueprint-button";
+import { EventStatusButton } from "./event-status-button";
 import { RegistrationChart } from "@/components/registration-chart";
+import { AttendeeSeatingModal } from "@/components/attendee-seating-modal";
+import { WhatsAppShareButton } from "@/components/whatsapp-share-button";
+import { getEventTag, isSeatedEvent, getEventTypeLabel } from "@/lib/event-tags";
 import {
   formatDate,
   formatMoney,
@@ -118,11 +125,23 @@ export default async function EventManagePage({
                   className={
                     event.status === "published"
                       ? "pill border-[rgba(232,211,166,0.28)] bg-[rgba(232,211,166,0.14)] text-brass-light"
+                      : event.status === "cancelled"
+                      ? "pill border-red-500/40 bg-red-950/60 text-red-200 font-semibold"
+                      : event.status === "postponed"
+                      ? "pill border-amber-500/40 bg-amber-950/60 text-amber-200 font-semibold"
                       : "pill border-[rgba(247,243,236,0.22)] bg-[rgba(247,243,236,0.1)] text-parchment"
                   }
                 >
                   {titleCase(event.status)}
                 </span>
+                <span className="pill border-[rgba(232,211,166,0.3)] bg-[rgba(232,211,166,0.14)] text-brass-light font-medium uppercase text-xs">
+                  {getEventTag(event.eventType)}
+                </span>
+                {isSeatedEvent(event.eventType) && (
+                  <span className="pill border-brass/50 bg-brass/20 text-brass-light font-medium text-xs">
+                    🍽️ {getEventTypeLabel(event.eventType)} • Table Seating
+                  </span>
+                )}
                 <span className="pill border-[rgba(247,243,236,0.2)] bg-[rgba(247,243,236,0.09)] text-[rgba(247,243,236,0.82)]">
                   <MapPin size={12} /> {event.city}, {event.country}
                 </span>
@@ -161,6 +180,12 @@ export default async function EventManagePage({
                   <QrCode size={17} /> Scan Tickets
                 </Link>
                 <Link
+                  href={`/dashboard/events/${event.id}/turnstile`}
+                  className="btn btn-light"
+                >
+                  <Radio size={16} className="text-emerald-400" /> Turnstile Gate
+                </Link>
+                <Link
                   href={`/dashboard/events/${event.id}/approvals`}
                   className="btn btn-light"
                 >
@@ -181,6 +206,29 @@ export default async function EventManagePage({
                 >
                   <Ticket size={16} /> Tickets
                 </Link>
+
+                <Link
+                  href={`/dashboard/events/${event.id}/poster`}
+                  className="btn btn-light"
+                >
+                  <Printer size={16} /> Venue Poster
+                </Link>
+
+                <Link
+                  href={`/dashboard/events/${event.id}/embed`}
+                  className="btn btn-light"
+                >
+                  <Globe size={16} /> Website Embed
+                </Link>
+
+                <EventStatusButton
+                  event={{
+                    id: event.id,
+                    title: event.title,
+                    status: event.status,
+                    cancellationReason: event.cancellationReason,
+                  }}
+                />
 
                 <Link
                   href={`/dashboard/events/${event.id}/schedule`}
@@ -212,6 +260,31 @@ export default async function EventManagePage({
           </div>
         </div>
       </section>
+
+      {/* Cancellation / Postponement Alert in Dashboard */}
+      {event.status === "cancelled" && (
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-5 text-sm text-red-950 flex items-start gap-3.5 shadow-sm">
+          <TriangleAlert className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <span className="font-semibold text-base block text-red-900">Event is currently Cancelled</span>
+            <p className="mt-1 text-red-700 leading-relaxed text-xs sm:text-sm">
+              {event.cancellationReason || "Public registration is blocked and check-in scanning is deactivated. Attendees visiting the event page see a cancellation notice."}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {event.status === "postponed" && (
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 text-sm text-amber-950 flex items-start gap-3.5 shadow-sm">
+          <TriangleAlert className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <span className="font-semibold text-base block text-amber-900">Event is currently Postponed</span>
+            <p className="mt-1 text-amber-700 leading-relaxed text-xs sm:text-sm">
+              {event.cancellationReason || "Registration is paused while new dates are scheduled. Existing delegate records remain reserved."}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Stat strip */}
       <section className="grid gap-px overflow-hidden rounded-[15px] border border-[rgba(22,19,17,0.1)] bg-[rgba(22,19,17,0.1)] sm:grid-cols-2 lg:grid-cols-5">
@@ -478,10 +551,10 @@ export default async function EventManagePage({
               <Download size={16} /> Export CSV
             </a>
             <Link
-              href={`/e/${event.slug}/register`}
+              href={`/e/${event.slug}/register?mode=desk`}
               className="btn btn-primary"
             >
-              Add registration
+              Add registration (Desk)
             </Link>
           </div>
         </div>
@@ -496,8 +569,10 @@ export default async function EventManagePage({
                   <th scope="col">Location</th>
                   <th scope="col">Amount</th>
                   <th scope="col">Hospitality</th>
+                  <th scope="col">Table / Seating</th>
                   <th scope="col">Custom Answers</th>
                   <th scope="col">Status</th>
+                  <th scope="col">WhatsApp Pass</th>
                   <th scope="col">Registered</th>
                 </tr>
               </thead>
@@ -541,6 +616,15 @@ export default async function EventManagePage({
                         ) : null}
                       </div>
                     </td>
+                    <td className="whitespace-nowrap">
+                      <AttendeeSeatingModal
+                        eventId={event.id}
+                        registrationId={reg.id}
+                        attendeeName={`${reg.firstName} ${reg.lastName}`}
+                        currentTable={reg.tableNumber}
+                        currentSeat={reg.seatNumber}
+                      />
+                    </td>
                     <td>
                       <div className="flex flex-col gap-1 text-[0.795rem] text-warm-600">
                         {reg.customAnswers && Object.keys(reg.customAnswers).length > 0 ? (
@@ -569,6 +653,22 @@ export default async function EventManagePage({
                       >
                         {titleCase(reg.status)}
                       </span>
+                    </td>
+                    <td className="whitespace-nowrap">
+                      <WhatsAppShareButton
+                        payload={{
+                          phone: reg.phone,
+                          eventTitle: event.title,
+                          attendeeName: `${reg.firstName} ${reg.lastName}`,
+                          ticketCode: reg.ticketCode,
+                          ticketTier: reg.attendeeType,
+                          tableNumber: reg.tableNumber,
+                          seatNumber: reg.seatNumber,
+                          venueName: event.venueName,
+                          passUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://selahevent.vercel.app'}/ticket/${reg.ticketCode}`,
+                        }}
+                        compact
+                      />
                     </td>
                     <td className="tnum whitespace-nowrap text-warm-400">
                       {formatDate(reg.createdAt)}

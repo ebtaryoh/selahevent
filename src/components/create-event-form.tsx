@@ -119,7 +119,10 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
         
         // createEvent redirects on success, so if it returns it's usually an error
         if (res && res.error) {
-          throw new Error(res.error);
+          const resolved = typeof res.error === "object" && res.error !== null && "then" in res.error
+            ? await res.error
+            : res.error;
+          throw new Error(typeof resolved === "string" ? resolved : "Could not create event. Please verify all details.");
         }
       }
     } catch (err: any) {
@@ -129,7 +132,11 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
       }
       console.error(err);
       setIsPending(false);
-      setError(err.message || "Something went wrong. Please try again.");
+      let message = err?.message;
+      if (!message || message === "[object Promise]" || message === "[object Object]") {
+        message = "Could not complete event setup. Please verify required fields and try again.";
+      }
+      setError(message);
     }
   }
 
@@ -220,23 +227,40 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
             
             <div>
               <label htmlFor="eventType" className="mb-1.5 block text-sm font-medium text-white">
-                Event Type
+                Event Type & Category
               </label>
               <select
                 id="eventType"
                 name="eventType"
                 required
-                defaultValue={initialData?.eventType}
+                defaultValue={initialData?.eventType || "conference"}
                 className="input !w-full bg-black/20"
               >
-                <option value="conference">Conference</option>
-                <option value="retreat">Retreat</option>
-                <option value="worship">Worship Night</option>
-                <option value="church_service">Church Service</option>
-                <option value="summit">Summit</option>
-                <option value="concert">Concert</option>
-                <option value="seminar">Seminar</option>
+                <optgroup label="Banquets & Celebrations (With Table & Seat Allocation)">
+                  <option value="banquet">Christian Banquet / Dinner (Tag: Christian Hangout)</option>
+                  <option value="wedding">Christian Wedding (Tag: Married & Singles)</option>
+                  <option value="birthday">Christian Birthday / Celebration (Tag: Christian Hangout)</option>
+                </optgroup>
+                <optgroup label="Standard Church & Ministry Events">
+                  <option value="conference">Conference (Tag: Conferences)</option>
+                  <option value="retreat">Retreat (Tag: Retreats)</option>
+                  <option value="worship">Worship Night (Tag: Worship)</option>
+                  <option value="church_service">Church Service (Tag: Worship)</option>
+                  <option value="summit">Summit (Tag: Conferences)</option>
+                  <option value="concert">Concert (Tag: Concerts)</option>
+                  <option value="seminar">Seminar (Tag: Seminars)</option>
+                  <option value="bible_study">Bible Study (Tag: Bible Study)</option>
+                  <option value="youth_meetings">Youth Meeting (Tag: Youth Meetings)</option>
+                  <option value="singles_program">Singles Program (Tag: Singles Program)</option>
+                  <option value="christian_hangout">Christian Hangout (Tag: Christian Hangout)</option>
+                  <option value="married_singles">Married & Singles (Tag: Married & Singles)</option>
+                  <option value="business">Business & Marketplace (Tag: Business)</option>
+                  <option value="online">Online Gathering (Tag: Online)</option>
+                </optgroup>
               </select>
+              <p className="mt-1.5 text-xs text-white/50">
+                Tagged among Selah&apos;s available categories. Christian Banquets, Weddings, and Birthdays automatically enable table &amp; seat allocation on digital badges, WhatsApp passes, and gate scanners.
+              </p>
             </div>
 
             <div>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ArrowRight, Loader2, Mail, KeyRound, RefreshCcw } from "lucide-react";
-import { loginOrganization, verifyOrgOTP } from "@/lib/actions";
+import { loginOrganization, verifyOrgOTP, devQuickLogin } from "@/lib/actions";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -83,6 +83,19 @@ export function LoginForm() {
                 We&apos;ll send a one-time code to verify it&apos;s you.
               </p>
             </div>
+
+            {process.env.NODE_ENV !== "production" && (
+              <div className="mb-5">
+                <form action={devQuickLogin}>
+                  <button
+                    type="submit"
+                    className="btn !bg-brass !text-black border border-brass-light hover:!bg-brass-light !w-full !px-6 !py-3 text-[0.95rem] font-semibold flex items-center justify-center gap-2 shadow-lg shadow-brass/20 transition-all hover:scale-[1.01]"
+                  >
+                    ⚡ One-Click Sign In (Demo Workspace)
+                  </button>
+                </form>
+              </div>
+            )}
 
             <div className="mb-6">
               <a 

@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { getEventBySlug, getTickets } from "@/lib/data";
+import { getOrgSession } from "@/lib/session";
 import { RegistrationForm } from "@/components/registration-form";
+import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +31,9 @@ export default async function RegisterPage({ params, searchParams }: Params) {
     notFound();
   }
 
+  const session = await getOrgSession();
+  const isStaff = Boolean(session && session.orgId === event.organizationId);
+
   const search = await searchParams;
   const initialTicketId = typeof search.ticket === 'string' ? search.ticket : undefined;
 
@@ -48,16 +53,26 @@ export default async function RegisterPage({ params, searchParams }: Params) {
     isDonation: t.isDonation,
   }));
 
+  const isCancelled = event.status === "cancelled";
+  const isPostponed = event.status === "postponed";
+
   const isRegistrationUpcoming =
-    event.registrationOpensAt && new Date(event.registrationOpensAt) > new Date();
+    !isCancelled && !isPostponed && event.registrationOpensAt && new Date(event.registrationOpensAt) > new Date();
 
   const isRegistrationClosed =
+    isCancelled ||
+    isPostponed ||
     (event.registrationClosesAt && new Date(event.registrationClosesAt) < new Date()) ||
     new Date(event.endsAt) < new Date();
 
+  const isEmbed = search?.embed === "true";
+
   return (
     <div 
-      className="min-h-screen bg-[var(--color-parchment)] pt-20 pb-20"
+      className={cn(
+        "min-h-screen bg-[var(--color-parchment)]",
+        isEmbed ? "pt-6 pb-10" : "pt-20 pb-20"
+      )}
       style={event.brandColor ? {
         '--color-brass': event.brandColor,
         '--color-brass-deep': `color-mix(in srgb, ${event.brandColor}, black 20%)`,
@@ -66,7 +81,37 @@ export default async function RegisterPage({ params, searchParams }: Params) {
       } as React.CSSProperties : undefined}
     >
       <div className="container mx-auto px-6 max-w-6xl">
-        {isRegistrationClosed ? (
+        {isCancelled ? (
+          <div className="mx-auto max-w-lg rounded-2xl border border-red-500/20 bg-paper p-10 text-center shadow-sm">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600 mb-4">
+              <span className="text-xl">⚠️</span>
+            </div>
+            <h1 className="font-display text-2xl font-semibold text-ink">This event has been cancelled</h1>
+            <p className="mt-4 text-warm-600 text-sm leading-relaxed">
+              {event.cancellationReason || "Registration is not available because this event has been cancelled by the organizers."}
+            </p>
+            <div className="mt-8">
+              <a href={`/e/${event.slug}`} className="btn btn-primary">
+                Return to event page
+              </a>
+            </div>
+          </div>
+        ) : isPostponed ? (
+          <div className="mx-auto max-w-lg rounded-2xl border border-amber-500/20 bg-paper p-10 text-center shadow-sm">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-100 text-amber-700 mb-4">
+              <span className="text-xl">⏳</span>
+            </div>
+            <h1 className="font-display text-2xl font-semibold text-ink">This event has been postponed</h1>
+            <p className="mt-4 text-warm-600 text-sm leading-relaxed">
+              {event.cancellationReason || "Registration is temporarily paused while new dates are scheduled by the organizers."}
+            </p>
+            <div className="mt-8">
+              <a href={`/e/${event.slug}`} className="btn btn-primary">
+                Return to event page
+              </a>
+            </div>
+          </div>
+        ) : isRegistrationClosed && !isStaff ? (
           <div className="mx-auto max-w-lg rounded-2xl border border-[rgba(22,19,17,0.1)] bg-paper p-10 text-center shadow-sm">
             <h1 className="font-display text-2xl font-semibold text-ink">Registration is closed</h1>
             <p className="mt-4 text-warm-600">
@@ -78,7 +123,7 @@ export default async function RegisterPage({ params, searchParams }: Params) {
               </a>
             </div>
           </div>
-        ) : isRegistrationUpcoming ? (
+        ) : isRegistrationUpcoming && !isStaff ? (
           <div className="mx-auto max-w-lg rounded-2xl border border-[rgba(22,19,17,0.1)] bg-paper p-10 text-center shadow-sm">
             <h1 className="font-display text-2xl font-semibold text-ink">Registration opens soon</h1>
             <p className="mt-4 text-warm-600">
@@ -91,23 +136,32 @@ export default async function RegisterPage({ params, searchParams }: Params) {
             </div>
           </div>
         ) : (
-          <RegistrationForm 
-            event={{
-              title: event.title,
-              slug: event.slug,
-              orgId: event.organizationId,
-              city: event.city,
-              venueName: event.venueName,
-              venueAddress: event.venueAddress,
-              startsAt: event.startsAt?.toISOString() || new Date().toISOString(),
-              endsAt: event.endsAt?.toISOString() || new Date().toISOString(),
-              coverImage: event.coverImage,
-              customQuestions: event.customQuestions,
-              attendeeTypes: event.attendeeTypes,
-            }}
-            tickets={tickets}
-            initialTicketId={initialTicketId}
-          />
+          <>
+            {isRegistrationClosed && isStaff && !isCancelled && (
+              <div className="mx-auto max-w-[52rem] mb-6 rounded-xl border border-[rgba(184,121,28,0.35)] bg-[rgba(184,121,28,0.1)] p-4 text-sm text-[#7d5212] flex items-center gap-3">
+                <span className="font-semibold">⚠️ Desk Mode:</span>
+                <span>Public online registration has closed, but your organizer session is active to register door walk-ins.</span>
+              </div>
+            )}
+            <RegistrationForm 
+              event={{
+                title: event.title,
+                slug: event.slug,
+                orgId: event.organizationId,
+                city: event.city,
+                venueName: event.venueName,
+                venueAddress: event.venueAddress,
+                startsAt: event.startsAt?.toISOString() || new Date().toISOString(),
+                endsAt: event.endsAt?.toISOString() || new Date().toISOString(),
+                coverImage: event.coverImage,
+                customQuestions: event.customQuestions,
+                attendeeTypes: event.attendeeTypes,
+              }}
+              tickets={tickets}
+              initialTicketId={initialTicketId}
+              isStaff={isStaff}
+            />
+          </>
         )}
       </div>
     </div>

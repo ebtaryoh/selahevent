@@ -125,6 +125,7 @@ export const events = pgTable(
     }[]>(),
     metaPixelId: text("meta_pixel_id"),
     googleAnalyticsId: text("google_analytics_id"),
+    cancellationReason: text("cancellation_reason"),
     createdAt: createdAt(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
@@ -298,6 +299,8 @@ export const registrations = pgTable(
     country: text("country").default("NG").notNull(),
     church: text("church").default("").notNull(),
     attendeeType: text("attendee_type").default("delegate").notNull(),
+    tableNumber: text("table_number"),
+    seatNumber: text("seat_number"),
     status: text("status").default("confirmed").notNull(),
     accommodation: boolean("accommodation").default(false).notNull(),
     transport: boolean("transport").default(false).notNull(),

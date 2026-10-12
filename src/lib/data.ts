@@ -3,6 +3,7 @@ import { ensureSeed } from "./seed";
 import { redirect } from "next/navigation";
 import { and, asc, count, desc, eq, sql, sum, or, ilike, inArray } from "drizzle-orm";
 import { db } from "@/db";
+import { getDbEventTypesForCategory } from "./event-tags";
 import {
   auditLogs,
   blueprints,
@@ -400,7 +401,12 @@ export async function getAllPublicEvents(filters?: { query?: string; city?: stri
   }
 
   if (filters?.category) {
-    conditions.push(eq(events.eventType, filters.category));
+    const rawTypes = getDbEventTypesForCategory(filters.category);
+    if (rawTypes.length === 1) {
+      conditions.push(eq(events.eventType, rawTypes[0]));
+    } else {
+      conditions.push(inArray(events.eventType, rawTypes));
+    }
   }
 
   const results = await db

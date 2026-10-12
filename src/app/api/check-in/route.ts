@@ -19,7 +19,10 @@ export async function POST(request: Request) {
   }
 
   const eventId = String(payload.eventId ?? "").trim();
-  const rawCode = String(payload.ticketCode ?? "").trim().toUpperCase();
+  const rawCode = String(payload.ticketCode ?? "")
+    .trim()
+    .toUpperCase()
+    .replace(/^SELAH:/i, "");
   const staffName =
     String(payload.staffName ?? "").trim() || "Command Center";
   const gate = String(payload.gate ?? "").trim() || "Main entrance";
@@ -59,6 +62,17 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { ok: false, error: "Event not found." },
       { status: 404 }
+    );
+  }
+
+  if (event.status === "cancelled") {
+    return NextResponse.json(
+      {
+        ok: false,
+        status: "cancelled",
+        error: "Check-in is deactivated because this event has been cancelled by the organizers.",
+      },
+      { status: 409 }
     );
   }
 

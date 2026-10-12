@@ -3,7 +3,9 @@
 import { useEffect, useState, useRef } from "react";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { useParams } from "next/navigation";
-import { CheckCircle2, QrCode, XCircle } from "lucide-react";
+import { CheckCircle2, QrCode, XCircle, Radio, Utensils } from "lucide-react";
+import Link from "next/link";
+import { offlineGateCache } from "@/lib/offline-gate-cache";
 
 
 export default function ScannerPage() {
@@ -94,8 +96,32 @@ export default function ScannerPage() {
         }, 4000);
 
       } catch (err) {
+        // Fallback to offline cache
+        const offlineResult = offlineGateCache.verifyOffline(eventId, decodedText);
+        if (offlineResult.valid && offlineResult.attendee) {
+          playBeep("success");
+          setScanResult({
+            status: "success",
+            message: "Ticket Verified (Offline Cache)!",
+            ticketDetails: {
+              attendeeName: offlineResult.attendee.name,
+              ticketType: `${offlineResult.attendee.tier} • Offline Mode`,
+              tableNumber: offlineResult.attendee.table,
+              seatNumber: offlineResult.attendee.seat,
+            },
+          });
+          setTimeout(() => {
+            setScanResult({ status: "idle", message: "Point your camera at a ticket QR code." });
+            isScanningRef.current = false;
+          }, 4000);
+          return;
+        }
+
         playBeep("error");
-        setScanResult({ status: "error", message: "Network error verifying ticket." });
+        setScanResult({
+          status: "error",
+          message: offlineResult.error || "Network error verifying ticket.",
+        });
         setTimeout(() => {
           setScanResult({ status: "idle", message: "Point your camera at a ticket QR code." });
           isScanningRef.current = false;
@@ -150,12 +176,20 @@ export default function ScannerPage() {
           <p className="mt-2 text-white/60">Use your camera to check in attendees.</p>
         </div>
         
-        <button 
-          onClick={handleCopyLink}
-          className="btn btn-brass shrink-0"
-        >
-          {isCopied ? "Link Copied!" : "Copy Volunteer Scanner Link"}
-        </button>
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <Link
+            href={`/dashboard/events/${eventId}/turnstile`}
+            className="btn btn-light"
+          >
+            <Radio size={16} className="text-emerald-400" /> Turnstile Gate Kiosk
+          </Link>
+          <button 
+            onClick={handleCopyLink}
+            className="btn btn-brass"
+          >
+            {isCopied ? "Link Copied!" : "Copy Volunteer Scanner Link"}
+          </button>
+        </div>
       </div>
 
       <div className="mt-8 rounded-[24px] border border-white/10 bg-[rgba(16,16,18,0.7)] backdrop-blur-2xl p-6 shadow-2xl">
@@ -176,6 +210,12 @@ export default function ScannerPage() {
             <div className="mt-2 text-sm text-green-300">
               <p><strong>Name:</strong> {scanResult.ticketDetails.attendeeName}</p>
               <p><strong>Type:</strong> {scanResult.ticketDetails.ticketType}</p>
+              {scanResult.ticketDetails.tableNumber && (
+                <p className="text-yellow-300 font-semibold mt-1 flex items-center justify-center gap-1">
+                  <Utensils size={14} /> Table: {scanResult.ticketDetails.tableNumber}
+                  {scanResult.ticketDetails.seatNumber ? ` • Seat ${scanResult.ticketDetails.seatNumber}` : ""}
+                </p>
+              )}
             </div>
           )}
         </div>

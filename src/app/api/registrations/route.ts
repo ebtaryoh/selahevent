@@ -84,11 +84,29 @@ export async function POST(request: Request) {
   const event = await db.select().from(events).where(eq(events.slug, slug)).limit(1).then(r => r[0]);
   if (!event) return NextResponse.json({ ok: false, error: "That event could not be found." }, { status: 404 });
 
+  const { getOrgSession } = await import("@/lib/session");
+  const orgSession = await getOrgSession();
+  const isStaff = Boolean(orgSession && orgSession.orgId === event.organizationId);
+
+  if (event.status === "cancelled") {
+    return NextResponse.json(
+      { ok: false, error: "Registration is not available because this event has been cancelled by the organizers." },
+      { status: 409 }
+    );
+  }
+
+  if (event.status === "postponed") {
+    return NextResponse.json(
+      { ok: false, error: "Registration is temporarily paused because this event has been postponed." },
+      { status: 409 }
+    );
+  }
+
   const now = new Date();
-  if (event.registrationOpensAt && now < event.registrationOpensAt) {
+  if (!isStaff && event.registrationOpensAt && now < event.registrationOpensAt) {
     return NextResponse.json({ ok: false, error: "Registration for this event has not opened yet." }, { status: 409 });
   }
-  if (event.registrationClosesAt && now > event.registrationClosesAt) {
+  if (!isStaff && event.registrationClosesAt && now > event.registrationClosesAt) {
     return NextResponse.json({ ok: false, error: "Registration for this event is closed." }, { status: 409 });
   }
 
@@ -170,12 +188,18 @@ export async function POST(request: Request) {
     );
   }
 
+  const staffPaymentMethod = typeof payload.staffPaymentMethod === "string" ? payload.staffPaymentMethod : null;
+  const isDoorPayment = Boolean(
+    isStaff && staffPaymentMethod && ["cash", "pos", "complimentary"].includes(staffPaymentMethod)
+  );
+
   const baseAmount = ticket?.price ?? 0;
-  const amount = (ticket?.isDonation && typeof payload.donationAmount === "number" && payload.donationAmount >= baseAmount) 
+  const initialAmount = (ticket?.isDonation && typeof payload.donationAmount === "number" && payload.donationAmount >= baseAmount) 
                  ? payload.donationAmount 
                  : baseAmount;
+  const amount = (isDoorPayment && staffPaymentMethod === "complimentary") ? 0 : initialAmount;
   const requiresPayment = amount > 0;
-  const reference = (requiresPayment ? "PAYSTACK_" : "FREE_") + randomToken(12);
+  const reference = (isDoorPayment ? `DOOR_${staffPaymentMethod!.toUpperCase()}_` : (requiresPayment ? "PAYSTACK_" : "FREE_")) + randomToken(12);
   const prefix = (event.slug.match(/^[a-z]{2,3}/)?.[0] ?? "EV").slice(0, 3).toUpperCase();
   const code = makeCode(prefix);
   const ticketCode = "TKT-" + randomToken(8);
@@ -186,7 +210,7 @@ export async function POST(request: Request) {
   let attendeeId = session?.attendeeId ?? null;
 
   let isWaitlisted = false;
-  let finalRequiresPayment = requiresPayment;
+  let finalRequiresPayment = requiresPayment && !isDoorPayment;
 
   try {
     let result;
@@ -253,7 +277,7 @@ export async function POST(request: Request) {
         emergencyName: String(payload.emergencyName ?? "").trim(),
         emergencyPhone: String(payload.emergencyPhone ?? "").trim(),
         amount,
-        source: "event_page",
+        source: isDoorPayment ? "desk_walkin" : "event_page",
         customAnswers: (() => {
           const raw = payload.customAnswers;
           if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
@@ -274,7 +298,7 @@ export async function POST(request: Request) {
         eventId: event.id,
         amount,
         currency: event.currency,
-        gateway: "paystack",
+        gateway: isDoorPayment ? staffPaymentMethod! : "paystack",
         gatewayReference: reference,
         status: isWaitlisted ? "not_required" : (finalRequiresPayment ? "pending" : "paid"),
         verified: !finalRequiresPayment,
@@ -477,7 +501,14 @@ export async function POST(request: Request) {
       payment: {
         required: finalRequiresPayment,
         checkoutUrl,
-        status: isWaitlisted ? "not_required" : (finalRequiresPayment ? "pending" : "not_required"),
+        status: isWaitlisted ? "not_required" : (finalRequiresPayment ? "pending" : (isDoorPayment ? "paid" : "not_required")),
+        message: isDoorPayment
+          ? staffPaymentMethod === "cash"
+            ? "Paid in cash at the registration desk."
+            : staffPaymentMethod === "pos"
+            ? "Paid via POS terminal at the registration desk."
+            : "Complimentary pass granted by organizer."
+          : null,
         reservationExpiresAt: finalRequiresPayment ? reservationExpiresAt.toISOString() : null,
       },
     });

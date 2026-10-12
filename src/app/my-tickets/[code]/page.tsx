@@ -6,7 +6,8 @@ import { eq } from "drizzle-orm";
 import { SelahMark } from "@/components/logo";
 import { formatDate, formatTime } from "@/lib/format";
 import Image from "next/image";
-import { CalendarDays } from "lucide-react";
+import { CalendarDays, MessageSquare, Utensils } from "lucide-react";
+import { generateWhatsAppTicketLink } from "@/lib/whatsapp";
 
 export const metadata: Metadata = {
   title: "My Ticket | Selah",
@@ -89,12 +90,18 @@ export default async function TicketViewPage({
             </div>
           </div>
 
-          <div className="mt-6">
             <p className="font-mono text-lg font-bold tracking-[0.2em] text-ink">
               {registration.ticketCode}
             </p>
+            {registration.tableNumber && (
+              <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[rgba(192,138,46,0.15)] border border-[rgba(192,138,46,0.3)] px-3.5 py-1 text-xs font-semibold text-[var(--color-brass-deep)]">
+                <Utensils size={13} />
+                <span>{registration.tableNumber}</span>
+                {registration.seatNumber && <span>(Seat {registration.seatNumber})</span>}
+              </div>
+            )}
             {registration.status === "checked_in" && (
-              <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 text-[0.8125rem] font-medium text-green-800">
+              <span className="mt-3 ml-2 inline-flex items-center gap-1.5 rounded-full bg-green-100 px-3 py-1 text-[0.8125rem] font-medium text-green-800">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                 Checked In
               </span>
@@ -115,7 +122,7 @@ export default async function TicketViewPage({
             </div>
           </div>
           
-          <div className="mt-10">
+          <div className="mt-10 flex flex-col gap-3">
             <a 
               href={`/api/tickets/${registration.ticketCode}/pdf`}
               download
@@ -124,7 +131,27 @@ export default async function TicketViewPage({
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
               Download PDF Ticket
             </a>
-          </div>
+
+            <a
+              href={generateWhatsAppTicketLink({
+                phone: registration.phone,
+                eventTitle: event.title,
+                attendeeName: `${registration.firstName} ${registration.lastName}`,
+                ticketCode: registration.ticketCode,
+                ticketTier: ticketType?.name || registration.attendeeType,
+                tableNumber: registration.tableNumber,
+                seatNumber: registration.seatNumber,
+                venueName: event.venueName,
+                eventDate: formatDate(event.startsAt),
+                passUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://selahevent.vercel.app'}/my-tickets/${registration.ticketCode}`,
+              })}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-emerald-600/30 bg-emerald-500/10 px-6 py-3.5 text-[0.9rem] font-semibold text-emerald-800 transition-all hover:bg-emerald-500/20"
+            >
+              <MessageSquare size={17} className="text-emerald-600" />
+              Save Pass to WhatsApp
+            </a>
         </div>
       </div>
     </div>
