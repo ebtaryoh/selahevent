@@ -1,8 +1,8 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, sql, inArray } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { events, organizations, payments, registrations, ticketTypes, attendees, ticketReservations } from "@/db/schema";
+import { events, organizations, payments, registrations, ticketTypes, attendees, ticketReservations, ministryFollowers } from "@/db/schema";
 import { sendTicketConfirmation } from "@/lib/email";
 import { enforceRateLimit, getClientAddress, rateLimitHeaders } from "@/lib/rate-limit";
 
@@ -193,11 +193,74 @@ export async function POST(request: Request) {
     isStaff && staffPaymentMethod && ["cash", "pos", "complimentary"].includes(staffPaymentMethod)
   );
 
-  const baseAmount = ticket?.price ?? 0;
-  const initialAmount = (ticket?.isDonation && typeof payload.donationAmount === "number" && payload.donationAmount >= baseAmount) 
-                 ? payload.donationAmount 
-                 : baseAmount;
-  const amount = (isDoorPayment && staffPaymentMethod === "complimentary") ? 0 : initialAmount;
+  // Parse any additional guests (Group & Family Registration)
+  const rawGuests = Array.isArray(payload.guests) ? payload.guests.slice(0, 10) : [];
+  const validGuests: Array<{
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    ticketTypeId: string | null;
+    gender: string | null;
+    relationship: string | null;
+  }> = [];
+
+  for (let i = 0; i < rawGuests.length; i++) {
+    const g = rawGuests[i];
+    if (g && typeof g.firstName === "string" && g.firstName.trim().length > 0) {
+      const gFirstName = g.firstName.trim().slice(0, 100);
+      const gLastName = (typeof g.lastName === "string" && g.lastName.trim()) ? g.lastName.trim().slice(0, 100) : lastName;
+      let gEmail = (typeof g.email === "string" && g.email.trim()) ? g.email.trim().toLowerCase() : "";
+      if (!gEmail || !EMAIL_RE.test(gEmail)) {
+        const emailParts = email.split("@");
+        gEmail = `${emailParts[0]}+guest${i + 1}@${emailParts[1] || "attendee.selah"}`;
+      }
+      const gPhone = (typeof g.phone === "string" && g.phone.trim()) ? g.phone.trim().slice(0, 40) : (String(payload.phone ?? "").trim());
+      const gTicketId = typeof g.ticketTypeId === "string" && g.ticketTypeId ? g.ticketTypeId : (ticket?.id ?? null);
+      const gGender = typeof g.gender === "string" && g.gender.trim() ? g.gender.trim() : null;
+      const gRel = typeof g.relationship === "string" && g.relationship.trim() ? g.relationship.trim() : null;
+      validGuests.push({
+        firstName: gFirstName,
+        lastName: gLastName,
+        email: gEmail,
+        phone: gPhone,
+        ticketTypeId: gTicketId,
+        gender: gGender,
+        relationship: gRel,
+      });
+    }
+  }
+
+  // Pre-fetch all ticket types needed
+  const allNeededTicketIds = Array.from(new Set([
+    ...(ticket ? [ticket.id] : []),
+    ...validGuests.map(g => g.ticketTypeId).filter(Boolean) as string[],
+  ]));
+
+  const fetchedTickets = allNeededTicketIds.length > 0
+    ? await db.select().from(ticketTypes).where(inArray(ticketTypes.id, allNeededTicketIds))
+    : [];
+  const ticketMap = new Map(fetchedTickets.map(t => [t.id, t]));
+
+  // Calculate base amounts
+  const primaryBase = (ticket?.isDonation && typeof payload.donationAmount === "number" && payload.donationAmount >= (ticket?.price ?? 0))
+    ? payload.donationAmount
+    : (ticket?.price ?? 0);
+
+  let totalBaseAmount = primaryBase;
+  for (const g of validGuests) {
+    const gTicket = g.ticketTypeId ? ticketMap.get(g.ticketTypeId) : ticket;
+    totalBaseAmount += (gTicket?.price ?? 0);
+  }
+
+  // Pass-Through Convenience Fee calculation ("The Church Pays ₦0" Model)
+  const passFee = Boolean(ticket?.passFeeToAttendee ?? true);
+  const convenienceFee = (passFee && totalBaseAmount > 0 && !isDoorPayment)
+    ? Math.min(2000, Math.round(totalBaseAmount < 2500 ? totalBaseAmount * 0.015 : (totalBaseAmount * 0.015 + 100)))
+    : 0;
+
+  const totalAmountToCharge = (isDoorPayment && staffPaymentMethod === "complimentary") ? 0 : (totalBaseAmount + convenienceFee);
+  const amount = totalAmountToCharge;
   const requiresPayment = amount > 0;
   const reference = (isDoorPayment ? `DOOR_${staffPaymentMethod!.toUpperCase()}_` : (requiresPayment ? "PAYSTACK_" : "FREE_")) + randomToken(12);
   const prefix = (event.slug.match(/^[a-z]{2,3}/)?.[0] ?? "EV").slice(0, 3).toUpperCase();
@@ -225,7 +288,9 @@ export async function POST(request: Request) {
         const locked = await tx.select().from(ticketTypes).where(eq(ticketTypes.id, ticket.id)).limit(1).then(r => r[0]);
         if (!locked) throw new Error("TICKET_NOT_FOUND");
 
-        if (locked.capacity > 0 && locked.sold + reservedCount >= locked.capacity) {
+        // Need capacity for primary + any guests using this ticket
+        const neededForThisTicket = 1 + validGuests.filter(g => (g.ticketTypeId || ticket.id) === ticket.id).length;
+        if (locked.capacity > 0 && locked.sold + reservedCount + neededForThisTicket - 1 > locked.capacity) {
           if (locked.hasWaitlist) {
             isWaitlisted = true;
             finalRequiresPayment = false;
@@ -270,13 +335,17 @@ export async function POST(request: Request) {
         country: String(payload.country ?? event.country),
         church: String(payload.church ?? "").trim(),
         attendeeType: String(payload.attendeeType ?? "").trim() || "delegate",
+        gender: payload.gender ? String(payload.gender).trim() : null,
+        ageBracket: payload.ageBracket ? String(payload.ageBracket).trim() : null,
+        occupation: payload.occupation ? String(payload.occupation).trim() : null,
         status: isWaitlisted ? "waitlisted" : (finalRequiresPayment ? "pending" : "confirmed"),
         accommodation: payload.accommodation === true,
+        accommodationType: payload.accommodationType ? String(payload.accommodationType).trim() : (payload.accommodation === true ? "free" : "none"),
         transport: payload.transport === true,
         dietary: String(payload.dietary ?? "").trim(),
         emergencyName: String(payload.emergencyName ?? "").trim(),
         emergencyPhone: String(payload.emergencyPhone ?? "").trim(),
-        amount,
+        amount: primaryBase,
         source: isDoorPayment ? "desk_walkin" : "event_page",
         customAnswers: (() => {
           const raw = payload.customAnswers;
@@ -293,6 +362,96 @@ export async function POST(request: Request) {
 
       if (!created) throw new Error("REGISTRATION_INSERT_FAILED");
 
+      // Insert all additional guests
+      const createdGuests: Array<{
+        id: string;
+        code: string;
+        ticketCode: string;
+        firstName: string;
+        lastName: string;
+        email: string;
+        ticketName: string;
+        relationship: string | null;
+      }> = [];
+
+      for (let i = 0; i < validGuests.length; i++) {
+        const g = validGuests[i];
+        const gTicket = g.ticketTypeId ? ticketMap.get(g.ticketTypeId) : ticket;
+        const gCode = makeCode(prefix);
+        const gTicketCode = "TKT-" + randomToken(8);
+
+        const [guestAttendee] = await tx.insert(attendees).values({
+          organizationId: event.organizationId,
+          email: g.email,
+          firstName: g.firstName,
+          lastName: g.lastName,
+          phone: g.phone,
+          city: String(payload.city ?? "").trim(),
+          country: String(payload.country ?? event.country),
+        }).onConflictDoUpdate({
+          target: [attendees.organizationId, attendees.email],
+          set: {
+            firstName: g.firstName,
+            lastName: g.lastName,
+            phone: g.phone,
+          },
+        }).returning();
+
+        const [guestReg] = await tx.insert(registrations).values({
+          eventId: event.id,
+          attendeeId: guestAttendee.id,
+          ticketTypeId: gTicket?.id ?? null,
+          code: gCode,
+          ticketCode: gTicketCode,
+          firstName: g.firstName,
+          lastName: g.lastName,
+          email: g.email,
+          phone: g.phone,
+          city: String(payload.city ?? "").trim(),
+          country: String(payload.country ?? event.country),
+          church: String(payload.church ?? "").trim(),
+          attendeeType: "guest",
+          gender: g.gender,
+          status: isWaitlisted ? "waitlisted" : (finalRequiresPayment ? "pending" : "confirmed"),
+          accommodation: false,
+          transport: false,
+          amount: gTicket?.price ?? 0,
+          source: isDoorPayment ? "desk_walkin" : "event_page",
+          customAnswers: {
+            primaryRegistrationId: created.id,
+            relationship: g.relationship || "Family/Guest",
+          },
+        }).returning();
+
+        if (gTicket && !isWaitlisted) {
+          await tx.insert(ticketReservations).values({
+            ticketTypeId: gTicket.id,
+            eventId: event.id,
+            registrationId: guestReg.id,
+            status: finalRequiresPayment ? "reserved" : "confirmed",
+            expiresAt: reservationExpiresAt,
+          });
+
+          if (!finalRequiresPayment) {
+            await tx.update(ticketTypes)
+              .set({ sold: sql.raw('"sold" + 1') })
+              .where(eq(ticketTypes.id, gTicket.id));
+          }
+        }
+
+        createdGuests.push({
+          id: guestReg.id,
+          code: guestReg.code,
+          ticketCode: guestReg.ticketCode,
+          firstName: guestReg.firstName,
+          lastName: guestReg.lastName,
+          email: guestReg.email,
+          ticketName: gTicket?.name ?? "General admission",
+          relationship: g.relationship,
+        });
+      }
+
+      // Record payment for total charged amount
       const [payment] = await tx.insert(payments).values({
         registrationId: created.id,
         eventId: event.id,
@@ -323,7 +482,27 @@ export async function POST(request: Request) {
         }
       }
 
-      return { created, payment };
+      if (payload.followMinistry !== false && email) {
+        try {
+          const org = await tx
+            .select({ id: organizations.id, name: organizations.name })
+            .from(organizations)
+            .where(eq(organizations.id, event.organizationId))
+            .limit(1)
+            .then(r => r[0]);
+
+          if (org) {
+            await tx.insert(ministryFollowers).values({
+              ministryId: org.id,
+              ministryName: org.name,
+              email,
+              phone: String(payload.phone || "").trim() || null,
+            }).catch(() => {});
+          }
+        } catch {}
+      }
+
+      return { created, payment, createdGuests };
       });
     } catch (error) {
       const pgError = error as { code?: string };
@@ -406,6 +585,7 @@ export async function POST(request: Request) {
             eventId: event.id,
             registrationId: result.created.id,
             ticketTypeId: ticket?.id ?? null,
+            guestRegistrationIds: result.createdGuests.map(g => g.id),
           },
           callback_url: (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000") + "/e/" + event.slug + "/wallet",
         }),
@@ -488,6 +668,24 @@ export async function POST(request: Request) {
         amount,
         currency: event.currency,
       },
+      guests: result.createdGuests,
+      allTickets: [
+        {
+          code: result.created.code,
+          ticketCode: result.created.ticketCode,
+          name: `${result.created.firstName} ${result.created.lastName}`,
+          ticketName: ticket?.name ?? "General admission",
+          email: result.created.email,
+        },
+        ...result.createdGuests.map((g) => ({
+          code: g.code,
+          ticketCode: g.ticketCode,
+          name: `${g.firstName} ${g.lastName}`,
+          ticketName: g.ticketName,
+          email: g.email,
+          relationship: g.relationship,
+        })),
+      ],
       event: {
         title: event.title,
         slug: event.slug,
@@ -501,6 +699,9 @@ export async function POST(request: Request) {
       payment: {
         required: finalRequiresPayment,
         checkoutUrl,
+        baseAmount: totalBaseAmount,
+        fee: convenienceFee,
+        amount: totalAmountToCharge,
         status: isWaitlisted ? "not_required" : (finalRequiresPayment ? "pending" : (isDoorPayment ? "paid" : "not_required")),
         message: isDoorPayment
           ? staffPaymentMethod === "cash"

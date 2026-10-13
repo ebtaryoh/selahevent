@@ -114,6 +114,10 @@ export const events = pgTable(
       required: boolean;
     }[]>().default([]),
     attendeeTypes: jsonb("attendee_types").$type<string[]>().default(["Delegate", "Student", "Minister / clergy", "Volunteer", "Speaker", "Guest"]),
+    accommodationMode: text("accommodation_mode").default("none").notNull(),
+    collectGender: boolean("collect_gender").default(false).notNull(),
+    collectAgeBracket: boolean("collect_age_bracket").default(false).notNull(),
+    collectOccupation: boolean("collect_occupation").default(false).notNull(),
     brandColor: text("brand_color").default("#c08a2e").notNull(),
     certificateThreshold: integer("certificate_threshold").default(0).notNull(),
     commsPlan: jsonb("comms_plan").$type<{
@@ -156,6 +160,7 @@ export const ticketTypes = pgTable(
     badge: text("badge"),
     requiresApproval: boolean("requires_approval").default(false).notNull(),
     isVisible: boolean("is_visible").default(true).notNull(),
+    passFeeToAttendee: boolean("pass_fee_to_attendee").default(true).notNull(),
     sortOrder: integer("sort_order").default(0).notNull(),
     createdAt: createdAt(),
   },
@@ -299,10 +304,14 @@ export const registrations = pgTable(
     country: text("country").default("NG").notNull(),
     church: text("church").default("").notNull(),
     attendeeType: text("attendee_type").default("delegate").notNull(),
+    gender: text("gender"),
+    ageBracket: text("age_bracket"),
+    occupation: text("occupation"),
     tableNumber: text("table_number"),
     seatNumber: text("seat_number"),
     status: text("status").default("confirmed").notNull(),
     accommodation: boolean("accommodation").default(false).notNull(),
+    accommodationType: text("accommodation_type"),
     transport: boolean("transport").default(false).notNull(),
     dietary: text("dietary").default("").notNull(),
     emergencyName: text("emergency_name").default("").notNull(),
@@ -475,3 +484,46 @@ export const auditLogs = pgTable(
   },
   (t) => [index("audit_logs_org_idx").on(t.organizationId)]
 );
+
+/* ------------------------------------------------------------------ */
+/* Daily Sanctuary & Community Prayer Wall                            */
+/* ------------------------------------------------------------------ */
+
+export const prayerRequests = pgTable(
+  "prayer_requests",
+  {
+    id: id(),
+    authorName: text("author_name").default("Anonymous Believer").notNull(),
+    authorCity: text("author_city").default("Lagos").notNull(),
+    title: text("title").notNull(),
+    content: text("content").notNull(),
+    category: text("category").default("general").notNull(),
+    prayerCount: integer("prayer_count").default(1).notNull(),
+    isTestimony: boolean("is_testimony").default(false).notNull(),
+    testimonyUpdate: text("testimony_update"),
+    isApproved: boolean("is_approved").default(true).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("prayer_requests_created_idx").on(t.createdAt),
+    index("prayer_requests_cat_idx").on(t.category),
+  ]
+);
+
+export const ministryFollowers = pgTable(
+  "ministry_followers",
+  {
+    id: id(),
+    ministryId: text("ministry_id").notNull(),
+    ministryName: text("ministry_name").notNull(),
+    email: text("email"),
+    phone: text("phone"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("ministry_followers_min_idx").on(t.ministryId),
+    index("ministry_followers_email_idx").on(t.email),
+  ]
+);
+
+

@@ -73,9 +73,16 @@ export default async function TicketsPage({
             >
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="font-display text-[1.125rem] font-semibold text-ink">
-                    {ticket.name}
-                  </h3>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-display text-[1.125rem] font-semibold text-ink">
+                      {ticket.name}
+                    </h3>
+                    {ticket.badge && (
+                      <span className="pill pill-live !text-[0.625rem] !py-0.2 !px-2 font-medium">
+                        {ticket.badge}
+                      </span>
+                    )}
+                  </div>
                   <div className="text-[0.875rem] text-warm-500 mt-1 line-clamp-2">
                     {ticket.description || "No description"}
                   </div>
@@ -106,12 +113,20 @@ export default async function TicketsPage({
                 <div className="text-[0.8125rem] text-warm-500">
                   <strong className="text-ink font-medium">{ticket.sold.toLocaleString()}</strong> sold
                 </div>
-                <Link
-                  href={`/dashboard/events/${event.id}/tickets/${ticket.id}/edit`}
-                  className="btn btn-ghost !px-3 !py-1.5 text-[0.8125rem]"
-                >
-                  <Pencil size={14} className="mr-1.5" /> Edit
-                </Link>
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/dashboard/events/${event.id}#registrations`}
+                    className="text-[0.785rem] font-semibold text-[var(--color-brass-deep)] hover:underline"
+                  >
+                    View attendees →
+                  </Link>
+                  <Link
+                    href={`/dashboard/events/${event.id}/tickets/${ticket.id}/edit`}
+                    className="btn btn-ghost !px-3 !py-1.5 text-[0.8125rem]"
+                  >
+                    <Pencil size={14} className="mr-1.5" /> Edit
+                  </Link>
+                </div>
               </div>
             </div>
           ))}

@@ -31,6 +31,7 @@ import { hashOtp, normalizeOtpEmail } from "./otp";
 import { headers } from "next/headers";
 import { enforceRateLimit, getClientAddressFromHeaders, rateLimitHeaders } from "./rate-limit";
 import { MAX_MEDIA_FILES, mediaFilename, validateMediaFile } from "./media";
+import { validateChristianEventContent } from "./christian-moderation";
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                              */
@@ -100,6 +101,19 @@ export async function createEvent(formData: FormData) {
   const country = formData.get("country") as string;
   const mode = formData.get("mode") as string;
   const visibility = formData.get("visibility") as string;
+
+  // Automated Christian Ministry Content Moderation Guard
+  const moderation = validateChristianEventContent({
+    title,
+    theme,
+    tagline,
+    description,
+    eventType,
+  });
+
+  if (!moderation.isValid) {
+    return { error: moderation.reason };
+  }
 
   // Collision-safe slug
   const slug = await generateUniqueSlug(title);
@@ -216,6 +230,10 @@ for (const file of mediaFiles) {
         media: mediaPaths,
         customQuestions,
         attendeeTypes,
+        accommodationMode: (formData.get("accommodationMode") as string) || "none",
+        collectGender: formData.get("collectGender") === "true",
+        collectAgeBracket: formData.get("collectAgeBracket") === "true",
+        collectOccupation: formData.get("collectOccupation") === "true",
         brandColor: (formData.get("brandColor") as string) || "#c08a2e",
         status: "published",
         visibility: visibility || "public",
@@ -405,6 +423,10 @@ for (const file of mediaFiles) {
         media: mediaPaths,
         customQuestions,
         attendeeTypes,
+        accommodationMode: (formData.get("accommodationMode") as string) || existingEvent.accommodationMode || "none",
+        collectGender: formData.get("collectGender") === "true",
+        collectAgeBracket: formData.get("collectAgeBracket") === "true",
+        collectOccupation: formData.get("collectOccupation") === "true",
         brandColor: (formData.get("brandColor") as string) || existingEvent.brandColor,
         visibility: visibility || "public",
         updatedAt: new Date(),
@@ -1005,9 +1027,14 @@ export async function createTicketType(eventId: string, formData: FormData) {
   const price = formData.get("price") ? parseInt(formData.get("price") as string, 10) : 0;
   const capacity = formData.get("capacity") ? parseInt(formData.get("capacity") as string, 10) : 0;
   const isVisible = formData.get("isVisible") === "on" || formData.get("isVisible") === "true";
+  const passFeeToAttendee = formData.get("passFeeToAttendee") !== null 
+    ? (formData.get("passFeeToAttendee") === "on" || formData.get("passFeeToAttendee") === "true")
+    : true;
   
   const benefitsRaw = formData.get("benefits") as string;
   const benefits = benefitsRaw ? benefitsRaw.split("\n").map(b => b.trim()).filter(Boolean) : [];
+  const badgeRaw = formData.get("badge") as string | null;
+  const badge = badgeRaw && badgeRaw.trim() ? badgeRaw.trim() : null;
 
   let redirectUrl = "";
   try {
@@ -1018,7 +1045,9 @@ export async function createTicketType(eventId: string, formData: FormData) {
       price,
       capacity,
       isVisible,
+      passFeeToAttendee,
       benefits,
+      badge,
       currency: org.currency || "NGN",
     });
 
@@ -1055,9 +1084,14 @@ export async function updateTicketType(ticketId: string, eventId: string, formDa
   const price = formData.get("price") ? parseInt(formData.get("price") as string, 10) : 0;
   const capacity = formData.get("capacity") ? parseInt(formData.get("capacity") as string, 10) : 0;
   const isVisible = formData.get("isVisible") === "on" || formData.get("isVisible") === "true";
+  const passFeeToAttendee = formData.get("passFeeToAttendee") !== null 
+    ? (formData.get("passFeeToAttendee") === "on" || formData.get("passFeeToAttendee") === "true")
+    : true;
   
   const benefitsRaw = formData.get("benefits") as string;
   const benefits = benefitsRaw ? benefitsRaw.split("\n").map(b => b.trim()).filter(Boolean) : [];
+  const badgeRaw = formData.get("badge") as string | null;
+  const badge = badgeRaw && badgeRaw.trim() ? badgeRaw.trim() : null;
 
   let redirectUrl = "";
   try {
@@ -1069,7 +1103,9 @@ export async function updateTicketType(ticketId: string, eventId: string, formDa
         price,
         capacity,
         isVisible,
+        passFeeToAttendee,
         benefits,
+        badge,
       })
       .where(and(eq(ticketTypes.id, ticketId), eq(ticketTypes.eventId, eventId)));
 

@@ -143,6 +143,26 @@ export default async function RegisterPage({ params, searchParams }: Params) {
                 <span>Public online registration has closed, but your organizer session is active to register door walk-ins.</span>
               </div>
             )}
+
+            {/* Self-Service 'Find My Lost Pass' Banner */}
+            <div className="mx-auto max-w-[52rem] mb-6 rounded-2xl border border-brass/30 bg-black/40 p-4 sm:px-5 text-xs text-white/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md backdrop-blur-md">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-brass/20 text-brass text-sm shrink-0">
+                  🎟️
+                </span>
+                <div>
+                  <span className="font-semibold text-white block">Already registered for this event?</span>
+                  <span className="text-white/60 text-[0.725rem]">Lost your ticket email, closed your browser, or need your QR code for the gate?</span>
+                </div>
+              </div>
+              <a
+                href={`/my-tickets?event=${event.slug}`}
+                className="shrink-0 btn btn-secondary !text-xs !py-2 !px-3.5 !border-brass/40 !text-brass-light hover:!bg-brass/20 inline-flex items-center gap-1 font-semibold"
+              >
+                Find &amp; Retrieve Pass &rarr;
+              </a>
+            </div>
+
             <RegistrationForm 
               event={{
                 title: event.title,
@@ -156,6 +176,10 @@ export default async function RegisterPage({ params, searchParams }: Params) {
                 coverImage: event.coverImage,
                 customQuestions: event.customQuestions,
                 attendeeTypes: event.attendeeTypes,
+                accommodationMode: (event.accommodationMode as "none" | "free" | "paid" | "both") || "none",
+                collectGender: Boolean(event.collectGender),
+                collectAgeBracket: Boolean(event.collectAgeBracket),
+                collectOccupation: Boolean(event.collectOccupation),
               }}
               tickets={tickets}
               initialTicketId={initialTicketId}

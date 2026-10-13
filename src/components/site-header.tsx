@@ -9,6 +9,7 @@ import { cn } from "@/lib/format";
 
 const links = [
   { href: "/", label: "Discover Events" },
+  { href: "/sanctuary", label: "Daily Sanctuary & Prayers" },
   { href: "/for-ministries", label: "For Ministries" },
   { href: "/#lifecycle", label: "How it works" },
 ];

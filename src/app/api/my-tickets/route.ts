@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { registrations, events, ticketTypes } from "@/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, or, ilike, and, sql } from "drizzle-orm";
 import { sendTicketConfirmation } from "@/lib/email";
 import { enforceRateLimit, getClientAddress, rateLimitHeaders } from "@/lib/rate-limit";
+import { generateWhatsAppTicketLink } from "@/lib/whatsapp";
 
 export async function POST(req: Request) {
   const contentLength = Number(req.headers.get("content-length") || "0");
@@ -11,34 +12,60 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: false, error: "Request is too large." }, { status: 413 });
   }
 
-  const limit = await enforceRateLimit("my-tickets-ip", getClientAddress(req), 5, 600);
+  const limit = await enforceRateLimit("my-tickets-ip", getClientAddress(req), 15, 600);
   if (!limit.allowed) {
     return NextResponse.json(
-      { success: false, error: "Too many ticket lookup requests. Please try again later." },
+      { success: false, error: "Too many ticket lookup requests. Please try again in a few minutes." },
       { status: 429, headers: rateLimitHeaders(limit) },
     );
   }
 
   try {
-    const { email } = await req.json();
+    const body = await req.json();
+    const rawQuery = String(body.query || body.email || body.phone || "").trim();
+    const eventSlug = body.eventSlug ? String(body.eventSlug).trim() : undefined;
 
-    if (!email) {
-      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+    if (!rawQuery) {
+      return NextResponse.json({ success: false, error: "Please enter your email, phone number, or ticket code." }, { status: 400 });
     }
 
-    const cleanEmail = String(email).toLowerCase().trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(cleanEmail) || cleanEmail.length > 254) {
-      return NextResponse.json({ success: true });
-    }
-    const emailLimit = await enforceRateLimit("my-tickets-email", cleanEmail, 3, 600);
-    if (!emailLimit.allowed) {
-      return NextResponse.json(
-        { success: false, error: "Too many ticket lookup requests for this email. Please try again later." },
-        { status: 429, headers: rateLimitHeaders(emailLimit) },
+    const isEmail = rawQuery.includes("@");
+    const digitsOnly = rawQuery.replace(/\D/g, "");
+    const isCode = rawQuery.toUpperCase().startsWith("TKT-") || rawQuery.toUpperCase().startsWith("REG-");
+
+    // Build search conditions
+    const searchConditions = [];
+
+    if (isEmail) {
+      searchConditions.push(ilike(registrations.email, rawQuery.toLowerCase()));
+    } else if (isCode) {
+      searchConditions.push(
+        or(
+          eq(registrations.ticketCode, rawQuery.toUpperCase()),
+          eq(registrations.code, rawQuery.toUpperCase())
+        )
       );
+    } else {
+      // General text or phone number
+      if (digitsOnly.length >= 7) {
+        // Last 7 to 10 digits to match phone variations (+234803... vs 0803...)
+        const phoneSuffix = digitsOnly.slice(-8);
+        searchConditions.push(ilike(registrations.phone, `%${phoneSuffix}%`));
+        searchConditions.push(
+          sql`regexp_replace(${registrations.phone}, '[^0-9]', '', 'g') ILIKE ${'%' + phoneSuffix + '%'}`
+        );
+      }
+      searchConditions.push(ilike(registrations.email, `%${rawQuery.toLowerCase()}%`));
+      searchConditions.push(eq(registrations.ticketCode, rawQuery.toUpperCase()));
     }
 
-    // Fetch all registrations for this email
+    let whereClause = or(...searchConditions);
+
+    if (eventSlug) {
+      whereClause = and(whereClause, eq(events.slug, eventSlug));
+    }
+
+    // Fetch matching registrations
     const userRegistrations = await db
       .select({
         registration: registrations,
@@ -47,34 +74,81 @@ export async function POST(req: Request) {
       })
       .from(registrations)
       .innerJoin(events, eq(registrations.eventId, events.id))
-      .innerJoin(ticketTypes, eq(registrations.ticketTypeId, ticketTypes.id))
-      .where(eq(registrations.email, cleanEmail))
-      .orderBy(desc(registrations.createdAt));
+      .leftJoin(ticketTypes, eq(registrations.ticketTypeId, ticketTypes.id))
+      .where(whereClause)
+      .orderBy(desc(registrations.createdAt))
+      .limit(10);
 
-    if (userRegistrations.length === 0) {
-      // Return 200 anyway so we don't leak whether an email exists or not
-      return NextResponse.json({ success: true });
-    }
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://selahevent.vercel.app";
 
-    // For simplicity in this demo, instead of a summary email, we just resend the ticket 
-    // confirmation emails for all tickets they own, or maybe just the most recent ones (future events).
-    // Let's resend the ticket email for all of them!
-    
-    // In a real production app, we would send ONE email: "Here are all your tickets" with links to /my-tickets/[code]
-    for (const reg of userRegistrations) {
-      await sendTicketConfirmation(cleanEmail, {
-        attendeeName: `${reg.registration.firstName} ${reg.registration.lastName}`,
-        eventName: reg.event.title,
-        ticketName: reg.ticketType.name,
-        ticketCode: reg.registration.ticketCode,
-        startsAt: new Date(reg.event.startsAt).toLocaleString(),
-        venueName: reg.event.venueName || "TBA",
+    const tickets = userRegistrations.map((item) => {
+      const reg = item.registration;
+      const evt = item.event;
+      const tkt = item.ticketType;
+      const passUrl = `${siteUrl}/my-tickets/${reg.ticketCode}`;
+
+      const whatsappUrl = generateWhatsAppTicketLink({
+        phone: reg.phone,
+        eventTitle: evt.title,
+        attendeeName: `${reg.firstName} ${reg.lastName}`,
+        ticketCode: reg.ticketCode,
+        ticketTier: tkt?.name || "General Admission",
+        tableNumber: reg.tableNumber,
+        seatNumber: reg.seatNumber,
+        venueName: evt.venueName,
+        eventDate: evt.startsAt ? new Date(evt.startsAt).toLocaleDateString() : undefined,
+        passUrl,
       });
+
+      return {
+        id: reg.id,
+        ticketCode: reg.ticketCode,
+        code: reg.code,
+        firstName: reg.firstName,
+        lastName: reg.lastName,
+        email: reg.email,
+        phone: reg.phone,
+        status: reg.status,
+        eventTitle: evt.title,
+        eventSlug: evt.slug,
+        eventStartsAt: evt.startsAt ? evt.startsAt.toISOString() : null,
+        eventVenue: evt.venueName || "Venue Announced on Pass",
+        eventCity: evt.city,
+        coverImage: evt.coverImage,
+        ticketName: tkt?.name || "General Admission",
+        tableNumber: reg.tableNumber,
+        seatNumber: reg.seatNumber,
+        accommodation: reg.accommodation,
+        accommodationType: reg.accommodationType,
+        gender: reg.gender,
+        qrCodeUrl: `https://quickchart.io/qr?text=${encodeURIComponent(reg.ticketCode)}&size=300&margin=1`,
+        passUrl,
+        pdfUrl: `/api/tickets/${reg.ticketCode}/pdf`,
+        whatsappUrl,
+      };
+    });
+
+    // If an email was queried and matches found, trigger background email resend
+    if (isEmail && tickets.length > 0) {
+      for (const t of tickets.slice(0, 3)) {
+        void sendTicketConfirmation(t.email, {
+          attendeeName: `${t.firstName} ${t.lastName}`,
+          eventName: t.eventTitle,
+          ticketName: t.ticketName,
+          ticketCode: t.ticketCode,
+          startsAt: t.eventStartsAt ? new Date(t.eventStartsAt).toLocaleString() : "TBA",
+          venueName: t.eventVenue,
+        }).catch(() => null);
+      }
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      count: tickets.length,
+      tickets,
+    });
   } catch (error) {
     console.error("Error looking up tickets:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json({ success: false, error: "Internal server error looking up tickets" }, { status: 500 });
   }
 }

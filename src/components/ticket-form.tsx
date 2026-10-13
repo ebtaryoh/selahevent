@@ -63,8 +63,55 @@ export function TicketForm({
     }
   };
 
+  const [badge, setBadge] = useState<string>(ticket?.badge || "");
+  const [benefitsText, setBenefitsText] = useState<string>(ticket?.benefits?.join("\n") || "");
+  const [hasLodging, setHasLodging] = useState<boolean>(
+    Boolean(
+      ticket?.badge?.toLowerCase().includes("chalet") ||
+      ticket?.badge?.toLowerCase().includes("lodging") ||
+      ticket?.badge?.toLowerCase().includes("hotel") ||
+      ticket?.badge?.toLowerCase().includes("room") ||
+      ticket?.description?.toLowerCase().includes("chalet") ||
+      ticket?.description?.toLowerCase().includes("hotel") ||
+      ticket?.description?.toLowerCase().includes("lodging")
+    )
+  );
+
+  const lodgingPresets = [
+    {
+      label: "Executive Chalet",
+      badge: "Executive Chalet Included",
+      perks: ["Private Executive Chalet with ensuite bathroom", "Air-conditioned with premium furnishings", "Complimentary daily breakfast", "Priority event & welfare assistance"],
+    },
+    {
+      label: "Partner Hotel Room",
+      badge: "Hotel Room Included",
+      perks: ["Reserved room at partner hotel near venue", "Shuttle transport between hotel & event grounds", "Private ensuite room & amenities"],
+    },
+    {
+      label: "Camp Guest House",
+      badge: "Guest House Included",
+      perks: ["On-site Camp Guest House accommodation", "Double occupancy room with clean bedding", "Proximity to main auditorium"],
+    },
+    {
+      label: "AC Dormitory Bed",
+      badge: "AC Dorm Bed Included",
+      perks: ["Bed space in executive air-conditioned dorm", "Individual storage locker & charging point", "Clean shared facilities"],
+    },
+  ];
+
+  const applyLodgingPreset = (preset: typeof lodgingPresets[0]) => {
+    setBadge(preset.badge);
+    setHasLodging(true);
+    // Merge perks cleanly
+    const existing = benefitsText.split("\n").map(b => b.trim()).filter(Boolean);
+    const newPerks = preset.perks.filter(p => !existing.includes(p));
+    const combined = [...existing, ...newPerks].join("\n");
+    setBenefitsText(combined);
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="max-w-[42rem]">
+    <form onSubmit={handleSubmit} className="max-w-[44rem]">
       <header className="mb-10 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link
@@ -74,7 +121,7 @@ export function TicketForm({
             <ArrowLeft size={16} className="text-ink" />
           </Link>
           <h1 className="font-display text-[1.75rem] font-semibold text-ink">
-            {isEditing ? "Edit Ticket" : "New Ticket"}
+            {isEditing ? "Edit Ticket Package" : "New Ticket Package"}
           </h1>
         </div>
         <div className="flex items-center gap-3">
@@ -115,14 +162,14 @@ export function TicketForm({
         </h2>
 
         <div className="grid gap-6">
-          <Field label="Ticket name" description="e.g. General Admission, VIP, Early Bird">
+          <Field label="Ticket name" description="e.g. General Admission, VIP Package, Executive Chalet Pass">
             <input
               type="text"
               name="name"
               required
               defaultValue={ticket?.name}
               className="input"
-              placeholder="General Admission"
+              placeholder="e.g. Executive Chalet Package"
             />
           </Field>
 
@@ -135,7 +182,7 @@ export function TicketForm({
               rows={3}
               defaultValue={ticket?.description}
               className="input"
-              placeholder="Standard access to the event."
+              placeholder="Standard access to all sessions plus accommodation."
             />
           </Field>
           
@@ -171,20 +218,117 @@ export function TicketForm({
             </Field>
           </div>
 
+          {/* Pass-Through Convenience Fee Toggle */}
+          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4.5">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                name="passFeeToAttendee"
+                defaultChecked={ticket?.passFeeToAttendee ?? true}
+                className="mt-1 h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+              />
+              <div className="flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-semibold text-ink">
+                    Pass Payment Processing Fee to Attendee
+                  </span>
+                  <span className="inline-flex items-center rounded-full bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[0.6875rem] font-semibold text-emerald-700 dark:text-emerald-300">
+                    ✨ Church Receives 100%
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-warm-500 leading-relaxed">
+                  Recommended for Christian ministries. Attendees cover the small online checkout fee (e.g. 1.5% + ₦100) at payment, ensuring your church receives 100% of the ticket face value without deductions.
+                </p>
+              </div>
+            </label>
+          </div>
+
+          {/* Badge & Highlight */}
           <Field
-            label="Benefits (One per line)"
-            description="List specific perks for this ticket type. These appear as checkmarks."
+            label="Badge / Highlight Pill (Optional)"
+            description="Displays as a gold tag above the ticket on the public registration page."
+          >
+            <div className="flex flex-col gap-2">
+              <input
+                type="text"
+                name="badge"
+                value={badge}
+                onChange={(e) => setBadge(e.target.value)}
+                className="input"
+                placeholder="e.g. Executive Chalet Included, VIP, Most Popular"
+              />
+              {badge ? (
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs text-warm-500">Live preview:</span>
+                  <span className="pill pill-live !text-[0.6875rem] font-semibold">
+                    {badge}
+                  </span>
+                </div>
+              ) : null}
+            </div>
+          </Field>
+
+          {/* Accommodation Inclusion Box */}
+          <div className="rounded-xl border border-[rgba(192,138,46,0.35)] bg-[rgba(192,138,46,0.06)] p-5">
+            <div className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                id="lodgingIncludedToggle"
+                checked={hasLodging}
+                onChange={(e) => setHasLodging(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-warm-300 text-brass focus:ring-brass"
+              />
+              <div className="flex-1">
+                <label htmlFor="lodgingIncludedToggle" className="cursor-pointer font-semibold text-ink text-sm">
+                  🏨 This Package Includes Accommodation / Lodging
+                </label>
+                <p className="mt-1 text-xs text-warm-600 leading-relaxed">
+                  Tag this ticket package with specific lodging (such as Executive Chalets or Partner Hotel Rooms). Attendees who buy this tier are automatically accounted for, and your welfare team can filter the attendee list by this package to assign rooms.
+                </p>
+
+                {hasLodging && (
+                  <div className="mt-4 pt-4 border-t border-[rgba(192,138,46,0.2)]">
+                    <span className="block text-xs font-semibold uppercase tracking-wider text-[var(--color-brass-deep)] mb-2.5">
+                      1-Click Room Presets (Auto-adds badge &amp; perks)
+                    </span>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      {lodgingPresets.map((preset) => (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          onClick={() => applyLodgingPreset(preset)}
+                          className="flex flex-col items-start rounded-lg border border-[rgba(192,138,46,0.25)] bg-white/70 p-3 text-left transition-all hover:border-[var(--color-brass-deep)] hover:bg-white shadow-xs"
+                        >
+                          <span className="text-xs font-semibold text-ink">
+                            + {preset.label}
+                          </span>
+                          <span className="mt-0.5 text-[0.7rem] text-warm-500">
+                            Badge: &ldquo;{preset.badge}&rdquo;
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <Field
+            label="Benefits & Perks (One per line)"
+            description="List specific perks for this ticket type. These appear as checkmarks for attendees."
           >
             <textarea
               name="benefits"
-              rows={5}
-              defaultValue={ticket?.benefits?.join("\n")}
-              className="input"
-              placeholder="Priority seating\nExclusive lunch\nMeet & greet"
+              rows={6}
+              value={benefitsText}
+              onChange={(e) => setBenefitsText(e.target.value)}
+              className="input font-mono text-[0.825rem]"
+              placeholder="Priority seating&#10;Exclusive lunch&#10;Executive Chalet room included&#10;Meet & greet"
             />
           </Field>
 
-          <label className="flex items-start gap-3 mt-4">
+          <label className="flex items-start gap-3 mt-2">
             <input
               type="checkbox"
               name="isVisible"

@@ -861,6 +861,19 @@ export default async function EventPage({ params, searchParams }: Params) {
               );
             })}
           </div>
+
+          {/* Retrieve Pass Quick Link */}
+          <div className="mt-8 text-center">
+            <p className="text-xs text-warm-500">
+              Already registered or bought a ticket?{" "}
+              <Link
+                href={`/my-tickets?event=${event.slug}`}
+                className="font-semibold text-[var(--color-brass-deep)] hover:underline inline-flex items-center gap-1"
+              >
+                Find &amp; retrieve your lost pass &rarr;
+              </Link>
+            </p>
+          </div>
         </div>
       </section>
 

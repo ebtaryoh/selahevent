@@ -40,6 +40,7 @@ import { EventStatusButton } from "./event-status-button";
 import { RegistrationChart } from "@/components/registration-chart";
 import { AttendeeSeatingModal } from "@/components/attendee-seating-modal";
 import { WhatsAppShareButton } from "@/components/whatsapp-share-button";
+import { AttendeeLedgerTable } from "@/components/attendee-ledger-table";
 import { getEventTag, isSeatedEvent, getEventTypeLabel } from "@/lib/event-tags";
 import {
   formatDate,
@@ -543,13 +544,6 @@ export default async function EventManagePage({
             }
           />
           <div className="flex flex-wrap gap-3">
-            <a 
-              href={`/api/export-registrations?eventId=${event.id}`} 
-              className="btn btn-ghost"
-              download
-            >
-              <Download size={16} /> Export CSV
-            </a>
             <Link
               href={`/e/${event.slug}/register?mode=desk`}
               className="btn btn-primary"
@@ -559,140 +553,17 @@ export default async function EventManagePage({
           </div>
         </div>
 
-        <div className="mt-9 overflow-hidden rounded-[15px] border border-[rgba(22,19,17,0.1)] bg-paper">
-          <div className="overflow-x-auto">
-            <table className="ledger">
-              <thead>
-                <tr>
-                  <th scope="col">Code</th>
-                  <th scope="col">Attendee</th>
-                  <th scope="col">Location</th>
-                  <th scope="col">Amount</th>
-                  <th scope="col">Hospitality</th>
-                  <th scope="col">Table / Seating</th>
-                  <th scope="col">Custom Answers</th>
-                  <th scope="col">Status</th>
-                  <th scope="col">WhatsApp Pass</th>
-                  <th scope="col">Registered</th>
-                </tr>
-              </thead>
-              <tbody>
-                {registrations.map((reg) => (
-                  <tr key={reg.id}>
-                    <td className="tnum whitespace-nowrap font-semibold text-[var(--color-brass-deep)]">
-                      {reg.code}
-                    </td>
-                    <td>
-                      <div className="font-semibold text-ink">
-                        {reg.firstName} {reg.lastName}
-                      </div>
-                      <div className="text-[0.795rem] text-warm-400">
-                        {reg.email}
-                      </div>
-                    </td>
-                    <td className="text-warm-500">
-                      {reg.city || "—"}
-                      {reg.country ? `, ${reg.country}` : ""}
-                    </td>
-                    <td className="tnum text-ink">
-                      {formatMoney(reg.amount, event.currency)}
-                    </td>
-                    <td>
-                      <div className="flex flex-wrap gap-1.5">
-                        {reg.accommodation ? (
-                          <span className="pill pill-brass !text-[0.625rem]">
-                            Accommodation
-                          </span>
-                        ) : null}
-                        {reg.transport ? (
-                          <span className="pill pill-neutral !text-[0.625rem]">
-                            Transport
-                          </span>
-                        ) : null}
-                        {!reg.accommodation && !reg.transport ? (
-                          <span className="text-[0.795rem] text-warm-300">
-                            None
-                          </span>
-                        ) : null}
-                      </div>
-                    </td>
-                    <td className="whitespace-nowrap">
-                      <AttendeeSeatingModal
-                        eventId={event.id}
-                        registrationId={reg.id}
-                        attendeeName={`${reg.firstName} ${reg.lastName}`}
-                        currentTable={reg.tableNumber}
-                        currentSeat={reg.seatNumber}
-                      />
-                    </td>
-                    <td>
-                      <div className="flex flex-col gap-1 text-[0.795rem] text-warm-600">
-                        {reg.customAnswers && Object.keys(reg.customAnswers).length > 0 ? (
-                          Object.entries(reg.customAnswers).map(([k, v]) => {
-                            const q = event.customQuestions?.find(q => q.id === k);
-                            return (
-                              <div key={k}>
-                                <span className="font-medium text-ink">{q?.label || k}:</span> {String(v)}
-                              </div>
-                            )
-                          })
-                        ) : (
-                          <span className="text-warm-300">—</span>
-                        )}
-                      </div>
-                    </td>
-                    <td>
-                      <span
-                        className={
-                          reg.status === "confirmed"
-                            ? "pill pill-live"
-                            : reg.status === "pending"
-                              ? "pill pill-warn"
-                              : "pill pill-neutral"
-                        }
-                      >
-                        {titleCase(reg.status)}
-                      </span>
-                    </td>
-                    <td className="whitespace-nowrap">
-                      <WhatsAppShareButton
-                        payload={{
-                          phone: reg.phone,
-                          eventTitle: event.title,
-                          attendeeName: `${reg.firstName} ${reg.lastName}`,
-                          ticketCode: reg.ticketCode,
-                          ticketTier: reg.attendeeType,
-                          tableNumber: reg.tableNumber,
-                          seatNumber: reg.seatNumber,
-                          venueName: event.venueName,
-                          passUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://selahevent.vercel.app'}/ticket/${reg.ticketCode}`,
-                        }}
-                        compact
-                      />
-                    </td>
-                    <td className="tnum whitespace-nowrap text-warm-400">
-                      {formatDate(reg.createdAt)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="flex items-center justify-between gap-4 border-t border-[rgba(22,19,17,0.1)] px-6 py-4">
-            <p className="text-[0.8125rem] text-warm-500">
-              Showing {registrations.length} of{" "}
-              {formatNumber(stats.registered)} registrations
-            </p>
-            <div className="flex gap-2">
-              <button type="button" className="btn btn-ghost !px-4 !py-2 !text-[0.8125rem]" disabled>
-                Previous
-              </button>
-              <button type="button" className="btn btn-ghost !px-4 !py-2 !text-[0.8125rem]">
-                Next
-              </button>
-            </div>
-          </div>
+        <div className="mt-8">
+          <AttendeeLedgerTable
+            eventId={event.id}
+            currency={event.currency}
+            eventSlug={event.slug}
+            eventTitle={event.title}
+            venueName={event.venueName || ""}
+            registrations={registrations as any}
+            tickets={tickets as any}
+            customQuestions={(event.customQuestions as any) || []}
+          />
         </div>
       </section>
 

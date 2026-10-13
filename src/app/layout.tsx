@@ -1,29 +1,42 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://selahevent.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Selah — The Christian Event Operating System",
+    default: "Selah — The Christian Event Operating System & Daily Sanctuary",
     template: "%s · Selah",
   },
   description:
-    "Plan, publish, register, pay, check in and follow up on every Christian event — then reuse the whole setup next time. Built for churches, conferences, retreats and ministries.",
+    "Plan, publish, register, pay, check in and follow up on every Christian event — and enter the daily digital sanctuary with morning scriptures & community prayer wall.",
   keywords: [
     "church event software",
     "Christian conference registration",
     "event management platform",
     "QR check-in",
     "church retreat planning",
+    "daily Christian devotion",
+    "prayer wall",
   ],
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Selah",
+  },
+  icons: {
+    icon: "/icons/icon-192.png",
+    apple: "/icons/apple-touch-icon.png",
+  },
   openGraph: {
     type: "website",
     siteName: "Selah",
-    title: "Selah — The Christian Event Operating System",
+    title: "Selah — The Christian Event Operating System & Daily Sanctuary",
     description:
-      "Run every Christian event from one place. Beautiful event pages, registrations, payments, teams, check-in and a setup you can reuse.",
+      "Run every Christian event from one place, and connect daily with believers in prayer and meditation.",
     images: [
       {
         url: "/images/hero-auditorium.jpg",
@@ -68,13 +81,20 @@ export default function RootLayout({
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Manrope:wght@300..800&display=swap"
         />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Selah" />
       </head>
       <body>
         <a href="#main-content" className="skip-link">
           Skip to content
         </a>
         {children}
+        <PwaInstallPrompt />
       </body>
     </html>
   );
 }
+

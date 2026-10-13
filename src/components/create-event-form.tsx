@@ -1,7 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, X, ArrowRight, Loader2, CalendarDays, MapPin, Tag, UploadCloud, ImageIcon, ListTodo, Palette, Copy, ShieldCheck } from "lucide-react";
+import {
+  Plus,
+  X,
+  ArrowRight,
+  Loader2,
+  CalendarDays,
+  MapPin,
+  Tag,
+  UploadCloud,
+  ImageIcon,
+  ListTodo,
+  Palette,
+  Copy,
+  ShieldCheck,
+  Users,
+  Sparkles,
+  HelpCircle,
+  BedDouble,
+  ChevronDown,
+  ChevronUp,
+  Utensils,
+  CheckCircle2,
+  Info,
+} from "lucide-react";
 import { createEvent, createEventFromBlueprint, updateEvent } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 import { FocusImageUpload } from "./focus-image-upload";
@@ -22,6 +45,23 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
   const [attendeeTypes, setAttendeeTypes] = useState<string>(
     initialData?.attendeeTypes ? initialData.attendeeTypes.join(", ") : "Delegate, Student, Minister / clergy, Volunteer, Speaker, Guest"
   );
+  const [accommodationMode, setAccommodationMode] = useState<string>(
+    initialData?.accommodationMode || "none"
+  );
+  const [collectGender, setCollectGender] = useState<boolean>(
+    initialData?.collectGender ?? false
+  );
+  const [collectAgeBracket, setCollectAgeBracket] = useState<boolean>(
+    initialData?.collectAgeBracket ?? false
+  );
+  const [collectOccupation, setCollectOccupation] = useState<boolean>(
+    initialData?.collectOccupation ?? false
+  );
+  const [selectedEventType, setSelectedEventType] = useState<string>(
+    initialData?.eventType || "conference"
+  );
+  const [appliedPresetNotice, setAppliedPresetNotice] = useState<string | null>(null);
+  const [showFeatureGuide, setShowFeatureGuide] = useState<boolean>(false);
   const [selectedBlueprintId, setSelectedBlueprintId] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
@@ -31,6 +71,399 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
   const [focus, setFocus] = useState<{ x: number; y: number }>(
     existingCoverImage?.focus || { x: 50, y: 50 }
   );
+
+  function getPresetForType(type: string) {
+    // 1. Campus & Student Fellowships
+    if (type === "fyb_dinner" || type === "campus_handover") {
+      return {
+        title: type === "fyb_dinner" ? "Final Year Brethren (FYB) Dinner" : "Fellowship Handover Banquet",
+        badge: "Table & Seat Allocation Enabled",
+        accommodationMode: "none",
+        collectGender: false,
+        collectAgeBracket: false,
+        collectOccupation: false,
+        seating: "Table & Seat Allocation Active",
+        why: "Send-off and transition banquets require assigned tables for graduating brethren, fellowship executives, and guests. Checkout is kept fast and frictionless.",
+        suggestedQuestion: {
+          label: "Department & Faculty / Final Year Set",
+          type: "text" as const,
+          required: true,
+        },
+      };
+    }
+    if (type === "campus_conference" || type === "academic_summit") {
+      return {
+        title: type === "campus_conference" ? "Campus Fellowship Conference" : "Students' Academic & Spiritual Summit",
+        badge: "Campus Hostel Lodging & Demographics",
+        accommodationMode: "both",
+        collectGender: true,
+        collectAgeBracket: true,
+        collectOccupation: true,
+        seating: "Open Seating",
+        why: "Joint-campus conferences (NIFES, JCCF, RCF, CASOR, etc.) require gender collection to segregate male/female campus hostels, plus student vs graduate tracking.",
+        suggestedQuestion: {
+          label: "Institution & Campus Fellowship Chapter",
+          type: "text" as const,
+          required: true,
+        },
+      };
+    }
+    if (type === "freshers_welcome") {
+      return {
+        title: "Freshers' Welcome & Orientation Night",
+        badge: "Fast Student Pass Access",
+        accommodationMode: "none",
+        collectGender: false,
+        collectAgeBracket: true,
+        collectOccupation: true,
+        seating: "Open Seating",
+        why: "Welcome new 100-level students into the fellowship with instant WhatsApp digital passes and department tracking.",
+        suggestedQuestion: {
+          label: "Course / Department of Study",
+          type: "text" as const,
+          required: true,
+        },
+      };
+    }
+
+    // 2. Youth, Teens & Young Adults
+    if (type === "youth_camp" || type === "teens_camp") {
+      return {
+        title: type === "youth_camp" ? "Youth Camp & Retreat" : "Teenagers' Bootcamp & Camp",
+        badge: "Camp Hostel Lodging & Welfare Segregation",
+        accommodationMode: "both",
+        collectGender: true,
+        collectAgeBracket: true,
+        collectOccupation: false,
+        seating: "Open Seating",
+        why: "Youth & Teen camps strictly mandate Gender tracking to automatically allocate campers to Men's or Women's dorms, with emergency guardian contact collection.",
+        suggestedQuestion: {
+          label: "Parent / Guardian Contact & Emergency Phone",
+          type: "text" as const,
+          required: true,
+        },
+      };
+    }
+    if (type === "youth_hangout" || type === "church_picnic" || type === "game_night" || type === "love_feast") {
+      return {
+        title: "Christian Social Hangout & Fun Day",
+        badge: "Instant 10-Second Digital Pass",
+        accommodationMode: "none",
+        collectGender: false,
+        collectAgeBracket: false,
+        collectOccupation: false,
+        seating: "Casual / Open Fellowship",
+        why: "Picnics, games nights, and love feasts thrive on instant, frictionless registration so members and invited friends can grab passes in seconds.",
+      };
+    }
+    if (type === "career_workshop") {
+      return {
+        title: "Career, Skills & Tech Workshop",
+        badge: "Professional Mentorship & Streams",
+        accommodationMode: "none",
+        collectGender: false,
+        collectAgeBracket: true,
+        collectOccupation: true,
+        seating: "Workshop Seating",
+        why: "Career & skills hubs capture job status (student vs employed) to group delegates into relevant tech/business tracks.",
+        suggestedQuestion: {
+          label: "Target Career Stream / Field of Interest",
+          type: "text" as const,
+          required: true,
+        },
+      };
+    }
+
+    // 3. Singles & Relationships
+    if (type === "singles_dinner") {
+      return {
+        title: "Singles Gala Dinner & Red Carpet",
+        badge: "Table & Seat Allocation Enabled",
+        accommodationMode: "none",
+        collectGender: true,
+        collectAgeBracket: true,
+        collectOccupation: true,
+        seating: "Table & Seat Allocation Active",
+        why: "Formal dinner with assigned tables, allowing singles to dine, connect, and network in an elegant Christian environment.",
+      };
+    }
+    if (type === "singles_program" || type === "singles_hangout" || type === "premarital_class") {
+      return {
+        title: "Singles Summit & Relationship Seminar",
+        badge: "Demographic Breakouts & Networking",
+        accommodationMode: "none",
+        collectGender: true,
+        collectAgeBracket: true,
+        collectOccupation: true,
+        seating: "Open Seating",
+        why: "Capturing age ranges and occupations helps organizers guide delegates into age-appropriate breakout sessions and relationship panels.",
+      };
+    }
+
+    // 4. Couples, Married & Family Life
+    if (type === "couples_dinner") {
+      return {
+        title: "Couples Dinner & Romance Night",
+        badge: "Table & Seat Allocation (Reserved Pairs)",
+        accommodationMode: "none",
+        collectGender: false,
+        collectAgeBracket: false,
+        collectOccupation: false,
+        seating: "Table & Seat Allocation Active",
+        why: "Couples dinners require reserved table numbers for pairs and served catering. Table assignments display on digital WhatsApp passes.",
+        suggestedQuestion: {
+          label: "Spouse's Full Name",
+          type: "text" as const,
+          required: true,
+        },
+      };
+    }
+    if (type === "marriage_retreat") {
+      return {
+        title: "Marriage Enrichment Retreat & Getaway",
+        badge: "Couples Hotel / Chalet Lodging",
+        accommodationMode: "paid",
+        collectGender: false,
+        collectAgeBracket: false,
+        collectOccupation: false,
+        seating: "Open Seating",
+        why: "Weekend couples getaways offer paid hotel rooms or chalets. Create dedicated room upgrade packages under Tickets.",
+        suggestedQuestion: {
+          label: "Years of Marriage",
+          type: "text" as const,
+          required: false,
+        },
+      };
+    }
+    if (type === "wedding") {
+      return {
+        title: "Christian Wedding Celebration",
+        badge: "Table Seating & Reception Invitations",
+        accommodationMode: "none",
+        collectGender: false,
+        collectAgeBracket: false,
+        collectOccupation: false,
+        seating: "Table & Seat Allocation Active",
+        why: "Weddings benefit from Table & Seat numbers on digital WhatsApp passes so family and invited guests find their tables effortlessly.",
+        suggestedQuestion: {
+          label: "Guest of Bride or Groom?",
+          type: "select" as const,
+          required: true,
+          options: ["Bride's Family / Guest", "Groom's Family / Guest", "Church / Mutual Friend"],
+        },
+      };
+    }
+    if (type === "family_conference") {
+      return {
+        title: "Parents & Family Life Conference",
+        badge: "Family Ministry & Parenting",
+        accommodationMode: "none",
+        collectGender: false,
+        collectAgeBracket: false,
+        collectOccupation: true,
+        seating: "Open Seating",
+        why: "Family life conferences focus on godly parenting and marital balance.",
+      };
+    }
+
+    // 5. Pastors, Ministers & Church Leadership
+    if (type === "ministers_conference" || type === "ministers_retreat" || type === "workers_retreat" || type === "elders_retreat") {
+      return {
+        title: "Pastors, Ministers & Leadership Gathering",
+        badge: "Executive Lodging & Ministry Roles",
+        accommodationMode: "both",
+        collectGender: false,
+        collectAgeBracket: false,
+        collectOccupation: true,
+        seating: "Reserved / Open Seating",
+        why: "Leadership retreats provide executive lodging for pastors and ministers, with church leadership credentials tracking.",
+        suggestedQuestion: {
+          label: "Ministry Office / Church Title (e.g. Pastor, Deacon, Minister, Worker)",
+          type: "text" as const,
+          required: true,
+        },
+      };
+    }
+
+    // 6. Church Groups & Departmental Wings
+    if (type === "mens_breakfast") {
+      return {
+        title: "Men's Fellowship Breakfast & Summit",
+        badge: "Breakfast Table Seating & Brotherhood",
+        accommodationMode: "none",
+        collectGender: false,
+        collectAgeBracket: false,
+        collectOccupation: true,
+        seating: "Table & Seat Allocation Active",
+        why: "Men's breakfasts feature reserved dining tables and marketplace discussions.",
+        suggestedQuestion: {
+          label: "Profession / Industry",
+          type: "text" as const,
+          required: false,
+        },
+      };
+    }
+    if (type === "womens_conference") {
+      return {
+        title: "Women's Conference & Fellowship",
+        badge: "Spiritual Empowerment & Fellowship",
+        accommodationMode: "none",
+        collectGender: false,
+        collectAgeBracket: false,
+        collectOccupation: false,
+        seating: "Open Seating",
+        why: "Annual gatherings for Women of Faith with keynote speakers and fellowship tea.",
+      };
+    }
+    if (type === "choir_retreat" || type === "ushers_training" || type === "media_workshop" || type === "departmental_dinner") {
+      return {
+        title: "Church Department Training & Fellowship",
+        badge: "Service Department Empowerment",
+        accommodationMode: "none",
+        collectGender: false,
+        collectAgeBracket: false,
+        collectOccupation: false,
+        seating: type === "departmental_dinner" ? "Table & Seat Allocation Active" : "Open Seating",
+        why: "Department bootcamps empower choir, ushers, media, and technical teams with team check-ins.",
+        suggestedQuestion: {
+          label: "Department Unit / Vocal Part (e.g. Soprano, Camera, Protocol)",
+          type: "text" as const,
+          required: true,
+        },
+      };
+    }
+    if (type === "vbs_camp") {
+      return {
+        title: "Children's Vacation Bible School (VBS)",
+        badge: "Kids Camp & Child Safeguarding",
+        accommodationMode: "none",
+        collectGender: true,
+        collectAgeBracket: true,
+        collectOccupation: false,
+        seating: "Classroom / Open",
+        why: "VBS captures child age brackets and parent contacts for safety.",
+        suggestedQuestion: {
+          label: "Parent / Guardian Contact & Allergies",
+          type: "text" as const,
+          required: true,
+        },
+      };
+    }
+
+    // 7. Banquets & Social Celebrations
+    if (type === "banquet" || type === "birthday") {
+      return {
+        title: "Christian Banquet & Dinner",
+        badge: "Table & Seat Allocation Enabled",
+        accommodationMode: "none",
+        collectGender: false,
+        collectAgeBracket: false,
+        collectOccupation: false,
+        seating: "Table & Seat Allocation Active",
+        why: "Banquets require reserved Table & Seat allocation for dining and ushers. Lodging and demographic questions are disabled to keep checkout quick and frictionless.",
+        suggestedQuestion: {
+          label: "Dietary Restrictions / Food Allergies",
+          type: "text" as const,
+          required: false,
+        },
+      };
+    }
+
+    // 8. Congregational Conventions, Crusades, Vigils, Worship
+    if (type === "church_convention") {
+      return {
+        title: "Annual Church Convention / Synod",
+        badge: "General Assembly & Multi-Day Housing",
+        accommodationMode: "both",
+        collectGender: true,
+        collectAgeBracket: false,
+        collectOccupation: false,
+        seating: "Auditorium Seating",
+        why: "Annual church conventions feature thousands of delegates with hostel housing and executive lodging.",
+      };
+    }
+    if (type === "crusade" || type === "vigil" || type === "worship" || type === "concert" || type === "youth_rally") {
+      return {
+        title: "Worship Night, Crusade & Concert",
+        badge: "High-Volume Fast Pass Access",
+        accommodationMode: "none",
+        collectGender: false,
+        collectAgeBracket: false,
+        collectOccupation: false,
+        seating: "Open Seating",
+        why: "High-volume spiritual gatherings require instant frictionless registration so attendees can claim digital passes in seconds.",
+      };
+    }
+    if (type === "business") {
+      return {
+        title: "Marketplace & Business Summit",
+        badge: "Industry Networking & Professional Segmentation",
+        accommodationMode: "none",
+        collectGender: false,
+        collectAgeBracket: false,
+        collectOccupation: true,
+        seating: "Open / VIP Seating",
+        why: "Marketplace summits benefit from collecting Occupation and Industry so organizers can facilitate B2B networking and executive seating.",
+        suggestedQuestion: {
+          label: "Company / Organization & Industry",
+          type: "text" as const,
+          required: true,
+        },
+      };
+    }
+    if (type === "retreat") {
+      return {
+        title: "Spiritual Retreat",
+        badge: "Hostel Lodging & Welfare Segregation",
+        accommodationMode: "both",
+        collectGender: true,
+        collectAgeBracket: true,
+        collectOccupation: false,
+        seating: "Open Seating",
+        why: "Multi-day retreats need Gender collection to automatically separate Men's and Women's camp dormitories.",
+      };
+    }
+
+    return {
+      title: "Christian Gathering & Fellowship",
+      badge: "Standard Access",
+      accommodationMode: "none",
+      collectGender: false,
+      collectAgeBracket: false,
+      collectOccupation: false,
+      seating: "Open Seating",
+      why: "Streamlined registration with zero friction so attendees can claim their digital passes swiftly.",
+    };
+  }
+
+  function applyPreset(type: string) {
+    const preset = getPresetForType(type);
+    setAccommodationMode(preset.accommodationMode);
+    setCollectGender(preset.collectGender);
+    setCollectAgeBracket(preset.collectAgeBracket);
+    setCollectOccupation(preset.collectOccupation);
+
+    if (preset.suggestedQuestion) {
+      const alreadyHas = customQuestions.some(
+        (q: CustomQuestion) => q.label.toLowerCase() === preset.suggestedQuestion!.label.toLowerCase()
+      );
+      if (!alreadyHas) {
+        setCustomQuestions((prev: CustomQuestion[]) => [
+          ...prev,
+          {
+            id: Math.random().toString(36).substring(7),
+            label: preset.suggestedQuestion!.label,
+            type: preset.suggestedQuestion!.type,
+            required: preset.suggestedQuestion!.required,
+            options: preset.suggestedQuestion!.options,
+          },
+        ]);
+      }
+    }
+
+    setAppliedPresetNotice(`Applied recommended settings for ${preset.title}!`);
+    setTimeout(() => setAppliedPresetNotice(null), 4000);
+  }
   
   const existingVideoUrl = initialData?.media?.find((m: any) => m.type === "video")?.url;
 
@@ -44,11 +477,11 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
   }
   
   function updateQuestion(id: string, field: keyof CustomQuestion, value: any) {
-    setCustomQuestions(customQuestions.map(q => q.id === id ? { ...q, [field]: value } : q));
+    setCustomQuestions(customQuestions.map((q: CustomQuestion) => q.id === id ? { ...q, [field]: value } : q));
   }
 
   function removeQuestion(id: string) {
-    setCustomQuestions(customQuestions.filter(q => q.id !== id));
+    setCustomQuestions(customQuestions.filter((q: CustomQuestion) => q.id !== id));
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -62,7 +495,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
     if (coverImageFile) {
       formData.append("media", coverImageFile);
     }
-    selectedFiles.forEach((file) => {
+    selectedFiles.forEach((file: File) => {
       formData.append("media", file);
     });
 
@@ -76,8 +509,12 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
         formData.append("customQuestions", JSON.stringify(customQuestions));
         formData.append(
           "attendeeTypes",
-          JSON.stringify(attendeeTypes.split(",").map((t) => t.trim()).filter(Boolean))
+          JSON.stringify(attendeeTypes.split(",").map((t: string) => t.trim()).filter(Boolean))
         );
+        formData.append("accommodationMode", accommodationMode);
+        formData.append("collectGender", String(collectGender));
+        formData.append("collectAgeBracket", String(collectAgeBracket));
+        formData.append("collectOccupation", String(collectOccupation));
         const res = await updateEvent(initialData.id, formData);
         
         if (res && res.error) {
@@ -113,8 +550,12 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
         formData.append("customQuestions", JSON.stringify(customQuestions));
         formData.append(
           "attendeeTypes",
-          JSON.stringify(attendeeTypes.split(",").map((t) => t.trim()).filter(Boolean))
+          JSON.stringify(attendeeTypes.split(",").map((t: string) => t.trim()).filter(Boolean))
         );
+        formData.append("accommodationMode", accommodationMode);
+        formData.append("collectGender", String(collectGender));
+        formData.append("collectAgeBracket", String(collectAgeBracket));
+        formData.append("collectOccupation", String(collectOccupation));
         const res = await createEvent(formData);
         
         // createEvent redirects on success, so if it returns it's usually an error
@@ -233,34 +674,213 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                 id="eventType"
                 name="eventType"
                 required
-                defaultValue={initialData?.eventType || "conference"}
+                value={selectedEventType}
+                onChange={(e) => setSelectedEventType(e.target.value)}
                 className="input !w-full bg-black/20"
               >
-                <optgroup label="Banquets & Celebrations (With Table & Seat Allocation)">
-                  <option value="banquet">Christian Banquet / Dinner (Tag: Christian Hangout)</option>
-                  <option value="wedding">Christian Wedding (Tag: Married & Singles)</option>
-                  <option value="birthday">Christian Birthday / Celebration (Tag: Christian Hangout)</option>
+                {/* 1. Campus Fellowships & Student Ministries */}
+                <optgroup label="🎓 Campus Fellowships & Student Ministries">
+                  <option value="fyb_dinner">Final Year Brethren (FYB) Dinner (Tag: Christian Hangout · Table Seated)</option>
+                  <option value="campus_conference">All-Campus Fellowship Conference (Tag: Conferences · Camp Lodging)</option>
+                  <option value="freshers_welcome">Freshers&apos; Welcome &amp; Orientation (Tag: Youth Meetings)</option>
+                  <option value="campus_handover">Fellowship Handover Banquet (Tag: Christian Hangout · Table Seated)</option>
+                  <option value="academic_summit">Students&apos; Academic &amp; Spiritual Summit (Tag: Conferences)</option>
                 </optgroup>
-                <optgroup label="Standard Church & Ministry Events">
-                  <option value="conference">Conference (Tag: Conferences)</option>
-                  <option value="retreat">Retreat (Tag: Retreats)</option>
-                  <option value="worship">Worship Night (Tag: Worship)</option>
-                  <option value="church_service">Church Service (Tag: Worship)</option>
-                  <option value="summit">Summit (Tag: Conferences)</option>
-                  <option value="concert">Concert (Tag: Concerts)</option>
-                  <option value="seminar">Seminar (Tag: Seminars)</option>
-                  <option value="bible_study">Bible Study (Tag: Bible Study)</option>
-                  <option value="youth_meetings">Youth Meeting (Tag: Youth Meetings)</option>
-                  <option value="singles_program">Singles Program (Tag: Singles Program)</option>
-                  <option value="christian_hangout">Christian Hangout (Tag: Christian Hangout)</option>
-                  <option value="married_singles">Married & Singles (Tag: Married & Singles)</option>
-                  <option value="business">Business & Marketplace (Tag: Business)</option>
-                  <option value="online">Online Gathering (Tag: Online)</option>
+
+                {/* 2. Youth, Teenagers & Young Adults */}
+                <optgroup label="⚡ Youth, Teenagers & Young Adults">
+                  <option value="youth_camp">Youth Camp &amp; Retreat (Tag: Retreats · Camp Lodging)</option>
+                  <option value="teens_camp">Teenagers&apos; Bootcamp &amp; Camp (Tag: Youth Meetings · Dorms)</option>
+                  <option value="youth_meetings">Youth Meeting &amp; Service (Tag: Youth Meetings)</option>
+                  <option value="youth_hangout">Youth Games Day &amp; Hangout (Tag: Christian Hangout)</option>
+                  <option value="youth_rally">Youth Praise Rally &amp; Explosion (Tag: Concerts)</option>
+                  <option value="career_workshop">Youth Career, Tech &amp; Skills Hub (Tag: Seminars)</option>
+                </optgroup>
+
+                {/* 3. Singles & Courtship */}
+                <optgroup label="💍 Singles & Courtship">
+                  <option value="singles_dinner">Singles Gala Dinner (Tag: Christian Hangout · Table Seated)</option>
+                  <option value="singles_hangout">Singles Mixer &amp; Outdoor Hangout (Tag: Christian Hangout)</option>
+                  <option value="singles_program">Singles Summit &amp; Seminar (Tag: Singles Program)</option>
+                  <option value="premarital_class">Courtship &amp; Pre-Marital Class (Tag: Seminars)</option>
+                </optgroup>
+
+                {/* 4. Couples, Married & Family Life */}
+                <optgroup label="💑 Couples, Married & Family Life">
+                  <option value="couples_dinner">Couples Dinner &amp; Romance Night (Tag: Married &amp; Singles · Table Seated)</option>
+                  <option value="marriage_retreat">Marriage Enrichment Retreat &amp; Getaway (Tag: Retreats · Hotel)</option>
+                  <option value="wedding">Christian Wedding Celebration (Tag: Married &amp; Singles · Table Seated)</option>
+                  <option value="family_conference">Parents &amp; Family Life Conference (Tag: Married &amp; Singles)</option>
+                </optgroup>
+
+                {/* 5. Pastors, Ministers & Church Leadership */}
+                <optgroup label="👑 Pastors, Ministers & Church Leadership">
+                  <option value="ministers_conference">Pastors &amp; Church Leaders Conference (Tag: Conferences)</option>
+                  <option value="ministers_retreat">Ministers Impartation Retreat (Tag: Retreats · Lodging)</option>
+                  <option value="workers_retreat">Church Workers Induction Retreat (Tag: Retreats)</option>
+                  <option value="elders_retreat">Elders, Deacons &amp; Council Retreat (Tag: Retreats)</option>
+                </optgroup>
+
+                {/* 6. Church Groups & Departmental Hangouts */}
+                <optgroup label="🏛️ Church Groups & Departmental Wings">
+                  <option value="mens_breakfast">Men&apos;s Fellowship Breakfast &amp; Summit (Tag: Christian Hangout · Table Seated)</option>
+                  <option value="womens_conference">Women&apos;s Conference &amp; Fellowship (Tag: Conferences)</option>
+                  <option value="choir_retreat">Choir &amp; Music Ministry Retreat (Tag: Retreats)</option>
+                  <option value="departmental_dinner">Departmental End-of-Year Banquet (Tag: Christian Hangout · Table Seated)</option>
+                  <option value="ushers_training">Ushers, Greeters &amp; Protocol Summit (Tag: Seminars)</option>
+                  <option value="media_workshop">Media, Sound &amp; Tech Workshop (Tag: Seminars)</option>
+                  <option value="vbs_camp">Children&apos;s Vacation Bible School - VBS (Tag: Bible Study)</option>
+                </optgroup>
+
+                {/* 7. Christian Socials, Banquets & Hangouts */}
+                <optgroup label="🍽️ Christian Socials, Banquets & Hangouts">
+                  <option value="banquet">Christian Banquet / Gala Dinner (Tag: Christian Hangout · Table Seated)</option>
+                  <option value="church_picnic">Church Picnic &amp; Outdoor Fellowship (Tag: Christian Hangout)</option>
+                  <option value="game_night">Christian Board Games &amp; Quiz Night (Tag: Christian Hangout)</option>
+                  <option value="love_feast">Love Feast &amp; Praise Buffet (Tag: Christian Hangout)</option>
+                  <option value="birthday">Christian Birthday / Thanksgiving Celebration (Tag: Christian Hangout · Table Seated)</option>
+                  <option value="christian_hangout">General Christian Hangout (Tag: Christian Hangout)</option>
+                </optgroup>
+
+                {/* 8. Congregational Worship, Crusades & Outreaches */}
+                <optgroup label="🕊️ Congregational Worship, Crusades & Outreaches">
+                  <option value="church_convention">Annual Church Convention / Synod (Tag: Conferences · Camp Lodging)</option>
+                  <option value="crusade">Miracle Crusade &amp; City Outreach (Tag: Worship)</option>
+                  <option value="worship">Worship &amp; Praise Night (Tag: Worship)</option>
+                  <option value="vigil">All-Night Prayer Vigil (Tag: Worship)</option>
+                  <option value="concert">Gospel Music Concert (Tag: Concerts)</option>
+                  <option value="conference">General Christian Conference (Tag: Conferences)</option>
+                  <option value="retreat">General Spiritual Retreat (Tag: Retreats · Lodging)</option>
+                  <option value="seminar">Teaching Seminar &amp; Masterclass (Tag: Seminars)</option>
+                  <option value="bible_study">Bible Study &amp; Expository School (Tag: Bible Study)</option>
+                  <option value="business">Marketplace &amp; Business Summit (Tag: Business)</option>
+                  <option value="church_service">Regular Church Service (Tag: Worship)</option>
+                  <option value="online">Online Gathering / Webinar (Tag: Online)</option>
                 </optgroup>
               </select>
-              <p className="mt-1.5 text-xs text-white/50">
-                Tagged among Selah&apos;s available categories. Christian Banquets, Weddings, and Birthdays automatically enable table &amp; seat allocation on digital badges, WhatsApp passes, and gate scanners.
-              </p>
+
+              {/* Dynamic Smart Event Preset Assistant */}
+              {(() => {
+                const currentPreset = getPresetForType(selectedEventType);
+                return (
+                  <div className="mt-3.5 rounded-xl border border-brass/40 bg-brass/10 p-4 transition-all">
+                    <div className="flex flex-col gap-3.5 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Sparkles size={16} className="text-brass shrink-0" />
+                          <span className="font-semibold text-white text-sm">
+                            Smart Setup: {currentPreset.title}
+                          </span>
+                          <span className="pill border-brass/40 bg-brass/20 text-brass-light !text-[0.65rem] !py-0.2 !px-2 font-medium">
+                            {currentPreset.badge}
+                          </span>
+                        </div>
+                        <p className="mt-1.5 text-xs text-white/70 leading-relaxed">
+                          {currentPreset.why}
+                        </p>
+                        <div className="mt-2.5 flex flex-wrap gap-2 text-[0.725rem] text-white/80">
+                          <span className="rounded-md bg-black/30 px-2 py-0.5 border border-white/10">
+                            🛏️ Lodging: <strong className="text-brass capitalize">{currentPreset.accommodationMode === "both" ? "Free & Paid Upgrades" : currentPreset.accommodationMode}</strong>
+                          </span>
+                          <span className="rounded-md bg-black/30 px-2 py-0.5 border border-white/10">
+                            🚻 Collect Gender: <strong className="text-brass">{currentPreset.collectGender ? "Yes (Dorms)" : "No"}</strong>
+                          </span>
+                          <span className="rounded-md bg-black/30 px-2 py-0.5 border border-white/10">
+                            💼 Demographics: <strong className="text-brass">{currentPreset.collectAgeBracket || currentPreset.collectOccupation ? "Enabled" : "Off"}</strong>
+                          </span>
+                          <span className="rounded-md bg-black/30 px-2 py-0.5 border border-white/10">
+                            🍽️ Seating: <strong className="text-brass">{currentPreset.seating}</strong>
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="shrink-0 flex flex-col items-end gap-1">
+                        <button
+                          type="button"
+                          onClick={() => applyPreset(selectedEventType)}
+                          className="btn btn-primary !py-2 !px-3.5 !text-xs cursor-pointer shadow-sm hover:scale-[1.02] active:scale-[0.98] transition-transform"
+                        >
+                          <Sparkles size={13} className="mr-1" /> Apply Recommended Setup
+                        </button>
+                        {appliedPresetNotice && (
+                          <span className="inline-flex items-center gap-1 text-[0.7rem] text-emerald-300 font-semibold mt-1">
+                            <CheckCircle2 size={12} /> {appliedPresetNotice}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Expandable Feature Guide & Logistics Checklist */}
+              <div className="mt-3">
+                <button
+                  type="button"
+                  onClick={() => setShowFeatureGuide(!showFeatureGuide)}
+                  className="flex items-center gap-1.5 text-xs text-brass hover:underline font-semibold cursor-pointer"
+                >
+                  <HelpCircle size={14} />
+                  <span>
+                    {showFeatureGuide ? "Hide Feature Guide & Checklist" : "Guide: What features to add or remove for your event type?"}
+                  </span>
+                  {showFeatureGuide ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                </button>
+
+                {showFeatureGuide && (
+                  <div className="mt-2.5 rounded-xl border border-white/15 bg-black/40 p-4 text-xs text-white/80 space-y-3.5 leading-relaxed">
+                    <div className="font-semibold text-white flex items-center gap-1.5 border-b border-white/10 pb-2">
+                      <Info size={14} className="text-brass" /> Everything you can enable or disable for your event:
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-lg bg-white/5 p-3 border border-white/5">
+                        <strong className="text-brass block mb-1">🍽️ Table & Seat Allocation</strong>
+                        <p className="text-white/60 text-[0.725rem]">
+                          <strong>When to use:</strong> FYB Dinners, Fellowship Handovers, Couples Dinners, Singles Galas, Weddings, and Banquets.
+                          <br />
+                          <strong>What it does:</strong> Ushers and gate staff assign or view table &amp; seat numbers on badges and WhatsApp passes. Keep off for open-seating conventions.
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-white/5 p-3 border border-white/5">
+                        <strong className="text-brass block mb-1">🛏️ Accommodation Modes</strong>
+                        <p className="text-white/60 text-[0.725rem]">
+                          <strong>Options:</strong> None &bull; Free Dorms &bull; Paid Rooms &bull; Both.
+                          <br />
+                          <strong>What it does:</strong> Provides lodging intake. Choose <em>Both</em> for youth/campus camps with free hostels and paid chalets. Choose <em>None</em> for 1-day dinners &amp; hangouts.
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-white/5 p-3 border border-white/5">
+                        <strong className="text-brass block mb-1">🚻 Gender &amp; Dorm Segregation</strong>
+                        <p className="text-white/60 text-[0.725rem]">
+                          <strong>When to use:</strong> Whenever lodging or student dormitories are enabled.
+                          <br />
+                          <strong>What it does:</strong> Automatically tags campers as Men&apos;s Dorm or Women&apos;s Dorm to prevent accommodation mix-ups.
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-white/5 p-3 border border-white/5">
+                        <strong className="text-brass block mb-1">💼 Age &amp; Occupation Demographics</strong>
+                        <p className="text-white/60 text-[0.725rem]">
+                          <strong>When to use:</strong> Campus summits, Youth conferences, Singles summits, and Marketplace hubs.
+                          <br />
+                          <strong>What it does:</strong> Groups attendees into age brackets and student/professional categories for tailored workshops.
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-white/5 p-3 border border-white/5">
+                        <strong className="text-brass block mb-1">💬 Instant WhatsApp Passes</strong>
+                        <p className="text-white/60 text-[0.725rem]">
+                          <strong>Active for all events:</strong> Attendees can save their digital ticket, QR entry code, and table assignment straight to WhatsApp with 1 tap.
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-white/5 p-3 border border-white/5">
+                        <strong className="text-brass block mb-1">🏷️ Walk-In Desk Registration</strong>
+                        <p className="text-white/60 text-[0.725rem]">
+                          <strong>For reception teams:</strong> Use <code>/register?mode=desk</code> at the venue entrance for rapid on-site registrations.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div>
@@ -536,6 +1156,170 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
           </div>
         </div>
 
+        {/* Registration Demographics & Accommodation Logistics */}
+        <div className="rounded-[16px] border border-white/10 bg-[rgba(16,16,18,0.5)] backdrop-blur-md p-6 shadow-sm">
+          <div className="mb-4">
+            <h2 className="font-display flex items-center gap-2 text-lg font-semibold text-white">
+              <Users size={18} className="text-brass" /> Demographics & Accommodation
+            </h2>
+            <p className="mt-1 text-sm text-white/60">
+              Control what information is asked on the registration form. Keep it short for single-day events, or enable lodging and demographics for conventions and retreats.
+            </p>
+          </div>
+
+          <div className="space-y-6">
+            {/* Accommodation Policy */}
+            <div>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-brass">
+                Accommodation / Lodging Policy
+              </label>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <label className={`flex cursor-pointer flex-col justify-between rounded-xl border p-4 transition-colors ${accommodationMode === "none" ? "border-brass bg-brass/10 text-white" : "border-white/10 bg-black/20 text-white/70 hover:border-white/20"}`}>
+                  <div className="flex items-center gap-2 font-medium text-sm">
+                    <input
+                      type="radio"
+                      name="accommodationModeChoice"
+                      value="none"
+                      checked={accommodationMode === "none"}
+                      onChange={() => setAccommodationMode("none")}
+                      className="text-brass focus:ring-brass"
+                    />
+                    Not Offered (None)
+                  </div>
+                  <p className="mt-2 text-xs text-white/50 leading-relaxed">
+                    Hides lodging questions completely. Recommended for 1-day events, dinners & banquets.
+                  </p>
+                </label>
+
+                <label className={`flex cursor-pointer flex-col justify-between rounded-xl border p-4 transition-colors ${accommodationMode === "free" ? "border-brass bg-brass/10 text-white" : "border-white/10 bg-black/20 text-white/70 hover:border-white/20"}`}>
+                  <div className="flex items-center gap-2 font-medium text-sm">
+                    <input
+                      type="radio"
+                      name="accommodationModeChoice"
+                      value="free"
+                      checked={accommodationMode === "free"}
+                      onChange={() => {
+                        setAccommodationMode("free");
+                        setCollectGender(true);
+                      }}
+                      className="text-brass focus:ring-brass"
+                    />
+                    Free Dorms Only
+                  </div>
+                  <p className="mt-2 text-xs text-white/50 leading-relaxed">
+                    Hostel/dorm provided by ministry for all. Prompts for dorm & gender segregation.
+                  </p>
+                </label>
+
+                <label className={`flex cursor-pointer flex-col justify-between rounded-xl border p-4 transition-colors ${accommodationMode === "paid" ? "border-brass bg-brass/10 text-white" : "border-white/10 bg-black/20 text-white/70 hover:border-white/20"}`}>
+                  <div className="flex items-center gap-2 font-medium text-sm">
+                    <input
+                      type="radio"
+                      name="accommodationModeChoice"
+                      value="paid"
+                      checked={accommodationMode === "paid"}
+                      onChange={() => setAccommodationMode("paid")}
+                      className="text-brass focus:ring-brass"
+                    />
+                    Paid Rooms Only
+                  </div>
+                  <p className="mt-2 text-xs text-white/50 leading-relaxed">
+                    Strictly paid lodging. Attendees purchase hotel/room packages upfront via ticket tiers.
+                  </p>
+                </label>
+
+                <label className={`flex cursor-pointer flex-col justify-between rounded-xl border p-4 transition-colors ${accommodationMode === "both" ? "border-brass bg-brass/10 text-white" : "border-white/10 bg-black/20 text-white/70 hover:border-white/20"}`}>
+                  <div className="flex items-center gap-2 font-medium text-sm">
+                    <input
+                      type="radio"
+                      name="accommodationModeChoice"
+                      value="both"
+                      checked={accommodationMode === "both"}
+                      onChange={() => {
+                        setAccommodationMode("both");
+                        setCollectGender(true);
+                      }}
+                      className="text-brass focus:ring-brass"
+                    />
+                    Both (Free & Paid)
+                  </div>
+                  <p className="mt-2 text-xs text-white/50 leading-relaxed">
+                    General dorms are free, plus paid executive chalets/hotel upgrades via ticket tiers.
+                  </p>
+                </label>
+              </div>
+
+              {/* Informative Guidance for Paid Lodging Packages */}
+              {(accommodationMode === "paid" || accommodationMode === "both") && (
+                <div className="mt-4 rounded-xl border border-[rgba(192,138,46,0.35)] bg-[rgba(192,138,46,0.12)] p-4 text-xs text-white/90 leading-relaxed shadow-sm">
+                  <div className="flex items-center gap-2 font-semibold text-brass mb-1.5 text-sm">
+                    <BedDouble size={16} /> How to configure Paid Accommodation Packages
+                  </div>
+                  <p>
+                    After saving this event, navigate to <strong>Tickets &rarr; New Ticket</strong> to create your paid lodging tiers (such as <em>&ldquo;Executive Chalet Pass - ₦50,000&rdquo;</em>, <em>&ldquo;Partner Hotel Room&rdquo;</em>, or <em>&ldquo;Guest House Suite&rdquo;</em>).
+                  </p>
+                  <p className="mt-1.5 text-white/70">
+                    Use our 1-click room presets on the ticket form to automatically badge the package with its lodging type. In your dashboard, you can filter attendees directly by this package and export dedicated rooming lists for your housing &amp; welfare team!
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Demographic Toggles */}
+            <div className="border-t border-white/10 pt-5">
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-brass">
+                Standard Demographic Questions (1-Click Toggles)
+              </label>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-black/20 p-3.5 hover:border-white/20 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={collectGender}
+                    onChange={(e) => setCollectGender(e.target.checked)}
+                    className="mt-0.5 rounded border-warm-300 text-brass focus:ring-brass"
+                  />
+                  <div>
+                    <span className="block text-sm font-medium text-white">Collect Gender</span>
+                    <span className="mt-0.5 block text-xs text-white/50">
+                      Male / Female (vital for dorm allocation & retreats)
+                    </span>
+                  </div>
+                </label>
+
+                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-black/20 p-3.5 hover:border-white/20 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={collectAgeBracket}
+                    onChange={(e) => setCollectAgeBracket(e.target.checked)}
+                    className="mt-0.5 rounded border-warm-300 text-brass focus:ring-brass"
+                  />
+                  <div>
+                    <span className="block text-sm font-medium text-white">Collect Age Bracket</span>
+                    <span className="mt-0.5 block text-xs text-white/50">
+                      Under 18, 18-24, 25-34, 35-49, 50+
+                    </span>
+                  </div>
+                </label>
+
+                <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-white/10 bg-black/20 p-3.5 hover:border-white/20 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={collectOccupation}
+                    onChange={(e) => setCollectOccupation(e.target.checked)}
+                    className="mt-0.5 rounded border-warm-300 text-brass focus:ring-brass"
+                  />
+                  <div>
+                    <span className="block text-sm font-medium text-white">Collect Occupation</span>
+                    <span className="mt-0.5 block text-xs text-white/50">
+                      Employed, Self-Employed, Student, etc.
+                    </span>
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Custom Registration Questions */}
         <div className={`rounded-[16px] border border-white/10 bg-[rgba(16,16,18,0.5)] backdrop-blur-md p-6 shadow-sm transition-opacity duration-300 ${selectedBlueprintId ? 'opacity-50 pointer-events-none hidden' : ''}`}>
           <div className="mb-4 flex items-center justify-between">
@@ -560,7 +1344,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                 No custom questions added.
               </div>
             ) : (
-              customQuestions.map((q, index) => (
+              customQuestions.map((q: CustomQuestion, index: number) => (
                 <div key={q.id} className="relative rounded-xl border border-warm-200 bg-black/20 p-4 pr-12">
                   <button
                     type="button"
@@ -706,7 +1490,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                 className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                 onChange={(e) => {
                   if (e.target.files) {
-                    setSelectedFiles((prev) => [...prev, ...Array.from(e.target.files!)]);
+                    setSelectedFiles((prev: File[]) => [...prev, ...Array.from(e.target.files!)]);
                   }
                 }}
               />
@@ -728,7 +1512,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
             
             {selectedFiles.length > 0 && (
               <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-                {selectedFiles.map((file, i) => (
+                {selectedFiles.map((file: File, i: number) => (
                   <div key={i} className="group relative aspect-video overflow-hidden rounded-lg border border-warm-200">
                     {file.type.startsWith("video/") ? (
                       <video src={URL.createObjectURL(file)} className="h-full w-full object-cover" />
