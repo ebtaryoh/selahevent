@@ -103,9 +103,11 @@ export default async function EventManagePage({
                 aria-hidden="true"
                 className="opacity-45 object-cover"
                 style={{
-                  objectPosition: (event.media as any[])?.[0]?.focus 
-                    ? `${(event.media as any[])[0].focus.x}% ${(event.media as any[])[0].focus.y}%` 
-                    : "center"
+                  objectPosition:
+                    typeof (event.media as any[])?.[0]?.focus?.x === "number" &&
+                    typeof (event.media as any[])?.[0]?.focus?.y === "number"
+                      ? `${(event.media as any[])[0].focus.x}% ${(event.media as any[])[0].focus.y}%`
+                      : "center",
                 }}
                 fill
               />
@@ -409,10 +411,10 @@ export default async function EventManagePage({
                 ["Transport", `${stats.transport} delegates requiring transport`, stats.transport === 0],
                 [
                   "Communication timeline",
-                  event.commsPlan && event.commsPlan.length > 0 
-                    ? `${event.commsPlan.filter(c => c.status === "scheduled").length} scheduled · ${event.commsPlan.filter(c => c.status === "draft").length} draft`
+                  Array.isArray(event.commsPlan) && event.commsPlan.length > 0 
+                    ? `${(event.commsPlan as any[]).filter(c => c.status === "scheduled").length} scheduled · ${(event.commsPlan as any[]).filter(c => c.status === "draft").length} draft`
                     : "0 scheduled · 0 draft",
-                  event.commsPlan ? event.commsPlan.length > 0 : false,
+                  Array.isArray(event.commsPlan) ? event.commsPlan.length > 0 : false,
                 ],
                 [
                   "Certificates",
@@ -484,10 +486,10 @@ export default async function EventManagePage({
                   {
                     icon: Mail,
                     label: "Communications",
-                    value: event.commsPlan && event.commsPlan.length > 0
-                      ? `${event.commsPlan.filter(c => c.status === "scheduled").length} scheduled · ${event.commsPlan.filter(c => c.status === "sent").length} sent`
+                    value: Array.isArray(event.commsPlan) && event.commsPlan.length > 0
+                      ? `${(event.commsPlan as any[]).filter(c => c.status === "scheduled").length} scheduled · ${(event.commsPlan as any[]).filter(c => c.status === "sent").length} sent`
                       : "0 scheduled · 0 sent",
-                    detail: event.commsPlan && event.commsPlan.length > 0
+                    detail: Array.isArray(event.commsPlan) && event.commsPlan.length > 0
                       ? "Campaigns active"
                       : "No active campaigns",
                     progress: 0,

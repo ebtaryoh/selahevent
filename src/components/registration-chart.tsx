@@ -1,17 +1,42 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { format } from "date-fns";
 
 export function RegistrationChart({ data }: { data: { date: string; count: number }[] }) {
-  // Format dates for display
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Format dates safely for display
   const chartData = useMemo(() => {
-    return data.map(d => ({
-      ...d,
-      displayDate: format(new Date(d.date), "MMM d")
-    }));
+    if (!Array.isArray(data)) return [];
+    return data.map((d) => {
+      let displayDate = d.date;
+      try {
+        if (d.date) {
+          displayDate = format(new Date(d.date), "MMM d");
+        }
+      } catch {
+        displayDate = d.date;
+      }
+      return {
+        ...d,
+        displayDate,
+      };
+    });
   }, [data]);
+
+  if (!mounted) {
+    return (
+      <div className="h-[300px] w-full mt-4 flex items-center justify-center rounded-xl bg-warm-100/30">
+        <span className="text-xs text-warm-400">Loading registration metrics...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="h-[300px] w-full mt-4">

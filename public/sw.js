@@ -1,5 +1,5 @@
 // Selah PWA Service Worker for Offline Gate Passes & Daily Sanctuary
-const CACHE_NAME = 'selah-v1';
+const CACHE_NAME = 'selah-v2';
 const STATIC_ASSETS = [
   '/',
   '/sanctuary',
@@ -8,7 +8,8 @@ const STATIC_ASSETS = [
   '/icons/icon-192.png',
   '/icons/icon-512.png',
   '/icons/apple-touch-icon.png',
-  '/icons/icon.svg'
+  '/icons/icon.svg',
+  '/favicon.ico'
 ];
 
 self.addEventListener('install', (event) => {
@@ -43,8 +44,15 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
 
-  // Skip API routes & non-http requests from caching
-  if (url.pathname.startsWith('/api') || !url.protocol.startsWith('http')) {
+  // CRITICAL: NEVER intercept dynamic dashboard, admin, API, uploads, or Next.js internal RSC/data requests
+  if (
+    url.pathname.startsWith('/api') ||
+    url.pathname.startsWith('/dashboard') ||
+    url.pathname.startsWith('/admin') ||
+    url.pathname.startsWith('/uploads') ||
+    url.pathname.startsWith('/_next') ||
+    !url.protocol.startsWith('http')
+  ) {
     return;
   }
 
@@ -60,14 +68,22 @@ self.addEventListener('fetch', (event) => {
         }
         return networkResponse;
       })
-      .catch(() => {
+      .catch(async () => {
         // Fallback to cache if network is offline
-        return caches.match(event.request).then((cachedResponse) => {
-          if (cachedResponse) return cachedResponse;
-          // Fallback to home page if navigating offline
-          if (event.request.mode === 'navigate') {
-            return caches.match('/');
-          }
+        const cached = await caches.match(event.request);
+        if (cached) return cached;
+
+        // Fallback to home page if navigating offline
+        if (event.request.mode === 'navigate') {
+          const rootCached = await caches.match('/');
+          if (rootCached) return rootCached;
+        }
+
+        // Return a valid Response object (Service Worker spec prohibits returning undefined)
+        return new Response('Network request failed while offline', {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: new Headers({ 'Content-Type': 'text/plain' }),
         });
       })
   );
