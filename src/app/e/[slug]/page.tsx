@@ -25,7 +25,9 @@ import {
   getSessions,
   getSpeakers,
   getTickets,
+  getEventProducts,
 } from "@/lib/data";
+import { EventStore } from "@/components/event-store";
 import {
   formatDate,
   formatMoney,
@@ -80,10 +82,11 @@ export default async function EventPage({ params, searchParams }: Params) {
   const event = await getEventBySlug(slug);
   if (!event || event.visibility === "private") notFound();
 
-  const [tickets, speakers, sessions] = await Promise.all([
+  const [tickets, speakers, sessions, products] = await Promise.all([
     getTickets(event.id),
     getSpeakers(event.id),
     getSessions(event.id),
+    getEventProducts(event.id, true),
   ]);
 
   const totalSold = tickets.reduce((sum, t) => sum + t.sold, 0);
@@ -321,6 +324,14 @@ export default async function EventPage({ params, searchParams }: Params) {
                     className="btn btn-light !px-7 !py-4 !text-[0.95rem]"
                   >
                     See the schedule
+                  </a>
+                )}
+                {products.length > 0 && (
+                  <a
+                    href="#store"
+                    className="btn btn-light !px-7 !py-4 !text-[0.95rem] inline-flex items-center gap-1.5"
+                  >
+                    🛍️ Event Store ({products.length})
                   </a>
                 )}
               </div>
@@ -932,6 +943,17 @@ export default async function EventPage({ params, searchParams }: Params) {
         </section>
       )}
 
+
+      {/* ------------- Event Store & Resources ------------- */}
+      {products.length > 0 && (
+        <EventStore
+          eventId={event.id}
+          eventSlug={event.slug}
+          eventTitle={event.title}
+          currency={event.currency}
+          products={products}
+        />
+      )}
 
       {/* ------------- Final CTA ------------- */}
       <section className="relative isolate overflow-hidden">

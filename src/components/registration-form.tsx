@@ -44,6 +44,21 @@ export type TicketOption = {
   passFeeToAttendee?: boolean;
 };
 
+export type ProductOption = {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  currency: string;
+  type: string;
+  category: string;
+  imageUrl?: string | null;
+  stockQuantity: number;
+  variants?: string[] | null;
+  requiresPickup?: boolean;
+  allowAddonAtCheckout?: boolean;
+};
+
 export type GuestFormItem = {
   id: string;
   firstName: string;
@@ -64,6 +79,7 @@ export type EventSummary = {
   startsAt: string;
   endsAt: string;
   coverImage: string | null;
+  currency?: string;
   customQuestions?: {
     id: string;
     label: string;
@@ -129,22 +145,27 @@ const initial = (firstTicketId: string): FormState => ({
 const STEPS = [
   { n: 1, label: "About you" },
   { n: 2, label: "Participation" },
-  { n: 3, label: "Details" },
+  { n: 3, label: "Store & Merch" },
   { n: 4, label: "Review" },
 ];
 
 export function RegistrationForm({
   event,
   tickets,
+  products = [],
   initialTicketId,
   isStaff,
 }: {
   event: EventSummary;
   tickets: TicketOption[];
+  products?: ProductOption[];
   initialTicketId?: string;
   isStaff?: boolean;
 }) {
   const [step, setStep] = useState(1);
+  const [selectedAddons, setSelectedAddons] = useState<
+    Array<{ productId: string; variant?: string; quantity: number }>
+  >([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -233,8 +254,12 @@ export function RegistrationForm({
       const t = tickets.find((tk) => tk.id === g.ticketTypeId) || selectedTicket;
       return sum + (t?.price ?? 0);
     }, 0);
-    return primaryPrice + guestsPrice;
-  }, [selectedTicket, form.donationAmount, guests, tickets]);
+    const addonsPrice = selectedAddons.reduce((sum, addon) => {
+      const prod = products.find((p) => p.id === addon.productId);
+      return sum + ((prod?.price ?? 0) * addon.quantity);
+    }, 0);
+    return primaryPrice + guestsPrice + addonsPrice;
+  }, [selectedTicket, form.donationAmount, guests, tickets, selectedAddons, products]);
 
   const passFee = Boolean(selectedTicket?.passFeeToAttendee ?? true);
   const convenienceFee = useMemo(() => {
@@ -394,6 +419,7 @@ export function RegistrationForm({
           donationAmount: form.donationAmount ? parseFloat(form.donationAmount) : undefined,
           customAnswers,
           followMinistry: form.followMinistry ?? true,
+          addons: selectedAddons,
           guests: guests
             .filter((g) => g.firstName.trim().length > 0)
             .map((g) => ({
@@ -1368,6 +1394,196 @@ export function RegistrationForm({
             </div>
           ) : null}
 
+          {step === 3 ? (
+            <div>
+              <StepHeading
+                title="Event Store & Resource Pre-orders"
+                subtitle="Optional add-ons: Pre-order official conference shirts, books, and download soaking recordings now."
+              />
+
+              {products.length === 0 ? (
+                <div className="mt-8 rounded-2xl border border-white/10 bg-white/5 p-10 text-center">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brass/10 text-brass mb-3">
+                    <Sparkles size={22} />
+                  </div>
+                  <h3 className="font-semibold text-ink text-base">No store add-ons for this event</h3>
+                  <p className="mt-1 text-xs text-warm-500 max-w-sm mx-auto">
+                    You can proceed directly to review and finalize your event registration pass.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={next}
+                    className="btn btn-primary mt-6 !text-xs !py-2.5 !px-5"
+                  >
+                    Proceed to Review &rarr;
+                  </button>
+                </div>
+              ) : (
+                <div className="mt-7 space-y-4">
+                  <div className="flex items-center justify-between text-xs text-warm-400 pb-1">
+                    <span>Select any resources to add to your pass (optional)</span>
+                    <span className="text-brass font-medium">
+                      {selectedAddons.length} item{selectedAddons.length === 1 ? "" : "s"} selected
+                    </span>
+                  </div>
+
+                  {products
+                    .filter((p) => p.allowAddonAtCheckout !== false)
+                    .map((prod) => {
+                      const existing = selectedAddons.find((a) => a.productId === prod.id);
+                      const isSelected = Boolean(existing);
+                      const currentVariant = existing?.variant || (Array.isArray(prod.variants) && prod.variants[0]) || "";
+                      const currentQty = existing?.quantity || 1;
+                      const isDigital = prod.type === "digital";
+
+                      return (
+                        <div
+                          key={prod.id}
+                          className={cn(
+                            "flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border p-4.5 transition-all",
+                            isSelected
+                              ? "border-[var(--color-brass-deep)] bg-[rgba(226,192,115,0.09)]"
+                              : "border-[rgba(255,255,255,0.13)] bg-paper hover:border-white/30"
+                          )}
+                        >
+                          <div className="flex items-start gap-3.5">
+                            {prod.imageUrl ? (
+                              <div className="relative h-14 w-14 rounded-lg overflow-hidden shrink-0 bg-black/40">
+                                <Image
+                                  src={prod.imageUrl}
+                                  alt={prod.name}
+                                  fill
+                                  className="object-cover"
+                                />
+                              </div>
+                            ) : (
+                              <div className="h-14 w-14 rounded-lg bg-cypress/80 text-brass/60 flex items-center justify-center shrink-0">
+                                <Sparkles size={20} />
+                              </div>
+                            )}
+
+                            <div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <h4 className="font-semibold text-ink text-sm sm:text-base">
+                                  {prod.name}
+                                </h4>
+                                <span
+                                  className={cn(
+                                    "text-[0.65rem] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border",
+                                    isDigital
+                                      ? "bg-sky-950/70 text-sky-300 border-sky-400/30"
+                                      : "bg-amber-950/70 text-amber-300 border-amber-400/30"
+                                  )}
+                                >
+                                  {isDigital ? "Instant Download" : "On-site Pickup"}
+                                </span>
+                              </div>
+                              <p className="text-xs text-warm-500 mt-1 line-clamp-1">
+                                {prod.description || "Official merchandise for this event."}
+                              </p>
+                              <div className="font-display font-semibold text-sm text-brass mt-1">
+                                {prod.price === 0 ? "Free" : formatMoney(prod.price, prod.currency || event.currency || "NGN")}
+                              </div>
+                              {Array.isArray(prod.variants) && prod.variants.length > 0 && !isSelected && (
+                                <span className="text-[0.68rem] text-warm-400 block mt-0.5">
+                                  {prod.variants.length} options (colors &amp; sizes) available
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 pt-3 sm:pt-0 border-t sm:border-t-0 border-white/10">
+                            {Array.isArray(prod.variants) && prod.variants.length > 0 && isSelected && (
+                              <div className="flex items-center gap-1.5">
+                                <label className="text-[0.65rem] uppercase font-bold text-warm-400 shrink-0">
+                                  {prod.variants[0]?.includes("/") ? "Color & Size:" : "Option:"}
+                                </label>
+                                <select
+                                  className="input !text-xs !py-1 !px-2 bg-paper text-ink font-medium"
+                                  value={currentVariant}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setSelectedAddons((prev) =>
+                                      prev.map((a) => (a.productId === prod.id ? { ...a, variant: val } : a))
+                                    );
+                                  }}
+                                >
+                                  {prod.variants.map((v) => (
+                                    <option key={v} value={v}>
+                                      {v}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+
+                            {isSelected ? (
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center border border-white/20 rounded-lg p-0.5 bg-black/30">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (currentQty <= 1) {
+                                        setSelectedAddons((prev) => prev.filter((a) => a.productId !== prod.id));
+                                      } else {
+                                        setSelectedAddons((prev) =>
+                                          prev.map((a) => (a.productId === prod.id ? { ...a, quantity: a.quantity - 1 } : a))
+                                        );
+                                      }
+                                    }}
+                                    className="h-6 w-6 flex items-center justify-center rounded text-xs font-bold hover:bg-white/10 cursor-pointer"
+                                  >
+                                    -
+                                  </button>
+                                  <span className="text-xs font-bold px-2">{currentQty}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedAddons((prev) =>
+                                        prev.map((a) => (a.productId === prod.id ? { ...a, quantity: a.quantity + 1 } : a))
+                                      );
+                                    }}
+                                    className="h-6 w-6 flex items-center justify-center rounded text-xs font-bold hover:bg-white/10 cursor-pointer"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedAddons((prev) => prev.filter((a) => a.productId !== prod.id))}
+                                  className="text-xs text-red-400 hover:text-red-300 p-1 cursor-pointer"
+                                  title="Remove"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedAddons((prev) => [
+                                    ...prev,
+                                    {
+                                      productId: prod.id,
+                                      variant: (Array.isArray(prod.variants) && prod.variants[0]) || undefined,
+                                      quantity: 1,
+                                    },
+                                  ]);
+                                }}
+                                className="btn btn-ghost !text-xs !py-1.5 !px-3.5 border border-white/20 hover:border-brass/40 text-brass cursor-pointer"
+                              >
+                                + Add to Pass
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+            </div>
+          ) : null}
+
           {step === 4 ? (
             <div>
               <StepHeading
@@ -1432,6 +1648,41 @@ export function RegistrationForm({
                   </div>
                 ))}
               </dl>
+
+              {selectedAddons.length > 0 && (
+                <div className="mt-5 rounded-[13px] border border-white/10 bg-white/5 p-4.5 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-brass uppercase tracking-wider">
+                      Selected Add-ons &amp; Resources
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setStep(3)}
+                      className="text-xs text-brass-light hover:underline cursor-pointer"
+                    >
+                      Edit add-ons
+                    </button>
+                  </div>
+                  <div className="divide-y divide-white/10 pt-1">
+                    {selectedAddons.map((addon) => {
+                      const prod = products.find((p) => p.id === addon.productId);
+                      if (!prod) return null;
+                      return (
+                        <div key={addon.productId} className="py-2.5 flex items-center justify-between text-xs">
+                          <div>
+                            <span className="font-semibold text-ink">{prod.name}</span>
+                            {addon.variant && <span className="text-warm-400 ml-1.5">({addon.variant})</span>}
+                            <span className="text-warm-500 ml-2">Qty: {addon.quantity}</span>
+                          </div>
+                          <span className="font-semibold text-brass-light">
+                            {prod.price === 0 ? "Free" : formatMoney(prod.price * addon.quantity, prod.currency || event.currency || "NGN")}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               <div className="mt-6 rounded-[13px] border border-[rgba(255,255,255,0.11)] bg-[rgba(226,192,115,0.08)] p-5 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-4">

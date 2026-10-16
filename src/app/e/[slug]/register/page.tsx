@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getEventBySlug, getTickets } from "@/lib/data";
+import { getEventBySlug, getTickets, getEventProducts } from "@/lib/data";
 import { getOrgSession } from "@/lib/session";
 import { RegistrationForm } from "@/components/registration-form";
 import { cn } from "@/lib/utils";
@@ -7,7 +7,7 @@ import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
-type Params = { 
+type Params = {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
@@ -15,9 +15,9 @@ type Params = {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
   const event = await getEventBySlug(slug);
-  
+
   if (!event) return { title: "Not found" };
-  
+
   return {
     title: `Register for ${event.title}`,
   };
@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 export default async function RegisterPage({ params, searchParams }: Params) {
   const { slug } = await params;
   const event = await getEventBySlug(slug);
-  
+
   if (!event) {
     notFound();
   }
@@ -37,8 +37,11 @@ export default async function RegisterPage({ params, searchParams }: Params) {
   const search = await searchParams;
   const initialTicketId = typeof search.ticket === 'string' ? search.ticket : undefined;
 
-  const rawTickets = await getTickets(event.id);
-  
+  const [rawTickets, rawProducts] = await Promise.all([
+    getTickets(event.id),
+    getEventProducts(event.id, true),
+  ]);
+
   // Transform to match the expected TicketOption type
   const tickets = rawTickets.map(t => ({
     id: t.id,
@@ -68,7 +71,7 @@ export default async function RegisterPage({ params, searchParams }: Params) {
   const isEmbed = search?.embed === "true";
 
   return (
-    <div 
+    <div
       className={cn(
         "min-h-screen bg-[var(--color-parchment)]",
         isEmbed ? "pt-6 pb-10" : "pt-20 pb-20"
@@ -163,7 +166,7 @@ export default async function RegisterPage({ params, searchParams }: Params) {
               </a>
             </div>
 
-            <RegistrationForm 
+            <RegistrationForm
               event={{
                 title: event.title,
                 slug: event.slug,
@@ -174,6 +177,7 @@ export default async function RegisterPage({ params, searchParams }: Params) {
                 startsAt: event.startsAt?.toISOString() || new Date().toISOString(),
                 endsAt: event.endsAt?.toISOString() || new Date().toISOString(),
                 coverImage: event.coverImage,
+                currency: event.currency || "NGN",
                 customQuestions: event.customQuestions,
                 attendeeTypes: event.attendeeTypes,
                 accommodationMode: (event.accommodationMode as "none" | "free" | "paid" | "both") || "none",
@@ -182,6 +186,7 @@ export default async function RegisterPage({ params, searchParams }: Params) {
                 collectOccupation: Boolean(event.collectOccupation),
               }}
               tickets={tickets}
+              products={rawProducts}
               initialTicketId={initialTicketId}
               isStaff={isStaff}
             />

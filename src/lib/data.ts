@@ -19,6 +19,8 @@ import {
   tasks,
   ticketTypes,
   volunteers,
+  eventProducts,
+  orderItems,
 } from "@/db/schema";
 
 export type AppRole = "owner" | "admin" | "event_manager" | "checkin_staff" | "finance" | "volunteer_coordinator" | "viewer";
@@ -530,4 +532,105 @@ export async function getEventRegistrationHistory(eventId: string, days = 14) {
   }
 
   return history;
+}
+
+/* ------------------------------------------------------------------ */
+/* Products & Merchandise                                              */
+/* ------------------------------------------------------------------ */
+
+export async function getEventProducts(eventId: string, activeOnly = false) {
+  if (!eventId) return [];
+  const conditions = [eq(eventProducts.eventId, eventId)];
+  if (activeOnly) {
+    conditions.push(eq(eventProducts.isActive, true));
+  }
+  return db
+    .select()
+    .from(eventProducts)
+    .where(and(...conditions))
+    .orderBy(asc(eventProducts.sortOrder), desc(eventProducts.createdAt));
+}
+
+export async function getEventProductById(id: string) {
+  if (!id) return null;
+  return db
+    .select()
+    .from(eventProducts)
+    .where(eq(eventProducts.id, id))
+    .limit(1)
+    .then((r) => r[0] ?? null);
+}
+
+export async function getProductOrders(eventId: string) {
+  if (!eventId) return [];
+  return db
+    .select()
+    .from(orderItems)
+    .where(eq(orderItems.eventId, eventId))
+    .orderBy(desc(orderItems.createdAt));
+}
+
+export async function getAttendeeProductOrders(params: {
+  eventId?: string;
+  registrationId?: string;
+  email?: string;
+  voucherCode?: string;
+}) {
+  const conditions = [];
+  if (params.eventId) conditions.push(eq(orderItems.eventId, params.eventId));
+  if (params.registrationId) conditions.push(eq(orderItems.registrationId, params.registrationId));
+  if (params.email) conditions.push(ilike(orderItems.customerEmail, params.email.trim()));
+  if (params.voucherCode) conditions.push(eq(orderItems.pickupVoucherCode, params.voucherCode.trim().toUpperCase()));
+
+  if (conditions.length === 0) return [];
+
+  return db
+    .select()
+    .from(orderItems)
+    .where(and(...conditions))
+    .orderBy(desc(orderItems.createdAt));
+}
+
+export async function getProductStats(eventId: string) {
+  if (!eventId) {
+    return {
+      totalRevenue: 0,
+      totalSoldUnits: 0,
+      pendingPickups: 0,
+      activeProductsCount: 0,
+    };
+  }
+
+  const [revenueResult, unitsResult, pendingResult, activeCountResult] = await Promise.all([
+    db
+      .select({ total: sql<number>`COALESCE(SUM(${orderItems.totalPrice}), 0)::int` })
+      .from(orderItems)
+      .where(and(eq(orderItems.eventId, eventId), eq(orderItems.status, "paid"))),
+    db
+      .select({ count: sql<number>`COALESCE(SUM(${orderItems.quantity}), 0)::int` })
+      .from(orderItems)
+      .where(and(eq(orderItems.eventId, eventId), eq(orderItems.status, "paid"))),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(orderItems)
+      .where(
+        and(
+          eq(orderItems.eventId, eventId),
+          eq(orderItems.status, "paid"),
+          eq(orderItems.productType, "physical"),
+          eq(orderItems.fulfillmentStatus, "unfulfilled")
+        )
+      ),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(eventProducts)
+      .where(and(eq(eventProducts.eventId, eventId), eq(eventProducts.isActive, true))),
+  ]);
+
+  return {
+    totalRevenue: revenueResult[0]?.total ?? 0,
+    totalSoldUnits: unitsResult[0]?.count ?? 0,
+    pendingPickups: pendingResult[0]?.count ?? 0,
+    activeProductsCount: activeCountResult[0]?.count ?? 0,
+  };
 }

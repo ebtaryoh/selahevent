@@ -20,6 +20,7 @@ import {
   Printer,
   Globe,
   Radio,
+  ShoppingBag,
 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -206,6 +207,13 @@ export default async function EventManagePage({
                   className="btn btn-light"
                 >
                   <Ticket size={16} /> Tickets
+                </Link>
+
+                <Link
+                  href={`/dashboard/events/${event.id}/products`}
+                  className="btn btn-light"
+                >
+                  <ShoppingBag size={16} /> Store &amp; Merch
                 </Link>
 
                 <Link

@@ -9,8 +9,11 @@ import {
   registrations,
   ticketTypes,
   ticketReservations,
+  eventProducts,
+  orderItems,
 } from "@/db/schema";
 import { sendTicketConfirmation } from "@/lib/email";
+import { fulfillOrderPayment } from "@/lib/order-fulfillment";
 
 export const dynamic = "force-dynamic";
 
@@ -105,6 +108,30 @@ export async function POST(req: Request) {
           await tx.update(payments)
             .set({ status: "paid", verified: true, paidAt: currentPayment.paidAt ?? new Date() })
             .where(eq(payments.id, currentPayment.id));
+        }
+
+        // Fulfill & mark any orderItems attached to this payment as paid
+        const linkedOrderItems = await tx
+          .select()
+          .from(orderItems)
+          .where(eq(orderItems.paymentId, currentPayment.id));
+
+        for (const item of linkedOrderItems) {
+          if (item.status !== "paid") {
+            await tx
+              .update(orderItems)
+              .set({ status: "paid" })
+              .where(eq(orderItems.id, item.id));
+
+            if (item.productId) {
+              await tx.execute(sql`
+                UPDATE event_products
+                SET sold_count = sold_count + ${item.quantity},
+                    stock_quantity = CASE WHEN stock_quantity >= 0 THEN GREATEST(0, stock_quantity - ${item.quantity}) ELSE stock_quantity END
+                WHERE id = ${item.productId}
+              `);
+            }
+          }
         }
 
         if (!currentPayment.registrationId) return;
@@ -220,6 +247,7 @@ export async function POST(req: Request) {
             await sendTicketConfirmation(updatedRegistration.email, {
               attendeeName: updatedRegistration.firstName,
               eventName: eventRecord.title,
+              organizationName: organization.name,
               ticketName,
               ticketCode: updatedRegistration.ticketCode,
               startsAt: startsAtFormatted,
@@ -228,6 +256,13 @@ export async function POST(req: Request) {
           } catch (emailError) {
             console.error("[selah] payment confirmation email failed:", emailError);
           }
+        }
+      } else if (!paymentRecord.registrationId) {
+        // Fulfill standalone store order and dispatch confirmation email
+        try {
+          await fulfillOrderPayment(paymentRecord.id);
+        } catch (orderError) {
+          console.error("[selah] order fulfillment dispatch failed:", orderError);
         }
       }
 

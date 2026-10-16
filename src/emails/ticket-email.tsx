@@ -18,6 +18,7 @@ import * as React from "react";
 interface TicketEmailProps {
   attendeeName: string;
   eventName: string;
+  organizationName?: string;
   ticketName: string;
   ticketCode: string;
   startsAt: string;
@@ -27,6 +28,7 @@ interface TicketEmailProps {
 export const TicketEmail = ({
   attendeeName,
   eventName,
+  organizationName,
   ticketName,
   ticketCode,
   startsAt,
@@ -37,9 +39,14 @@ export const TicketEmail = ({
   return (
   <Html>
     <Head />
-    <Preview>Your ticket for {eventName}</Preview>
+    <Preview>Your ticket for {eventName}{organizationName ? ` (${organizationName})` : ""}</Preview>
     <Body style={main}>
       <Container style={container}>
+        {organizationName && (
+          <Text style={{ fontSize: "11px", fontWeight: "700", letterSpacing: "1.5px", color: "#835914", margin: "0 0 6px", textTransform: "uppercase" }}>
+            {organizationName}
+          </Text>
+        )}
         <Heading style={h1}>You&apos;re in!</Heading>
         <Text style={text}>
           Hi {attendeeName}, your registration for <strong>{eventName}</strong> is confirmed.

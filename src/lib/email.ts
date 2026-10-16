@@ -3,6 +3,7 @@ import { render } from "@react-email/render";
 import OTPEmail from "@/emails/otp-email";
 import EventCreatedEmail from "@/emails/event-created-email";
 import TicketEmail from "@/emails/ticket-email";
+import OrderConfirmationEmail, { OrderConfirmationEmailProps } from "@/emails/order-confirmation-email";
 import * as React from "react";
 
 // Initialize Nodemailer with Gmail credentials
@@ -67,6 +68,7 @@ export async function sendTicketConfirmation(
   ticketProps: {
     attendeeName: string;
     eventName: string;
+    organizationName?: string;
     ticketName: string;
     ticketCode: string;
     startsAt: string;
@@ -81,10 +83,14 @@ export async function sendTicketConfirmation(
 
   try {
     const html = await render(React.createElement(TicketEmail, ticketProps));
+    const sender = ticketProps.organizationName
+      ? `"${ticketProps.organizationName} via Selah" <${SENDER_EMAIL}>`
+      : `"${SENDER_NAME}" <${SENDER_EMAIL}>`;
+
     const info = await transporter.sendMail({
-      from: `"${SENDER_NAME}" <${SENDER_EMAIL}>`,
+      from: sender,
       to: email,
-      subject: `Your Ticket: ${ticketProps.eventName}`,
+      subject: `Your Ticket: ${ticketProps.eventName}${ticketProps.organizationName ? ` - ${ticketProps.organizationName}` : ""}`,
       html: html,
       attachments: pdfBuffer ? [
         {
@@ -97,6 +103,30 @@ export async function sendTicketConfirmation(
     return { data: info };
   } catch (err) {
     console.error("Exception sending Ticket email:", err);
+    return { error: err };
+  }
+}
+
+export async function sendOrderConfirmationEmail(
+  email: string,
+  props: OrderConfirmationEmailProps
+) {
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+    console.warn("⚠️ GMAIL_USER or GMAIL_APP_PASSWORD not found. Skipping order confirmation email dispatch.");
+    return { error: "Email configuration missing" };
+  }
+
+  try {
+    const html = await render(React.createElement(OrderConfirmationEmail, props));
+    const info = await transporter.sendMail({
+      from: `"${props.organizationName} via Selah" <${SENDER_EMAIL}>`,
+      to: email,
+      subject: `Order Confirmed: ${props.eventName} (${props.orderCode})`,
+      html: html,
+    });
+    return { data: info };
+  } catch (err) {
+    console.error("Exception sending Order Confirmation email:", err);
     return { error: err };
   }
 }

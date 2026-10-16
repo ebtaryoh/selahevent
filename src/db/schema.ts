@@ -526,4 +526,77 @@ export const ministryFollowers = pgTable(
   ]
 );
 
+/* ------------------------------------------------------------------ */
+/* Event Store & Products                                              */
+/* ------------------------------------------------------------------ */
+
+export const eventProducts = pgTable(
+  "event_products",
+  {
+    id: id(),
+    eventId: uuid("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    description: text("description").default("").notNull(),
+    price: integer("price").default(0).notNull(),
+    currency: text("currency").default("NGN").notNull(),
+    type: text("type").default("physical").notNull(), // 'physical' | 'digital'
+    category: text("category").default("Merchandise").notNull(),
+    imageUrl: text("image_url"),
+    stockQuantity: integer("stock_quantity").default(-1).notNull(), // -1: unlimited
+    soldCount: integer("sold_count").default(0).notNull(),
+    downloadUrl: text("download_url"),
+    variants: jsonb("variants").$type<string[]>().default([]),
+    requiresPickup: boolean("requires_pickup").default(true).notNull(),
+    allowAddonAtCheckout: boolean("allow_addon_at_checkout").default(true).notNull(),
+    isActive: boolean("is_active").default(true).notNull(),
+    sortOrder: integer("sort_order").default(0).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("event_products_event_idx").on(t.eventId)]
+);
+
+export const orderItems = pgTable(
+  "order_items",
+  {
+    id: id(),
+    eventId: uuid("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    productId: uuid("product_id").references(() => eventProducts.id, {
+      onDelete: "set null",
+    }),
+    registrationId: uuid("registration_id").references(() => registrations.id, {
+      onDelete: "set null",
+    }),
+    paymentId: uuid("payment_id").references(() => payments.id, {
+      onDelete: "set null",
+    }),
+    orderCode: text("order_code").notNull(),
+    customerName: text("customer_name").notNull(),
+    customerEmail: text("customer_email").notNull(),
+    customerPhone: text("customer_phone").default("").notNull(),
+    productName: text("product_name").notNull(),
+    productType: text("product_type").default("physical").notNull(),
+    variant: text("variant"),
+    unitPrice: integer("unit_price").notNull(),
+    quantity: integer("quantity").default(1).notNull(),
+    totalPrice: integer("total_price").notNull(),
+    status: text("status").default("pending").notNull(), // 'pending', 'paid', 'cancelled'
+    fulfillmentStatus: text("fulfillment_status").default("unfulfilled").notNull(), // 'unfulfilled', 'ready_for_pickup', 'collected', 'downloaded'
+    pickupVoucherCode: text("pickup_voucher_code").notNull().unique(),
+    collectedAt: timestamp("collected_at", { withTimezone: true }),
+    collectedByStaffName: text("collected_by_staff_name"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("order_items_event_idx").on(t.eventId),
+    index("order_items_registration_idx").on(t.registrationId),
+    index("order_items_payment_idx").on(t.paymentId),
+    index("order_items_voucher_idx").on(t.pickupVoucherCode),
+  ]
+);
+
+
 

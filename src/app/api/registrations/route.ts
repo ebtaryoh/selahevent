@@ -2,7 +2,7 @@ import { and, eq, sql, inArray } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { events, organizations, payments, registrations, ticketTypes, attendees, ticketReservations, ministryFollowers } from "@/db/schema";
+import { events, organizations, payments, registrations, ticketTypes, attendees, ticketReservations, ministryFollowers, eventProducts, orderItems } from "@/db/schema";
 import { sendTicketConfirmation } from "@/lib/email";
 import { enforceRateLimit, getClientAddress, rateLimitHeaders } from "@/lib/rate-limit";
 
@@ -253,6 +253,35 @@ export async function POST(request: Request) {
     totalBaseAmount += (gTicket?.price ?? 0);
   }
 
+  // Calculate add-on products (merchandise, books, media pass)
+  const addonItems = Array.isArray(payload.addons) ? payload.addons : [];
+  const addonProductIds = addonItems
+    .map((a: { productId?: string }) => a?.productId)
+    .filter((id): id is string => typeof id === "string" && id.length > 0);
+  const fetchedAddonProducts = addonProductIds.length > 0
+    ? await db.select().from(eventProducts).where(and(eq(eventProducts.eventId, event.id), inArray(eventProducts.id, addonProductIds)))
+    : [];
+  const addonProductMap = new Map(fetchedAddonProducts.map(p => [p.id, p]));
+
+  let addonsTotal = 0;
+  const validatedAddons: Array<{ product: typeof eventProducts.$inferSelect; variant?: string; quantity: number; lineTotal: number }> = [];
+
+  for (const item of addonItems) {
+    const prod = addonProductMap.get(item.productId);
+    if (!prod || !prod.isActive) continue;
+    const qty = Math.max(1, parseInt(String(item.quantity || 1), 10));
+    const lineTotal = prod.price * qty;
+    addonsTotal += lineTotal;
+    validatedAddons.push({
+      product: prod,
+      variant: item.variant || (Array.isArray(prod.variants) && (prod.variants as string[])[0]) || undefined,
+      quantity: qty,
+      lineTotal,
+    });
+  }
+
+  totalBaseAmount += addonsTotal;
+
   // Pass-Through Convenience Fee calculation ("The Church Pays ₦0" Model)
   const passFee = Boolean(ticket?.passFeeToAttendee ?? true);
   const convenienceFee = (passFee && totalBaseAmount > 0 && !isDoorPayment)
@@ -502,6 +531,47 @@ export async function POST(request: Request) {
         } catch {}
       }
 
+      // Record any purchased add-on items linked to this registration
+      for (const va of validatedAddons) {
+        const voucherCode = "VCH-" + randomToken(4);
+        await tx.insert(orderItems).values({
+          eventId: event.id,
+          productId: va.product.id,
+          registrationId: created.id,
+          paymentId: payment.id,
+          orderCode: "ORD-" + randomToken(4),
+          customerName: `${firstName} ${lastName}`,
+          customerEmail: email,
+          customerPhone: String(payload.phone ?? "").trim(),
+          productName: va.product.name,
+          productType: va.product.type,
+          variant: va.variant || null,
+          unitPrice: va.product.price,
+          quantity: va.quantity,
+          totalPrice: va.lineTotal,
+          status: finalRequiresPayment ? "pending" : "paid",
+          fulfillmentStatus: va.product.type === "digital" ? "ready_for_pickup" : "unfulfilled",
+          pickupVoucherCode: voucherCode,
+        });
+
+        if (!finalRequiresPayment) {
+          if (va.product.stockQuantity >= 0) {
+            await tx
+              .update(eventProducts)
+              .set({
+                stockQuantity: Math.max(0, va.product.stockQuantity - va.quantity),
+                soldCount: va.product.soldCount + va.quantity,
+              })
+              .where(eq(eventProducts.id, va.product.id));
+          } else {
+            await tx
+              .update(eventProducts)
+              .set({ soldCount: va.product.soldCount + va.quantity })
+              .where(eq(eventProducts.id, va.product.id));
+          }
+        }
+      }
+
       return { created, payment, createdGuests };
       });
     } catch (error) {
@@ -586,6 +656,18 @@ export async function POST(request: Request) {
             registrationId: result.created.id,
             ticketTypeId: ticket?.id ?? null,
             guestRegistrationIds: result.createdGuests.map(g => g.id),
+            custom_fields: [
+              {
+                display_name: "Organizer / Ministry",
+                variable_name: "organizer_name",
+                value: organization?.name || "Event Organizer",
+              },
+              {
+                display_name: "Event",
+                variable_name: "event_title",
+                value: event.title,
+              },
+            ],
           },
           callback_url: (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000") + "/e/" + event.slug + "/wallet",
         }),
