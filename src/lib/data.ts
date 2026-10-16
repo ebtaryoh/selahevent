@@ -21,6 +21,12 @@ import {
   volunteers,
   eventProducts,
   orderItems,
+  eventAnnouncements,
+  eventAccommodations,
+  attendeeAccommodations,
+  eventShuttles,
+  attendeeShuttleBookings,
+  eventMealPasses,
 } from "@/db/schema";
 
 export type AppRole = "owner" | "admin" | "event_manager" | "checkin_staff" | "finance" | "volunteer_coordinator" | "viewer";
@@ -634,3 +640,98 @@ export async function getProductStats(eventId: string) {
     activeProductsCount: activeCountResult[0]?.count ?? 0,
   };
 }
+
+/* ------------------------------------------------------------------ */
+/* Pastoral Broadcasts & Announcements                                */
+/* ------------------------------------------------------------------ */
+
+export async function getEventAnnouncements(eventId: string, activeOnly = true) {
+  if (!eventId) return [];
+  const conditions = [eq(eventAnnouncements.eventId, eventId)];
+  if (activeOnly) {
+    conditions.push(eq(eventAnnouncements.isActive, true));
+  }
+  return db
+    .select()
+    .from(eventAnnouncements)
+    .where(and(...conditions))
+    .orderBy(desc(eventAnnouncements.isPinned), desc(eventAnnouncements.createdAt));
+}
+
+/* ------------------------------------------------------------------ */
+/* Logistics: Accommodations, Meal Passes, Shuttles                   */
+/* ------------------------------------------------------------------ */
+
+export async function getEventAccommodations(eventId: string) {
+  if (!eventId) return [];
+  return db
+    .select()
+    .from(eventAccommodations)
+    .where(and(eq(eventAccommodations.eventId, eventId), eq(eventAccommodations.isActive, true)))
+    .orderBy(asc(eventAccommodations.name));
+}
+
+export async function getAttendeeAccommodation(eventId: string, email: string) {
+  if (!eventId || !email) return null;
+  const res = await db
+    .select({
+      allocation: attendeeAccommodations,
+      accommodation: eventAccommodations,
+    })
+    .from(attendeeAccommodations)
+    .innerJoin(
+      eventAccommodations,
+      eq(attendeeAccommodations.accommodationId, eventAccommodations.id)
+    )
+    .where(
+      and(
+        eq(attendeeAccommodations.eventId, eventId),
+        ilike(attendeeAccommodations.attendeeEmail, email.trim())
+      )
+    )
+    .limit(1);
+
+  return res[0] || null;
+}
+
+export async function getEventShuttles(eventId: string) {
+  if (!eventId) return [];
+  return db
+    .select()
+    .from(eventShuttles)
+    .where(and(eq(eventShuttles.eventId, eventId), eq(eventShuttles.isActive, true)))
+    .orderBy(asc(eventShuttles.routeTitle));
+}
+
+export async function getAttendeeShuttleBookings(eventId: string, email: string) {
+  if (!eventId || !email) return [];
+  return db
+    .select({
+      booking: attendeeShuttleBookings,
+      shuttle: eventShuttles,
+    })
+    .from(attendeeShuttleBookings)
+    .innerJoin(eventShuttles, eq(attendeeShuttleBookings.shuttleId, eventShuttles.id))
+    .where(
+      and(
+        eq(attendeeShuttleBookings.eventId, eventId),
+        ilike(attendeeShuttleBookings.attendeeEmail, email.trim())
+      )
+    )
+    .orderBy(desc(attendeeShuttleBookings.createdAt));
+}
+
+export async function getAttendeeMealPasses(eventId: string, email: string) {
+  if (!eventId || !email) return [];
+  return db
+    .select()
+    .from(eventMealPasses)
+    .where(
+      and(
+        eq(eventMealPasses.eventId, eventId),
+        ilike(eventMealPasses.attendeeEmail, email.trim())
+      )
+    )
+    .orderBy(asc(eventMealPasses.mealDay), asc(eventMealPasses.mealType));
+}
+

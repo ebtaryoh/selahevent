@@ -26,8 +26,13 @@ import {
   getSpeakers,
   getTickets,
   getEventProducts,
+  getEventAnnouncements,
+  getEventShuttles,
+  getEventAccommodations,
 } from "@/lib/data";
 import { EventStore } from "@/components/event-store";
+import { PastoralBroadcastBanner } from "@/components/pastoral-broadcast-banner";
+import { CampLogisticsPortal } from "@/components/camp-logistics-portal";
 import {
   formatDate,
   formatMoney,
@@ -82,12 +87,16 @@ export default async function EventPage({ params, searchParams }: Params) {
   const event = await getEventBySlug(slug);
   if (!event || event.visibility === "private") notFound();
 
-  const [tickets, speakers, sessions, products] = await Promise.all([
-    getTickets(event.id),
-    getSpeakers(event.id),
-    getSessions(event.id),
-    getEventProducts(event.id, true),
-  ]);
+  const [tickets, speakers, sessions, products, announcements, shuttles, accommodations] =
+    await Promise.all([
+      getTickets(event.id),
+      getSpeakers(event.id),
+      getSessions(event.id),
+      getEventProducts(event.id, true),
+      getEventAnnouncements(event.id, true),
+      getEventShuttles(event.id),
+      getEventAccommodations(event.id),
+    ]);
 
   const totalSold = tickets.reduce((sum, t) => sum + t.sold, 0);
   const fillRate = percent(totalSold, event.capacity);
@@ -155,6 +164,9 @@ export default async function EventPage({ params, searchParams }: Params) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+
+      {/* Pastoral Broadcast / Flash Announcements */}
+      <PastoralBroadcastBanner announcements={announcements} />
 
       {/* Cancellation / Postponement Notice Banner */}
       {isCancelled && (
@@ -943,6 +955,14 @@ export default async function EventPage({ params, searchParams }: Params) {
         </section>
       )}
 
+
+      {/* ------------- Camp Logistics, Accommodations & Bus Shuttles ------------- */}
+      <CampLogisticsPortal
+        eventId={event.id}
+        eventTitle={event.title}
+        shuttles={shuttles}
+        accommodations={accommodations}
+      />
 
       {/* ------------- Event Store & Resources ------------- */}
       {products.length > 0 && (

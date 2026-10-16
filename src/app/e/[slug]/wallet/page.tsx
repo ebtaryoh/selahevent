@@ -1,13 +1,34 @@
 import { notFound, redirect } from "next/navigation";
-import { getEventBySlug } from "@/lib/data";
+import {
+  getEventBySlug,
+  getEventAnnouncements,
+  getAttendeeAccommodation,
+  getAttendeeShuttleBookings,
+  getAttendeeMealPasses,
+} from "@/lib/data";
 import { getAttendeeSession, getAttendeeProfile } from "@/lib/attendee";
 import { AttendeeLogin } from "@/components/attendee-login";
 import { db } from "@/db";
 import { registrations, events as eventsTable, orderItems, eventProducts } from "@/db/schema";
 import { eq, and, desc, or, ilike, inArray } from "drizzle-orm";
-import { Ticket, Calendar, MapPin, Download, ShoppingBag, Package, QrCode, CheckCircle2, Clock } from "lucide-react";
+import {
+  Ticket,
+  Calendar,
+  MapPin,
+  Download,
+  ShoppingBag,
+  Package,
+  QrCode,
+  CheckCircle2,
+  Clock,
+  BedDouble,
+  Bus,
+  Utensils,
+  Sparkles,
+} from "lucide-react";
 import { formatTime, formatRange, formatMoney } from "@/lib/format";
 import { QRCodeSVG } from "qrcode.react";
+import { PastoralBroadcastBanner } from "@/components/pastoral-broadcast-banner";
 
 export const dynamic = "force-dynamic";
 
@@ -68,29 +89,36 @@ export default async function WalletPage({ params, searchParams }: Params) {
     .orderBy(desc(registrations.createdAt));
 
   const regIds = myRegistrations.map((r) => r.registration.id);
-  const myOrderItems = await db
-    .select({
-      orderItem: orderItems,
-      product: eventProducts,
-    })
-    .from(orderItems)
-    .leftJoin(eventProducts, eq(orderItems.productId, eventProducts.id))
-    .where(
-      and(
-        eq(orderItems.eventId, event.id),
-        regIds.length > 0
-          ? or(
-              ilike(orderItems.customerEmail, session.email.trim()),
-              inArray(orderItems.registrationId, regIds)
-            )
-          : ilike(orderItems.customerEmail, session.email.trim())
-      )
-    )
-    .orderBy(desc(orderItems.createdAt));
+  const [myOrderItems, announcements, campAccommodation, shuttleBookings, mealPasses] =
+    await Promise.all([
+      db
+        .select({
+          orderItem: orderItems,
+          product: eventProducts,
+        })
+        .from(orderItems)
+        .leftJoin(eventProducts, eq(orderItems.productId, eventProducts.id))
+        .where(
+          and(
+            eq(orderItems.eventId, event.id),
+            regIds.length > 0
+              ? or(
+                  ilike(orderItems.customerEmail, session.email.trim()),
+                  inArray(orderItems.registrationId, regIds)
+                )
+              : ilike(orderItems.customerEmail, session.email.trim())
+          )
+        )
+        .orderBy(desc(orderItems.createdAt)),
+      getEventAnnouncements(event.id, true),
+      getAttendeeAccommodation(event.id, session.email),
+      getAttendeeShuttleBookings(event.id, session.email),
+      getAttendeeMealPasses(event.id, session.email),
+    ]);
 
   return (
     <div 
-      className="min-h-screen bg-[var(--color-parchment)] pt-24 pb-20 px-6"
+      className="min-h-screen bg-[var(--color-parchment)] pt-20 pb-20 px-6"
       style={event.brandColor ? {
         '--color-brass': event.brandColor,
         '--color-brass-deep': `color-mix(in srgb, ${event.brandColor}, black 20%)`,
@@ -99,10 +127,13 @@ export default async function WalletPage({ params, searchParams }: Params) {
       } as React.CSSProperties : undefined}
     >
       <div className="container mx-auto max-w-4xl">
+        {/* Pastoral Broadcast Notice */}
+        <PastoralBroadcastBanner announcements={announcements} className="mb-8 rounded-xl overflow-hidden shadow-sm" />
+
         <div className="mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="font-display text-3xl font-semibold text-ink">
-              My Tickets
+              My Tickets &amp; Convention Pass
             </h1>
             <p className="text-warm-500 mt-1">
               Welcome back, {profile?.firstName || session.email}
@@ -298,6 +329,173 @@ export default async function WalletPage({ params, searchParams }: Params) {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* Camp Accommodation / Hostel Allocation Pass              */}
+        {/* ======================================================== */}
+        {campAccommodation && (
+          <div className="mt-12">
+            <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-brass font-bold mb-3">
+              <BedDouble size={14} /> Camp Accommodation &amp; Hostel Pass
+            </div>
+
+            <div className="card p-6 border border-brass/35 bg-paper flex flex-col md:flex-row items-center justify-between gap-6 shadow-sm">
+              <div className="space-y-2 flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="pill text-[0.65rem] font-bold uppercase tracking-wider bg-brass/20 text-brass-light border-brass/40">
+                    {campAccommodation.accommodation.category} Dormitory
+                  </span>
+                  <span className="text-xs font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full border border-emerald-300">
+                    Allocated
+                  </span>
+                </div>
+
+                <h3 className="font-display text-xl font-bold text-ink">
+                  {campAccommodation.accommodation.name}
+                </h3>
+
+                <div className="text-sm font-semibold text-brass-deep">
+                  Space: {campAccommodation.allocation.roomNumber}
+                </div>
+
+                <p className="text-xs text-warm-500 max-w-lg leading-relaxed">
+                  {campAccommodation.accommodation.checkInInstructions}
+                </p>
+              </div>
+
+              {/* QR Pass Code */}
+              <div className="p-4 rounded-xl border border-dashed border-brass/40 bg-warm-50/80 flex items-center gap-4 shrink-0">
+                <div className="bg-white p-1 rounded-md shadow-sm">
+                  <QRCodeSVG value={campAccommodation.allocation.passCode} size={64} level="M" />
+                </div>
+                <div>
+                  <div className="text-[0.65rem] uppercase font-bold text-warm-500 tracking-wider">
+                    Hostel Check-in Code
+                  </div>
+                  <div className="font-mono text-base font-extrabold text-ink tracking-wider">
+                    {campAccommodation.allocation.passCode}
+                  </div>
+                  <p className="text-[0.68rem] text-warm-500 mt-0.5">
+                    Present at the Hall Porter Desk.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* Dining Hall Meal Passes                                  */}
+        {/* ======================================================== */}
+        {mealPasses.length > 0 && (
+          <div className="mt-12">
+            <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-brass font-bold mb-3">
+              <Utensils size={14} /> Cafeteria &amp; Dining Hall Vouchers
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {mealPasses.map((m) => (
+                <div
+                  key={m.id}
+                  className="card p-5 border border-black/10 bg-paper flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[0.68rem] font-bold uppercase tracking-wider text-brass">
+                        {m.mealDay}
+                      </span>
+                      <span
+                        className={`pill text-[0.65rem] font-semibold ${
+                          m.isClaimed
+                            ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                            : "bg-amber-100 text-amber-800 border-amber-300"
+                        }`}
+                      >
+                        {m.isClaimed ? "✓ Served" : "Ready"}
+                      </span>
+                    </div>
+
+                    <h4 className="font-display text-base font-bold text-ink mt-2 capitalize">
+                      {m.mealType} Pass
+                    </h4>
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-black/10 flex items-center gap-3">
+                    <div className="bg-white p-1 rounded-md shadow-xs shrink-0 border border-black/5">
+                      <QRCodeSVG value={m.voucherCode} size={44} level="M" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-mono text-xs font-bold text-ink truncate">
+                        {m.voucherCode}
+                      </div>
+                      <p className="text-[0.65rem] text-warm-500 mt-0.5 leading-tight">
+                        {m.isClaimed ? "Redeemed at turnstile" : "Scan at Dining Hall A/B"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ======================================================== */}
+        {/* Bus Shuttle Reservations                                 */}
+        {/* ======================================================== */}
+        {shuttleBookings.length > 0 && (
+          <div className="mt-12">
+            <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-brass font-bold mb-3">
+              <Bus size={14} /> Bus Shuttle Boarding Passes
+            </div>
+
+            <div className="space-y-4">
+              {shuttleBookings.map(({ booking: b, shuttle: s }) => (
+                <div
+                  key={b.id}
+                  className="card p-6 border border-sky-500/30 bg-paper flex flex-col sm:flex-row items-center justify-between gap-5"
+                >
+                  <div className="space-y-1.5 flex-1 text-center sm:text-left">
+                    <span className="pill text-[0.65rem] font-bold uppercase tracking-wider bg-sky-100 text-sky-800 border-sky-300">
+                      Confirmed Shuttle Booking ({b.seatCount} Seat{b.seatCount > 1 ? "s" : ""})
+                    </span>
+
+                    <h4 className="font-display text-lg font-bold text-ink mt-1">
+                      {s.routeTitle}
+                    </h4>
+
+                    <div className="text-xs text-warm-500 flex flex-wrap items-center gap-x-4 gap-y-1">
+                      <span><strong>Pickup:</strong> {s.pickupLocation}</span>
+                      <span><strong>Departure:</strong> {s.departureTime}</span>
+                    </div>
+
+                    {s.busCaptainPhone && (
+                      <div className="pt-2 text-xs text-warm-600">
+                        Bus Captain: <strong>{s.busCaptainName}</strong> ({s.busCaptainPhone})
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-3.5 rounded-xl border border-dashed border-sky-500/40 bg-sky-50/50 flex items-center gap-3.5 shrink-0">
+                    <div className="bg-white p-1 rounded-md shadow-xs">
+                      <QRCodeSVG value={b.bookingCode} size={54} level="M" />
+                    </div>
+                    <div>
+                      <div className="text-[0.65rem] uppercase font-bold text-sky-800 tracking-wider">
+                        Boarding Code
+                      </div>
+                      <div className="font-mono text-sm font-bold text-ink">
+                        {b.bookingCode}
+                      </div>
+                      <p className="text-[0.68rem] text-warm-500 mt-0.5">
+                        Show to Bus Captain.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

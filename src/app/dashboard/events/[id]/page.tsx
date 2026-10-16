@@ -21,6 +21,7 @@ import {
   Globe,
   Radio,
   ShoppingBag,
+  Megaphone,
 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -214,6 +215,20 @@ export default async function EventManagePage({
                   className="btn btn-light"
                 >
                   <ShoppingBag size={16} /> Store &amp; Merch
+                </Link>
+
+                <Link
+                  href={`/dashboard/events/${event.id}/logistics`}
+                  className="btn btn-light"
+                >
+                  <BedDouble size={16} /> Camp Logistics
+                </Link>
+
+                <Link
+                  href={`/dashboard/events/${event.id}/broadcasts`}
+                  className="btn btn-light"
+                >
+                  <Megaphone size={16} className="text-amber-500" /> Broadcasts
                 </Link>
 
                 <Link
@@ -444,15 +459,17 @@ export default async function EventManagePage({
                     icon: BedDouble,
                     label: "Accommodation",
                     value: `${stats.accommodation} delegates requiring rooms`,
-                    detail: "Room assignments pending",
+                    detail: "Manage blocks & allocations",
                     progress: 0,
+                    href: `/dashboard/events/${event.id}/logistics?tab=hostels`,
                   },
                   {
                     icon: Bus,
                     label: "Transportation",
                     value: `${stats.transport} delegates requiring transport`,
-                    detail: "Route planning pending",
+                    detail: "Manage routes & bus captains",
                     progress: 0,
+                    href: `/dashboard/events/${event.id}/logistics?tab=shuttles`,
                   },
                   {
                     icon: Users,

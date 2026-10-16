@@ -598,5 +598,154 @@ export const orderItems = pgTable(
   ]
 );
 
+/* ------------------------------------------------------------------ */
+/* Pastoral Broadcasts & Flash Announcements                           */
+/* ------------------------------------------------------------------ */
+
+export const eventAnnouncements = pgTable(
+  "event_announcements",
+  {
+    id: id(),
+    eventId: uuid("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    message: text("message").notNull(),
+    type: text("type").default("announcement").notNull(), // 'urgent', 'announcement', 'meal', 'shuttle', 'spiritual'
+    isPinned: boolean("is_pinned").default(true).notNull(),
+    isActive: boolean("is_active").default(true).notNull(),
+    authorName: text("author_name").default("Pastoral Secretariat").notNull(),
+    actionUrl: text("action_url"),
+    actionLabel: text("action_label"),
+    createdAt: createdAt(),
+  },
+  (t) => [index("event_announcements_event_idx").on(t.eventId)]
+);
+
+/* ------------------------------------------------------------------ */
+/* Camp Logistics: Accommodations, Meal Passes, Shuttles               */
+/* ------------------------------------------------------------------ */
+
+export const eventAccommodations = pgTable(
+  "event_accommodations",
+  {
+    id: id(),
+    eventId: uuid("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    category: text("category").default("general").notNull(), // 'male', 'female', 'couples', 'ministers', 'general'
+    location: text("location").default("").notNull(),
+    totalBeds: integer("total_beds").default(50).notNull(),
+    allocatedBeds: integer("allocated_beds").default(0).notNull(),
+    checkInInstructions: text("check_in_instructions")
+      .default("Present your digital camp pass at the Accommodation Secretariat.")
+      .notNull(),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("event_accommodations_event_idx").on(t.eventId)]
+);
+
+export const attendeeAccommodations = pgTable(
+  "attendee_accommodations",
+  {
+    id: id(),
+    eventId: uuid("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    accommodationId: uuid("accommodation_id")
+      .notNull()
+      .references(() => eventAccommodations.id, { onDelete: "cascade" }),
+    attendeeEmail: text("attendee_email").notNull(),
+    attendeeName: text("attendee_name").notNull(),
+    roomNumber: text("room_number").notNull(),
+    passCode: text("pass_code").notNull().unique(),
+    checkedIn: boolean("checked_in").default(false).notNull(),
+    checkedInAt: timestamp("checked_in_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("attendee_accommodations_event_idx").on(t.eventId),
+    index("attendee_accommodations_email_idx").on(t.attendeeEmail),
+    index("attendee_accommodations_pass_idx").on(t.passCode),
+  ]
+);
+
+export const eventShuttles = pgTable(
+  "event_shuttles",
+  {
+    id: id(),
+    eventId: uuid("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    routeTitle: text("route_title").notNull(),
+    pickupLocation: text("pickup_location").notNull(),
+    departureTime: text("departure_time").notNull(),
+    returnTime: text("return_time").default("").notNull(),
+    busCaptainName: text("bus_captain_name").default("Transport Coordinator").notNull(),
+    busCaptainPhone: text("bus_captain_phone").default("").notNull(),
+    totalSeats: integer("total_seats").default(50).notNull(),
+    bookedSeats: integer("booked_seats").default(0).notNull(),
+    fare: integer("fare").default(0).notNull(),
+    instructions: text("instructions")
+      .default("Please arrive 15 minutes before departure.")
+      .notNull(),
+    isActive: boolean("is_active").default(true).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("event_shuttles_event_idx").on(t.eventId)]
+);
+
+export const attendeeShuttleBookings = pgTable(
+  "attendee_shuttle_bookings",
+  {
+    id: id(),
+    eventId: uuid("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    shuttleId: uuid("shuttle_id")
+      .notNull()
+      .references(() => eventShuttles.id, { onDelete: "cascade" }),
+    attendeeName: text("attendee_name").notNull(),
+    attendeeEmail: text("attendee_email").notNull(),
+    attendeePhone: text("attendee_phone").default("").notNull(),
+    seatCount: integer("seat_count").default(1).notNull(),
+    bookingCode: text("booking_code").notNull().unique(),
+    boardingStatus: text("boarding_status").default("confirmed").notNull(), // 'confirmed', 'boarded'
+    boardedAt: timestamp("boarded_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("attendee_shuttle_bookings_event_idx").on(t.eventId),
+    index("attendee_shuttle_bookings_email_idx").on(t.attendeeEmail),
+  ]
+);
+
+export const eventMealPasses = pgTable(
+  "event_meal_passes",
+  {
+    id: id(),
+    eventId: uuid("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    attendeeEmail: text("attendee_email").notNull(),
+    attendeeName: text("attendee_name").notNull(),
+    mealType: text("meal_type").notNull(), // 'breakfast', 'lunch', 'dinner'
+    mealDay: text("meal_day").default("Day 1").notNull(),
+    voucherCode: text("voucher_code").notNull().unique(),
+    isClaimed: boolean("is_claimed").default(false).notNull(),
+    claimedAt: timestamp("claimed_at", { withTimezone: true }),
+    claimedByStaff: text("claimed_by_staff"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("event_meal_passes_event_idx").on(t.eventId),
+    index("event_meal_passes_email_idx").on(t.attendeeEmail),
+    index("event_meal_passes_voucher_idx").on(t.voucherCode),
+  ]
+);
+
+
 
 
