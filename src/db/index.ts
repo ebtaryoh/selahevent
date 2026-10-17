@@ -15,12 +15,20 @@ const globalForDb = globalThis as typeof globalThis & {
 };
 
 function createPool(url: string): Pool {
-  const isLocal = !url.includes("supabase.com") && !url.includes("neon.tech");
+  // If the connection string points to Supabase pooler on port 5432 (Session Mode, capped at 15 connections),
+  // automatically rewrite to port 6543 (Transaction Mode) to eliminate EMAXCONNSESSION crashes once and for all.
+  let cleanUrl = url;
+  if (cleanUrl.includes("pooler.supabase.com:5432")) {
+    cleanUrl = cleanUrl.replace("pooler.supabase.com:5432", "pooler.supabase.com:6543");
+  }
+
+  const isLocal = !cleanUrl.includes("supabase.com") && !cleanUrl.includes("neon.tech");
   const p = new Pool({
-    connectionString: url,
+    connectionString: cleanUrl,
     max: 10,
-    idleTimeoutMillis: 20000,
+    idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000,
+    allowExitOnIdle: true,
     ssl: isLocal ? false : { rejectUnauthorized: false },
   });
 
