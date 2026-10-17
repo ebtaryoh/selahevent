@@ -30,7 +30,7 @@ import { ensureSeed } from "./seed";
 import { hashOtp, normalizeOtpEmail } from "./otp";
 import { headers } from "next/headers";
 import { enforceRateLimit, getClientAddressFromHeaders, rateLimitHeaders } from "./rate-limit";
-import { MAX_MEDIA_FILES, mediaFilename, validateMediaFile } from "./media";
+import { MAX_MEDIA_FILES, mediaFilename, validateMediaFile, saveUploadedMedia } from "./media";
 import { validateChristianEventContent } from "./christian-moderation";
 
 /* ------------------------------------------------------------------ */
@@ -130,41 +130,19 @@ export async function createEvent(formData: FormData) {
   
   if (mediaFiles && mediaFiles.length > 0) {
         if (mediaFiles.length > MAX_MEDIA_FILES) return { error: "You can upload a maximum of 8 media files per event." };
-for (const file of mediaFiles) {
-      if (file.size === 0) continue;
+      for (const file of mediaFiles) {
+        if (file.size === 0) continue;
 
-      const mediaError = await validateMediaFile(file);
-      if (mediaError) return { error: mediaError };
-      const filename = mediaFilename(file);
-      const type = file.type.startsWith("video/") ? "video" : "image";
+        const mediaError = await validateMediaFile(file);
+        if (mediaError) return { error: mediaError };
+        const type = file.type.startsWith("video/") ? "video" : "image";
 
-      if (!process.env.BLOB_READ_WRITE_TOKEN && process.env.NODE_ENV === "production") {
-        return { error: "Media uploads are temporarily unavailable. Please configure storage and try again." };
-      }
-
-      if (process.env.BLOB_READ_WRITE_TOKEN) {
-        try {
-          const blob = await put(filename, file, { access: "public", multipart: true });
-          mediaPaths.push({ type, url: blob.url });
-        } catch (error) {
-          console.error("Vercel Blob upload failed:", error);
-          if (process.env.NODE_ENV === "production") {
-            return { error: "Media upload failed. Please try again." };
-          }
-          const buffer = Buffer.from(await file.arrayBuffer());
-          const filepath = path.join(process.cwd(), "public", "uploads", filename);
-          if (writeFileToDisk(filepath, buffer)) {
-            mediaPaths.push({ type, url: `/uploads/${filename}` });
-          }
+        const uploadResult = await saveUploadedMedia(file);
+        if (uploadResult.error || !uploadResult.url) {
+          return { error: uploadResult.error || "Media upload failed. Please try again." };
         }
-      } else {
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const filepath = path.join(process.cwd(), "public", "uploads", filename);
-        if (writeFileToDisk(filepath, buffer)) {
-          mediaPaths.push({ type, url: `/uploads/${filename}` });
-        }
+        mediaPaths.push({ type, url: uploadResult.url });
       }
-    }
 
     // Set the first uploaded image as the cover image
     if (mediaPaths.length > 0 && mediaPaths[0].type === "image") {
@@ -323,35 +301,20 @@ export async function updateEvent(eventId: string, formData: FormData) {
   
   if (mediaFiles && mediaFiles.length > 0) {
         if (mediaFiles.length > MAX_MEDIA_FILES) return { error: "You can upload a maximum of 8 media files per event." };
-for (const file of mediaFiles) {
-      if (file.size === 0) continue;
-      hasNewMedia = true;
+      for (const file of mediaFiles) {
+        if (file.size === 0) continue;
+        hasNewMedia = true;
 
-      const mediaError = await validateMediaFile(file);
-      if (mediaError) return { error: mediaError };
-      const filename = mediaFilename(file);
-      const type = file.type.startsWith("video/") ? "video" : "image";
+        const mediaError = await validateMediaFile(file);
+        if (mediaError) return { error: mediaError };
+        const type = file.type.startsWith("video/") ? "video" : "image";
 
-      if (process.env.BLOB_READ_WRITE_TOKEN) {
-        try {
-          const blob = await put(filename, file, { access: "public", multipart: true });
-          mediaPaths.unshift({ type, url: blob.url });
-        } catch (error) {
-          console.error("Vercel Blob upload failed:", error);
-          const buffer = Buffer.from(await file.arrayBuffer());
-          const filepath = path.join(process.cwd(), "public", "uploads", filename);
-          if (writeFileToDisk(filepath, buffer)) {
-            mediaPaths.unshift({ type, url: `/uploads/${filename}` });
-          }
+        const uploadResult = await saveUploadedMedia(file);
+        if (uploadResult.error || !uploadResult.url) {
+          return { error: uploadResult.error || "Media upload failed. Please try again." };
         }
-      } else {
-        const buffer = Buffer.from(await file.arrayBuffer());
-        const filepath = path.join(process.cwd(), "public", "uploads", filename);
-        if (writeFileToDisk(filepath, buffer)) {
-          mediaPaths.unshift({ type, url: `/uploads/${filename}` });
-        }
+        mediaPaths.unshift({ type, url: uploadResult.url });
       }
-    }
 
     if (hasNewMedia && mediaPaths.length > 0 && mediaPaths[0].type === "image") {
       coverImage = mediaPaths[0].url;

@@ -10,7 +10,7 @@ import { put } from "@vercel/blob";
 import fs from "fs";
 import path from "path";
 import { randomUUID } from "crypto";
-import { validateMediaFile } from "../media";
+import { validateMediaFile, saveUploadedMedia } from "../media";
 
 /** Write a file to disk (local fallback for media uploads). */
 function writeFileToDisk(filepath: string, buffer: Buffer): void {
@@ -59,35 +59,11 @@ export async function updateOrganizationSettings(orgId: string, formData: FormDa
     const mediaError = await validateMediaFile(avatarFile);
     if (mediaError) return { error: mediaError };
 
-    const ext = avatarFile.name.includes(".")
-      ? avatarFile.name.split(".").pop()!.toLowerCase().replace(/[^a-z0-9]/g, "")
-      : "bin";
-    const filename = `${Date.now()}-avatar-${randomUUID()}-${ext}`;
-
-    if (!process.env.BLOB_READ_WRITE_TOKEN && process.env.NODE_ENV === "production") {
-      return { error: "Logo uploads are temporarily unavailable. Please configure storage and try again." };
+    const uploadResult = await saveUploadedMedia(avatarFile);
+    if (uploadResult.error || !uploadResult.url) {
+      return { error: uploadResult.error || "Logo upload failed. Please try again." };
     }
-
-    if (process.env.BLOB_READ_WRITE_TOKEN) {
-      try {
-        const blob = await put(filename, avatarFile, { access: "public", multipart: true });
-        logoUrl = blob.url;
-      } catch (error) {
-        console.error("Vercel Blob upload failed:", error);
-        if (process.env.NODE_ENV === "production") {
-          return { error: "Logo upload failed. Please try again." };
-        }
-        const buffer = Buffer.from(await avatarFile.arrayBuffer());
-        const filepath = path.join(process.cwd(), "public", "uploads", filename);
-        writeFileToDisk(filepath, buffer);
-        logoUrl = `/uploads/${filename}`;
-      }
-    } else {
-      const buffer = Buffer.from(await avatarFile.arrayBuffer());
-      const filepath = path.join(process.cwd(), "public", "uploads", filename);
-      writeFileToDisk(filepath, buffer);
-      logoUrl = `/uploads/${filename}`;
-    }
+    logoUrl = uploadResult.url;
   }
 
   if (!name || !email) {

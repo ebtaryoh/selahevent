@@ -69,3 +69,59 @@ export function mediaFilename(file: File) {
     : "bin";
   return Date.now() + "-" + randomUUID() + "." + ext;
 }
+
+import { db } from "@/db";
+import { mediaUploads } from "@/db/schema";
+import { put } from "@vercel/blob";
+import fs from "fs";
+import path from "path";
+
+export async function saveUploadedMedia(file: File): Promise<{ url?: string; error?: string }> {
+  const filename = mediaFilename(file);
+
+  // 1. If Vercel Blob token is set, prioritize Vercel Blob CDN
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    try {
+      const blob = await put(filename, file, { access: "public", multipart: true });
+      return { url: blob.url };
+    } catch (blobErr) {
+      console.warn("Vercel Blob failed, falling back to database media storage:", blobErr);
+    }
+  }
+
+  // 2. Database storage (zero external storage setup required, survives serverless re-deploys)
+  try {
+    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const base64Data = buffer.toString("base64");
+
+    const [record] = await db
+      .insert(mediaUploads)
+      .values({
+        filename,
+        mimeType: file.type || "image/jpeg",
+        data: base64Data,
+        size: file.size,
+      })
+      .returning({ id: mediaUploads.id });
+
+    // Optional local write for development
+    if (process.env.NODE_ENV !== "production") {
+      try {
+        const uploadDir = path.join(process.cwd(), "public", "uploads");
+        if (!fs.existsSync(uploadDir)) {
+          fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        fs.writeFileSync(path.join(uploadDir, filename), buffer);
+      } catch {
+        // Ignore local disk error
+      }
+    }
+
+    return { url: `/api/media/${record.id}` };
+  } catch (dbErr) {
+    console.error("Database media storage failed:", dbErr);
+    return { error: "Failed to store media file." };
+  }
+}
+

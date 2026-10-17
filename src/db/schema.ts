@@ -746,6 +746,17 @@ export const eventMealPasses = pgTable(
   ]
 );
 
-
-
-
+export const mediaUploads = pgTable(
+  "media_uploads",
+  {
+    id: id(),
+    filename: text("filename").notNull(),
+    mimeType: text("mime_type").notNull(),
+    data: text("data").notNull(),
+    size: integer("size").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("media_uploads_filename_idx").on(t.filename),
+  ]
+);
