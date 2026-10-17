@@ -676,14 +676,29 @@ export function RegistrationForm({
                             placeholder="you@example.com"
                           />
                         </Field>
-                        <button
-                          type="button"
-                          className="btn btn-primary w-full justify-center"
-                          onClick={handleRequestOTP}
-                          disabled={otpLoading}
-                        >
-                          {otpLoading ? <Loader2 className="animate-spin h-5 w-5" /> : "Continue"}
-                        </button>
+                        <div className="flex flex-col sm:flex-row gap-2.5">
+                          <button
+                            type="button"
+                            className="btn btn-primary flex-1 justify-center"
+                            onClick={handleRequestOTP}
+                            disabled={otpLoading}
+                          >
+                            {otpLoading ? <Loader2 className="animate-spin h-5 w-5" /> : "Continue with Email"}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-secondary text-xs !py-2.5 px-3.5 justify-center"
+                            onClick={() => {
+                              if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(form.email.trim())) {
+                                setFieldErrors({ email: "Please enter a valid email address." });
+                                return;
+                              }
+                              setEmailVerified(true);
+                            }}
+                          >
+                            Continue as Guest &rarr;
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <div className="space-y-4">
@@ -720,13 +735,23 @@ export function RegistrationForm({
                             {otpLoading ? <Loader2 className="animate-spin h-5 w-5" /> : "Resend Code"}
                           </button>
                         </div>
-                        <div className="text-center pt-2">
+                        <div className="flex items-center justify-between pt-2">
                           <button
                             type="button"
                             className="text-[0.8rem] font-medium text-[var(--color-brass)] hover:underline"
                             onClick={() => setOtpMode(false)}
                           >
                             Use a different email
+                          </button>
+                          <button
+                            type="button"
+                            className="text-[0.8rem] text-warm-400 hover:text-ink underline transition-colors"
+                            onClick={() => {
+                              setEmailVerified(true);
+                              setOtpMode(false);
+                            }}
+                          >
+                            Skip &amp; fill manually &rarr;
                           </button>
                         </div>
                       </div>

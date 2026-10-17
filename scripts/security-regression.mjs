@@ -14,5 +14,6 @@ assertIncludes("src/app/api/webhooks/paystack/route.ts", ["timingSafeEqual", "x-
 assertIncludes("src/app/api/events/[id]/scan/route.ts", ['requirePermission("checkin.write")', "organizationId", "checkIns"]);
 assertIncludes("src/lib/attendee.ts", ["hashOtp", "attempts", "ATTENDEE_JWT_SECRET"]);
 assertIncludes("src/lib/actions.ts", ['requirePermission("events.write")', 'requirePermission("tickets.write")', 'requirePermission("checkin.write")', "ticketReservations"]);
-assertIncludes("src/lib/actions/settings.ts", ["validateMediaFile", "BLOB_READ_WRITE_TOKEN"]);
+assertIncludes("src/lib/actions/settings.ts", ["validateMediaFile"]);
+assertIncludes("src/lib/media.ts", ["validateMediaFile", "BLOB_READ_WRITE_TOKEN"]);
 console.log("[security] regression checks passed");
