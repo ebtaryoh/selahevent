@@ -381,11 +381,11 @@ export default async function EventManagePage({
                 Overall configuration
               </h3>
               <span className="tnum font-display text-[2.15rem] leading-none font-semibold text-[var(--color-brass-deep)]">
-                {event.readiness}%
+                {event.readiness ?? 0}%
               </span>
             </div>
             <div className="mt-5">
-              <ProgressBar value={event.readiness} tone="green" />
+              <ProgressBar value={event.readiness ?? 0} tone="green" />
             </div>
 
             <ul className="mt-8 space-y-0">
@@ -395,8 +395,10 @@ export default async function EventManagePage({
                 ["Speakers", `${eventSpeakers.length} profiles complete`, eventSpeakers.length > 0],
                 [
                   "Payment gateway",
-                  org.paymentGateway === "none" ? "Not connected" : `${titleCase(org.paymentGateway)} · ${org.paymentGatewayMode} mode`,
-                  org.paymentGateway !== "none",
+                  (org.paymentGateway === "none" || !org.paymentGateway)
+                    ? "Not connected"
+                    : `${titleCase(org.paymentGateway || "")} · ${org.paymentGatewayMode || "test"} mode`,
+                  Boolean(org.paymentGateway && org.paymentGateway !== "none"),
                 ],
                 [
                   "Volunteer coverage",
@@ -418,8 +420,8 @@ export default async function EventManagePage({
                 ],
                 [
                   "Certificates",
-                  event.certificateThreshold > 0 ? `Configured · attendance threshold ${event.certificateThreshold}%` : "Not configured",
-                  event.certificateThreshold > 0,
+                  (event.certificateThreshold ?? 0) > 0 ? `Configured · attendance threshold ${event.certificateThreshold}%` : "Not configured",
+                  (event.certificateThreshold ?? 0) > 0,
                 ],
               ].map(([label, value, ok]) => (
                 <li

@@ -135,12 +135,18 @@ export async function getEventById(id: string, customOrgId?: string) {
 }
 
 export async function getTickets(eventId: string) {
-  await ensureSeed();
-  return db
-    .select()
-    .from(ticketTypes)
-    .where(eq(ticketTypes.eventId, eventId))
-    .orderBy(asc(ticketTypes.sortOrder));
+  if (!eventId || !UUID_REGEX.test(eventId)) return [];
+  try {
+    await ensureSeed();
+    return await db
+      .select()
+      .from(ticketTypes)
+      .where(eq(ticketTypes.eventId, eventId))
+      .orderBy(asc(ticketTypes.sortOrder));
+  } catch (err) {
+    console.error("[getTickets error]:", err);
+    return [];
+  }
 }
 
 export async function getOrganizationMemoryStats(orgId: string) {
@@ -203,27 +209,45 @@ export async function getRecentReuseActivity(orgId: string, limitCount = 5) {
 }
 
 export async function getSpeakers(eventId: string) {
-  await ensureSeed();
-  return db.select().from(speakers).where(eq(speakers.eventId, eventId));
+  if (!eventId || !UUID_REGEX.test(eventId)) return [];
+  try {
+    await ensureSeed();
+    return await db.select().from(speakers).where(eq(speakers.eventId, eventId));
+  } catch (err) {
+    console.error("[getSpeakers error]:", err);
+    return [];
+  }
 }
 
 export async function getSessions(eventId: string) {
-  await ensureSeed();
-  return db
-    .select()
-    .from(sessions)
-    .where(eq(sessions.eventId, eventId))
-    .orderBy(asc(sessions.day), asc(sessions.startsAt));
+  if (!eventId || !UUID_REGEX.test(eventId)) return [];
+  try {
+    await ensureSeed();
+    return await db
+      .select()
+      .from(sessions)
+      .where(eq(sessions.eventId, eventId))
+      .orderBy(asc(sessions.day), asc(sessions.startsAt));
+  } catch (err) {
+    console.error("[getSessions error]:", err);
+    return [];
+  }
 }
 
 export async function getRegistrations(eventId: string, limit = 200) {
-  await ensureSeed();
-  return db
-    .select()
-    .from(registrations)
-    .where(eq(registrations.eventId, eventId))
-    .orderBy(desc(registrations.createdAt))
-    .limit(limit);
+  if (!eventId || !UUID_REGEX.test(eventId)) return [];
+  try {
+    await ensureSeed();
+    return await db
+      .select()
+      .from(registrations)
+      .where(eq(registrations.eventId, eventId))
+      .orderBy(desc(registrations.createdAt))
+      .limit(limit);
+  } catch (err) {
+    console.error("[getRegistrations error]:", err);
+    return [];
+  }
 }
 
 export async function getRegistrationByTicketCode(ticketCode: string) {
@@ -237,12 +261,18 @@ export async function getRegistrationByTicketCode(ticketCode: string) {
 }
 
 export async function getVolunteers(eventId: string) {
-  await ensureSeed();
-  return db
-    .select()
-    .from(volunteers)
-    .where(eq(volunteers.eventId, eventId))
-    .orderBy(asc(volunteers.department));
+  if (!eventId || !UUID_REGEX.test(eventId)) return [];
+  try {
+    await ensureSeed();
+    return await db
+      .select()
+      .from(volunteers)
+      .where(eq(volunteers.eventId, eventId))
+      .orderBy(asc(volunteers.department));
+  } catch (err) {
+    console.error("[getVolunteers error]:", err);
+    return [];
+  }
 }
 
 export async function getTasks(orgId: string, eventId?: string) {
@@ -608,35 +638,50 @@ export async function getEventRegistrationHistory(eventId: string, days = 14) {
 /* ------------------------------------------------------------------ */
 
 export async function getEventProducts(eventId: string, activeOnly = false) {
-  if (!eventId) return [];
-  const conditions = [eq(eventProducts.eventId, eventId)];
-  if (activeOnly) {
-    conditions.push(eq(eventProducts.isActive, true));
+  if (!eventId || !UUID_REGEX.test(eventId)) return [];
+  try {
+    const conditions = [eq(eventProducts.eventId, eventId)];
+    if (activeOnly) {
+      conditions.push(eq(eventProducts.isActive, true));
+    }
+    return await db
+      .select()
+      .from(eventProducts)
+      .where(and(...conditions))
+      .orderBy(asc(eventProducts.sortOrder), desc(eventProducts.createdAt));
+  } catch (err) {
+    console.error("[getEventProducts error]:", err);
+    return [];
   }
-  return db
-    .select()
-    .from(eventProducts)
-    .where(and(...conditions))
-    .orderBy(asc(eventProducts.sortOrder), desc(eventProducts.createdAt));
 }
 
 export async function getEventProductById(id: string) {
   if (!id) return null;
-  return db
-    .select()
-    .from(eventProducts)
-    .where(eq(eventProducts.id, id))
-    .limit(1)
-    .then((r) => r[0] ?? null);
+  try {
+    return await db
+      .select()
+      .from(eventProducts)
+      .where(eq(eventProducts.id, id))
+      .limit(1)
+      .then((r) => r[0] ?? null);
+  } catch (err) {
+    console.error("[getEventProductById error]:", err);
+    return null;
+  }
 }
 
 export async function getProductOrders(eventId: string) {
-  if (!eventId) return [];
-  return db
-    .select()
-    .from(orderItems)
-    .where(eq(orderItems.eventId, eventId))
-    .orderBy(desc(orderItems.createdAt));
+  if (!eventId || !UUID_REGEX.test(eventId)) return [];
+  try {
+    return await db
+      .select()
+      .from(orderItems)
+      .where(eq(orderItems.eventId, eventId))
+      .orderBy(desc(orderItems.createdAt));
+  } catch (err) {
+    console.error("[getProductOrders error]:", err);
+    return [];
+  }
 }
 
 export async function getAttendeeProductOrders(params: {
@@ -645,63 +690,75 @@ export async function getAttendeeProductOrders(params: {
   email?: string;
   voucherCode?: string;
 }) {
-  const conditions = [];
-  if (params.eventId) conditions.push(eq(orderItems.eventId, params.eventId));
-  if (params.registrationId) conditions.push(eq(orderItems.registrationId, params.registrationId));
-  if (params.email) conditions.push(ilike(orderItems.customerEmail, params.email.trim()));
-  if (params.voucherCode) conditions.push(eq(orderItems.pickupVoucherCode, params.voucherCode.trim().toUpperCase()));
+  try {
+    const conditions = [];
+    if (params.eventId && UUID_REGEX.test(params.eventId)) conditions.push(eq(orderItems.eventId, params.eventId));
+    if (params.registrationId && UUID_REGEX.test(params.registrationId)) conditions.push(eq(orderItems.registrationId, params.registrationId));
+    if (params.email) conditions.push(ilike(orderItems.customerEmail, params.email.trim()));
+    if (params.voucherCode) conditions.push(eq(orderItems.pickupVoucherCode, params.voucherCode.trim().toUpperCase()));
 
-  if (conditions.length === 0) return [];
+    if (conditions.length === 0) return [];
 
-  return db
-    .select()
-    .from(orderItems)
-    .where(and(...conditions))
-    .orderBy(desc(orderItems.createdAt));
+    return await db
+      .select()
+      .from(orderItems)
+      .where(and(...conditions))
+      .orderBy(desc(orderItems.createdAt));
+  } catch (err) {
+    console.error("[getAttendeeProductOrders error]:", err);
+    return [];
+  }
 }
 
 export async function getProductStats(eventId: string) {
-  if (!eventId) {
-    return {
-      totalRevenue: 0,
-      totalSoldUnits: 0,
-      pendingPickups: 0,
-      activeProductsCount: 0,
-    };
+  const fallback = {
+    totalRevenue: 0,
+    totalSoldUnits: 0,
+    pendingPickups: 0,
+    activeProductsCount: 0,
+  };
+
+  if (!eventId || !UUID_REGEX.test(eventId)) {
+    return fallback;
   }
 
-  const [revenueResult, unitsResult, pendingResult, activeCountResult] = await Promise.all([
-    db
-      .select({ total: sql<number>`COALESCE(SUM(${orderItems.totalPrice}), 0)::int` })
-      .from(orderItems)
-      .where(and(eq(orderItems.eventId, eventId), eq(orderItems.status, "paid"))),
-    db
-      .select({ count: sql<number>`COALESCE(SUM(${orderItems.quantity}), 0)::int` })
-      .from(orderItems)
-      .where(and(eq(orderItems.eventId, eventId), eq(orderItems.status, "paid"))),
-    db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(orderItems)
-      .where(
-        and(
-          eq(orderItems.eventId, eventId),
-          eq(orderItems.status, "paid"),
-          eq(orderItems.productType, "physical"),
-          eq(orderItems.fulfillmentStatus, "unfulfilled")
-        )
-      ),
-    db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(eventProducts)
-      .where(and(eq(eventProducts.eventId, eventId), eq(eventProducts.isActive, true))),
-  ]);
+  try {
+    const [revenueResult, unitsResult, pendingResult, activeCountResult] = await Promise.all([
+      db
+        .select({ total: sql<number>`COALESCE(SUM(${orderItems.totalPrice}), 0)::int` })
+        .from(orderItems)
+        .where(and(eq(orderItems.eventId, eventId), eq(orderItems.status, "paid"))),
+      db
+        .select({ count: sql<number>`COALESCE(SUM(${orderItems.quantity}), 0)::int` })
+        .from(orderItems)
+        .where(and(eq(orderItems.eventId, eventId), eq(orderItems.status, "paid"))),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(orderItems)
+        .where(
+          and(
+            eq(orderItems.eventId, eventId),
+            eq(orderItems.status, "paid"),
+            eq(orderItems.productType, "physical"),
+            eq(orderItems.fulfillmentStatus, "unfulfilled")
+          )
+        ),
+      db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(eventProducts)
+        .where(and(eq(eventProducts.eventId, eventId), eq(eventProducts.isActive, true))),
+    ]);
 
-  return {
-    totalRevenue: revenueResult[0]?.total ?? 0,
-    totalSoldUnits: unitsResult[0]?.count ?? 0,
-    pendingPickups: pendingResult[0]?.count ?? 0,
-    activeProductsCount: activeCountResult[0]?.count ?? 0,
-  };
+    return {
+      totalRevenue: revenueResult[0]?.total ?? 0,
+      totalSoldUnits: unitsResult[0]?.count ?? 0,
+      pendingPickups: pendingResult[0]?.count ?? 0,
+      activeProductsCount: activeCountResult[0]?.count ?? 0,
+    };
+  } catch (err) {
+    console.error("[getProductStats error]:", err);
+    return fallback;
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -709,16 +766,21 @@ export async function getProductStats(eventId: string) {
 /* ------------------------------------------------------------------ */
 
 export async function getEventAnnouncements(eventId: string, activeOnly = true) {
-  if (!eventId) return [];
-  const conditions = [eq(eventAnnouncements.eventId, eventId)];
-  if (activeOnly) {
-    conditions.push(eq(eventAnnouncements.isActive, true));
+  if (!eventId || !UUID_REGEX.test(eventId)) return [];
+  try {
+    const conditions = [eq(eventAnnouncements.eventId, eventId)];
+    if (activeOnly) {
+      conditions.push(eq(eventAnnouncements.isActive, true));
+    }
+    return await db
+      .select()
+      .from(eventAnnouncements)
+      .where(and(...conditions))
+      .orderBy(desc(eventAnnouncements.isPinned), desc(eventAnnouncements.createdAt));
+  } catch (err) {
+    console.error("[getEventAnnouncements error]:", err);
+    return [];
   }
-  return db
-    .select()
-    .from(eventAnnouncements)
-    .where(and(...conditions))
-    .orderBy(desc(eventAnnouncements.isPinned), desc(eventAnnouncements.createdAt));
 }
 
 /* ------------------------------------------------------------------ */
@@ -726,12 +788,17 @@ export async function getEventAnnouncements(eventId: string, activeOnly = true) 
 /* ------------------------------------------------------------------ */
 
 export async function getEventAccommodations(eventId: string) {
-  if (!eventId) return [];
-  return db
-    .select()
-    .from(eventAccommodations)
-    .where(and(eq(eventAccommodations.eventId, eventId), eq(eventAccommodations.isActive, true)))
-    .orderBy(asc(eventAccommodations.name));
+  if (!eventId || !UUID_REGEX.test(eventId)) return [];
+  try {
+    return await db
+      .select()
+      .from(eventAccommodations)
+      .where(and(eq(eventAccommodations.eventId, eventId), eq(eventAccommodations.isActive, true)))
+      .orderBy(asc(eventAccommodations.name));
+  } catch (err) {
+    console.error("[getEventAccommodations error]:", err);
+    return [];
+  }
 }
 
 export async function getAttendeeAccommodation(eventId: string, email: string) {
@@ -758,43 +825,58 @@ export async function getAttendeeAccommodation(eventId: string, email: string) {
 }
 
 export async function getEventShuttles(eventId: string) {
-  if (!eventId) return [];
-  return db
-    .select()
-    .from(eventShuttles)
-    .where(and(eq(eventShuttles.eventId, eventId), eq(eventShuttles.isActive, true)))
-    .orderBy(asc(eventShuttles.routeTitle));
+  if (!eventId || !UUID_REGEX.test(eventId)) return [];
+  try {
+    return await db
+      .select()
+      .from(eventShuttles)
+      .where(and(eq(eventShuttles.eventId, eventId), eq(eventShuttles.isActive, true)))
+      .orderBy(asc(eventShuttles.routeTitle));
+  } catch (err) {
+    console.error("[getEventShuttles error]:", err);
+    return [];
+  }
 }
 
 export async function getAttendeeShuttleBookings(eventId: string, email: string) {
-  if (!eventId || !email) return [];
-  return db
-    .select({
-      booking: attendeeShuttleBookings,
-      shuttle: eventShuttles,
-    })
-    .from(attendeeShuttleBookings)
-    .innerJoin(eventShuttles, eq(attendeeShuttleBookings.shuttleId, eventShuttles.id))
-    .where(
-      and(
-        eq(attendeeShuttleBookings.eventId, eventId),
-        ilike(attendeeShuttleBookings.attendeeEmail, email.trim())
+  if (!eventId || !email || !UUID_REGEX.test(eventId)) return [];
+  try {
+    return await db
+      .select({
+        booking: attendeeShuttleBookings,
+        shuttle: eventShuttles,
+      })
+      .from(attendeeShuttleBookings)
+      .innerJoin(eventShuttles, eq(attendeeShuttleBookings.shuttleId, eventShuttles.id))
+      .where(
+        and(
+          eq(attendeeShuttleBookings.eventId, eventId),
+          ilike(attendeeShuttleBookings.attendeeEmail, email.trim())
+        )
       )
-    )
-    .orderBy(desc(attendeeShuttleBookings.createdAt));
+      .orderBy(desc(attendeeShuttleBookings.createdAt));
+  } catch (err) {
+    console.error("[getAttendeeShuttleBookings error]:", err);
+    return [];
+  }
 }
 
 export async function getAttendeeMealPasses(eventId: string, email: string) {
-  if (!eventId || !email) return [];
-  return db
-    .select()
-    .from(eventMealPasses)
-    .where(
-      and(
-        eq(eventMealPasses.eventId, eventId),
-        ilike(eventMealPasses.attendeeEmail, email.trim())
+  if (!eventId || !email || !UUID_REGEX.test(eventId)) return [];
+  try {
+    return await db
+      .select()
+      .from(eventMealPasses)
+      .where(
+        and(
+          eq(eventMealPasses.eventId, eventId),
+          ilike(eventMealPasses.attendeeEmail, email.trim())
+        )
       )
-    )
-    .orderBy(asc(eventMealPasses.mealDay), asc(eventMealPasses.mealType));
+      .orderBy(asc(eventMealPasses.mealDay), asc(eventMealPasses.mealType));
+  } catch (err) {
+    console.error("[getAttendeeMealPasses error]:", err);
+    return [];
+  }
 }
 

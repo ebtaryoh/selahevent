@@ -207,7 +207,7 @@ export default async function DashboardLayout({
           <div className="truncate text-[0.8125rem] font-semibold text-ink">
             {org?.name ?? "Grace Fellowship"}
           </div>
-          <div className="truncate text-[0.695rem] text-warm-400">
+          <div className="truncate text-[0.695rem] text-warm-400" suppressHydrationWarning>
             {formatDate(new Date())}
           </div>
         </div>
@@ -249,7 +249,7 @@ export default async function DashboardLayout({
 
           <div className="flex items-center gap-5">
             <div className="text-right">
-              <div className="text-[0.8125rem] font-semibold text-ink">
+              <div className="text-[0.8125rem] font-semibold text-ink" suppressHydrationWarning>
                 {formatDate(new Date(), {
                   weekday: "long",
                   day: "numeric",

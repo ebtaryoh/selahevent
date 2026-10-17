@@ -32,49 +32,71 @@ const CURRENCY_LOCALE: Record<string, string> = {
   AUD: "en-AU",
 };
 
-export function formatMoney(amount: number, currency = "NGN", minor = false) {
-  const value = minor ? amount / 100 : amount;
+export function formatMoney(amount: number | null | undefined, currency = "NGN", minor = false) {
+  const num = typeof amount === "number" && !Number.isNaN(amount) ? amount : (Number(amount) || 0);
+  const value = minor ? num / 100 : num;
+  const curr = (currency && typeof currency === "string" && currency.trim()) ? currency.trim().toUpperCase() : "NGN";
   try {
-    return new Intl.NumberFormat(CURRENCY_LOCALE[currency] ?? "en-US", {
+    return new Intl.NumberFormat(CURRENCY_LOCALE[curr] ?? "en-US", {
       style: "currency",
-      currency,
+      currency: curr,
       maximumFractionDigits: value % 1 === 0 ? 0 : 2,
     }).format(value);
   } catch {
-    return `${currency} ${value.toLocaleString()}`;
+    return `${curr} ${Number(value).toLocaleString()}`;
   }
 }
 
-export function formatNumber(value: number) {
-  return new Intl.NumberFormat("en-US").format(value);
+export function formatNumber(value: number | null | undefined) {
+  const num = typeof value === "number" && !Number.isNaN(value) ? value : (Number(value) || 0);
+  return new Intl.NumberFormat("en-US").format(num);
 }
 
 export function formatDate(
-  date: Date | string,
+  date: Date | string | null | undefined,
   opts: Intl.DateTimeFormatOptions = {
     day: "numeric",
     month: "short",
     year: "numeric",
   }
 ) {
+  if (!date) return "—";
   const d = typeof date === "string" ? new Date(date) : date;
-  if (Number.isNaN(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("en-GB", opts).format(d);
+  if (!d || !(d instanceof Date) || Number.isNaN(d.getTime())) return "—";
+  try {
+    return new Intl.DateTimeFormat("en-GB", opts).format(d);
+  } catch {
+    return "—";
+  }
 }
 
-export function formatTime(date: Date | string) {
+export function formatTime(date: Date | string | null | undefined) {
+  if (!date) return "—";
   const d = typeof date === "string" ? new Date(date) : date;
-  if (Number.isNaN(d.getTime())) return "—";
-  return new Intl.DateTimeFormat("en-GB", {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  }).format(d);
+  if (!d || !(d instanceof Date) || Number.isNaN(d.getTime())) return "—";
+  try {
+    return new Intl.DateTimeFormat("en-GB", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(d);
+  } catch {
+    return "—";
+  }
 }
 
-export function formatRange(start: Date | string, end: Date | string) {
+export function formatRange(start: Date | string | null | undefined, end: Date | string | null | undefined) {
+  if (!start && !end) return "—";
+  if (!start) return formatDate(end);
+  if (!end) return formatDate(start);
   const s = typeof start === "string" ? new Date(start) : start;
   const e = typeof end === "string" ? new Date(end) : end;
+  const sValid = s instanceof Date && !Number.isNaN(s.getTime());
+  const eValid = e instanceof Date && !Number.isNaN(e.getTime());
+  if (!sValid && !eValid) return "—";
+  if (!sValid) return formatDate(e);
+  if (!eValid) return formatDate(s);
+
   const sameYear = s.getFullYear() === e.getFullYear();
   const sameMonth = sameYear && s.getMonth() === e.getMonth();
   const left = formatDate(s, {
@@ -90,8 +112,10 @@ export function formatRange(start: Date | string, end: Date | string) {
   return `${left} – ${right}`;
 }
 
-export function relativeDays(date: Date | string) {
+export function relativeDays(date: Date | string | null | undefined) {
+  if (!date) return "—";
   const d = typeof date === "string" ? new Date(date) : date;
+  if (!d || !(d instanceof Date) || Number.isNaN(d.getTime())) return "—";
   const diff = Math.round((d.getTime() - Date.now()) / 86_400_000);
   if (diff === 0) return "Today";
   if (diff === 1) return "Tomorrow";
@@ -100,12 +124,12 @@ export function relativeDays(date: Date | string) {
   return `${Math.abs(diff)} days ago`;
 }
 
-export function timeUntil(target: Date | string) {
+export function timeUntil(target: Date | string | null | undefined) {
   if (!target) {
     return { passed: true, days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
   }
   const d = typeof target === "string" ? new Date(target) : target;
-  if (!d || Number.isNaN(d.getTime())) {
+  if (!d || !(d instanceof Date) || Number.isNaN(d.getTime())) {
     return { passed: true, days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
   }
   const ms = d.getTime() - Date.now();
@@ -120,13 +144,16 @@ export function timeUntil(target: Date | string) {
   };
 }
 
-export function percent(part: number, whole: number) {
-  if (!whole) return 0;
-  return Math.min(100, Math.round((part / whole) * 100));
+export function percent(part: number | null | undefined, whole: number | null | undefined) {
+  const p = Number(part) || 0;
+  const w = Number(whole) || 0;
+  if (!w) return 0;
+  return Math.min(100, Math.round((p / w) * 100));
 }
 
-export function titleCase(value: string) {
-  return value
+export function titleCase(value: string | null | undefined) {
+  if (!value) return "";
+  return String(value)
     .replace(/[_-]+/g, " ")
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
