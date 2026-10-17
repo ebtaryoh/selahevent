@@ -177,14 +177,16 @@ export function DashboardBroadcastsManager({ eventId, initialAnnouncements }: Pr
               type="button"
               onClick={() =>
                 applyTemplate(
-                  "🚨 Service Schedule Notice: Impartation Session",
-                  "The evening revival and impartation service will commence promptly at 5:30 PM in the Main Auditorium. Please be seated early.",
-                  "urgent"
+                  "🚨 General Assembly Schedule Notice",
+                  "Due to the prophetic impartation service, the General Youth Revival session will begin promptly at 5:30 PM in the Main Auditorium. Please be seated early.",
+                  "urgent",
+                  "#schedule",
+                  "Read Full Notice"
                 )
               }
               className="text-[0.72rem] font-semibold px-2.5 py-1.5 rounded-lg bg-red-50 text-red-800 border border-red-200 hover:bg-red-100 transition-colors cursor-pointer"
             >
-              🚨 Service Schedule Change
+              🚨 Schedule Notice (General Assembly)
             </button>
 
             <button

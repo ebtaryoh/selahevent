@@ -26,14 +26,16 @@ export default async function HomePage({
 }) {
   const params = await searchParams;
   
-  // Read Vercel's IP geolocation headers
+  // Read Vercel's IP geolocation headers for contextual suggestions in city picker
   const headersList = await headers();
   const geoCityHeader = headersList.get("x-vercel-ip-city");
   const geoCity = geoCityHeader ? decodeURIComponent(geoCityHeader) : undefined;
   
-  // Default to geoCity if no city is specified in the URL params
-  const activeCity = params.city ?? geoCity;
-  const queryParams = { ...params, city: activeCity };
+  // Only filter by city if explicitly specified in the query parameters
+  const queryParams = { ...params };
+  if (!params.city) {
+    delete queryParams.city;
+  }
 
   const publicEvents = await getAllPublicEvents(queryParams);
   const session = await getOrgSession();

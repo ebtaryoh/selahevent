@@ -13,7 +13,7 @@ export function EventSearch({ defaultGeoCity }: { defaultGeoCity?: string }) {
   const [isPending, startTransition] = useTransition();
 
   const [query, setQuery] = useState(searchParams.get("query") || "");
-  const [city, setCity] = useState(searchParams.get("city") ?? defaultGeoCity ?? "");
+  const [city, setCity] = useState(searchParams.get("city") || "");
   const [category, setCategory] = useState(searchParams.get("category") || "");
 
   useEffect(() => {
@@ -83,7 +83,7 @@ export function EventSearch({ defaultGeoCity }: { defaultGeoCity?: string }) {
             onChange={(e) => setCity(e.target.value)}
             className="w-full appearance-none bg-transparent pr-5 text-[0.9rem] font-medium text-white/90 focus:outline-none cursor-pointer"
           >
-            <option value="" className="bg-[#101012] text-white">Pick a city</option>
+            <option value="" className="bg-[#101012] text-white">All Cities</option>
             {cities.map((c) => (
               <option key={c} value={c} className="bg-[#101012] text-white">{c}</option>
             ))}

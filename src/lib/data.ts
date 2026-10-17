@@ -404,8 +404,8 @@ export async function getAllPublicEvents(filters?: { query?: string; city?: stri
     );
   }
 
-  if (filters?.city) {
-    conditions.push(eq(events.city, filters.city));
+  if (filters?.city && filters.city.trim() !== "" && filters.city.toLowerCase() !== "all") {
+    conditions.push(ilike(events.city, `%${filters.city.trim()}%`));
   }
 
   if (filters?.category) {
