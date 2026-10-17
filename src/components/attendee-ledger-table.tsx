@@ -53,6 +53,8 @@ export interface RegistrationItem {
   accommodationType?: string | null;
   transport?: boolean | null;
   dietary?: string | null;
+  emergencyName?: string | null;
+  emergencyPhone?: string | null;
   amount: number;
   customAnswers?: Record<string, any> | null;
   createdAt: Date | string;
@@ -461,6 +463,21 @@ export function AttendeeLedgerTable({
                             ]
                               .filter(Boolean)
                               .join(" · ")}
+                          </div>
+                        )}
+                        {(reg.emergencyName || reg.emergencyPhone) && (
+                          <div className="mt-1.5 flex items-center gap-1.5 text-[0.7rem] text-warm-600 bg-warm-100/60 dark:bg-warm-900/40 border border-warm-200 dark:border-warm-800 px-2 py-0.5 rounded-md w-fit">
+                            <span className="font-semibold text-brass-deep dark:text-brass">Emergency:</span>
+                            <span>{reg.emergencyName || "Guardian"}</span>
+                            {reg.emergencyPhone && (
+                              <a
+                                href={`tel:${reg.emergencyPhone.replace(/[^0-9+]/g, "")}`}
+                                className="text-brass-deep dark:text-brass hover:underline ml-0.5 font-mono"
+                                title="Call emergency contact"
+                              >
+                                {reg.emergencyPhone}
+                              </a>
+                            )}
                           </div>
                         )}
                       </td>
