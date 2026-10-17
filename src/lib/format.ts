@@ -171,3 +171,26 @@ export function parseVideoEmbedUrl(url: string): string | null {
   
   return null;
 }
+
+export function getRequestOrigin(request?: Request): string {
+  if (request) {
+    const host = request.headers.get("x-forwarded-host") || request.headers.get("host");
+    const proto = request.headers.get("x-forwarded-proto") || "https";
+    if (host && !host.includes("localhost")) {
+      return `${proto}://${host}`;
+    }
+  }
+  const envUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (envUrl && !envUrl.includes("localhost")) {
+    return envUrl;
+  }
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
+  return process.env.NODE_ENV === "production"
+    ? "https://selahevent.vercel.app"
+    : (envUrl || "http://localhost:3000");
+}

@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { events, organizations, payments, registrations, ticketTypes, attendees, ticketReservations, ministryFollowers, eventProducts, orderItems, volunteers } from "@/db/schema";
 import { sendTicketConfirmation } from "@/lib/email";
 import { enforceRateLimit, getClientAddress, rateLimitHeaders } from "@/lib/rate-limit";
+import { getRequestOrigin } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
 
@@ -691,7 +692,7 @@ export async function POST(request: Request) {
               },
             ],
           },
-          callback_url: (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000") + "/e/" + event.slug + "/wallet",
+          callback_url: `${getRequestOrigin(request)}/e/${event.slug}/wallet`,
         }),
       });
 

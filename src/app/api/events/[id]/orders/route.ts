@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { events, organizations, eventProducts, orderItems, payments } from "@/db/schema";
 import { eq, and, desc, inArray } from "drizzle-orm";
 import { getOrganization, getCurrentUser } from "@/lib/data";
+import { getRequestOrigin } from "@/lib/format";
 
 function randomToken(len = 8) {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -226,8 +227,7 @@ export async function POST(
       }
 
       const callbackUrl =
-        (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000") +
-        `/e/${event.slug}/orders/confirmed?reference=${encodeURIComponent(paymentRef)}&orderCode=${encodeURIComponent(orderCode)}`;
+        `${getRequestOrigin(req)}/e/${event.slug}/orders/confirmed?reference=${encodeURIComponent(paymentRef)}&orderCode=${encodeURIComponent(orderCode)}`;
 
       const paystackRes = await fetch("https://api.paystack.co/transaction/initialize", {
         signal: AbortSignal.timeout(15000),

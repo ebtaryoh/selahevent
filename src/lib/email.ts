@@ -15,7 +15,7 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const SENDER_EMAIL = process.env.GMAIL_USER || "events@selah-app.local";
+const SENDER_EMAIL = process.env.GMAIL_USER || "events@selahevent.vercel.app";
 const SENDER_NAME = "Selah Events";
 
 export async function sendEmailOTP(email: string, code: string) {
@@ -45,7 +45,7 @@ export async function sendEventCreatedNotification(email: string, eventName: str
     return { error: "Email configuration missing" };
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || "https://selahevent.vercel.app";
   const eventUrl = `${baseUrl}/dashboard/events/${eventId}`;
 
   try {

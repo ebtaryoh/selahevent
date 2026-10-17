@@ -22,6 +22,9 @@ export async function generateScannerLink(eventId: string) {
     .update(eventId)
     .digest("hex");
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SITE_URL && !process.env.NEXT_PUBLIC_SITE_URL.includes("localhost")
+      ? process.env.NEXT_PUBLIC_SITE_URL
+      : (process.env.NODE_ENV === "production" ? "https://selahevent.vercel.app" : (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"));
   return `${baseUrl}/e/${event.slug}/scan?token=${token}`;
 }
