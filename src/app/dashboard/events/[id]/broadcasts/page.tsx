@@ -58,6 +58,8 @@ export default async function EventBroadcastsPage({
 
       <DashboardBroadcastsManager
         eventId={event.id}
+        eventSlug={event.slug}
+        eventTitle={event.title}
         initialAnnouncements={announcements as any}
       />
     </div>

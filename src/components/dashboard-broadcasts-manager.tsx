@@ -15,6 +15,8 @@ import {
   Clock,
   ExternalLink,
   Loader2,
+  MessageSquare,
+  Radio,
 } from "lucide-react";
 
 interface Announcement {
@@ -32,10 +34,17 @@ interface Announcement {
 
 interface Props {
   eventId: string;
+  eventSlug?: string;
+  eventTitle?: string;
   initialAnnouncements: Announcement[];
 }
 
-export function DashboardBroadcastsManager({ eventId, initialAnnouncements }: Props) {
+export function DashboardBroadcastsManager({
+  eventId,
+  eventSlug,
+  eventTitle,
+  initialAnnouncements,
+}: Props) {
   const [announcements, setAnnouncements] = useState<Announcement[]>(initialAnnouncements);
 
   const [form, setForm] = useState({
@@ -155,6 +164,30 @@ export function DashboardBroadcastsManager({ eventId, initialAnnouncements }: Pr
 
   return (
     <div className="space-y-8">
+      {/* Attendee Visibility Channels Guide */}
+      <div className="rounded-2xl bg-amber-500/10 border border-amber-500/25 p-5 text-xs text-amber-950 flex flex-col sm:flex-row items-start gap-3.5 shadow-xs">
+        <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-900 shrink-0 mt-0.5">
+          <Radio size={18} className="animate-pulse" />
+        </div>
+        <div className="flex-1">
+          <h4 className="font-display font-bold text-sm text-ink">How Attendees See Your Broadcasts</h4>
+          <div className="mt-2 grid grid-cols-1 md:grid-cols-3 gap-3 text-warm-700 leading-relaxed">
+            <div className="bg-white/80 p-3 rounded-xl border border-amber-500/15">
+              <span className="font-bold text-ink block mb-0.5">📱 1. Digital Pass & Screen</span>
+              <span>Automatically pins to the very top of each attendee&apos;s digital ticket pass (<span className="font-mono text-amber-900 bg-amber-100/80 px-1 py-0.5 rounded text-[0.68rem]">/my-tickets/[code]</span>).</span>
+            </div>
+            <div className="bg-white/80 p-3 rounded-xl border border-amber-500/15">
+              <span className="font-bold text-ink block mb-0.5">🌐 2. Public Event Website</span>
+              <span>Flash alert banner pins right to the top of the event home page (<span className="font-mono text-amber-900 bg-amber-100/80 px-1 py-0.5 rounded text-[0.68rem]">/e/{eventSlug || "slug"}</span>).</span>
+            </div>
+            <div className="bg-white/80 p-3 rounded-xl border border-amber-500/15">
+              <span className="font-bold text-ink block mb-0.5">💬 3. Church WhatsApp Groups</span>
+              <span>Click the green <strong className="text-emerald-800">Broadcast to WhatsApp</strong> button on any announcement below to blast it to church groups.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Broadcast Publisher */}
       <div className="card p-7 border border-brass/35 bg-paper shadow-sm rounded-2xl">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-brass-deep">
@@ -403,7 +436,20 @@ export function DashboardBroadcastsManager({ eventId, initialAnnouncements }: Pr
                   )}
                 </div>
 
-                <div className="flex items-center gap-2 self-end md:self-center shrink-0">
+                <div className="flex flex-wrap items-center gap-2 self-end md:self-center shrink-0">
+                  <a
+                    href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
+                      `📢 *${a.title}*\n\n${a.message}${a.actionUrl ? `\n\n🔗 ${a.actionLabel || 'Details'}: ${a.actionUrl}` : ''}\n\n📍 *Event:* ${eventTitle || "Selah Gathering"}\n🎟️ *Passes & Live Updates:* ${(typeof window !== "undefined" ? window.location.origin : "https://selahevent.vercel.app")}/e/${eventSlug || ""}`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-800 hover:bg-emerald-500/20 text-xs font-semibold border border-emerald-500/30 transition-colors"
+                    title="Share this announcement to church WhatsApp group or broadcast list"
+                  >
+                    <MessageSquare size={13} className="text-emerald-600" />
+                    <span>Share to WhatsApp</span>
+                  </a>
+
                   <button
                     type="button"
                     onClick={() => handleTogglePin(a)}

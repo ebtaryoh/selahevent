@@ -9,6 +9,8 @@ import Image from "next/image";
 import { CalendarDays, MessageSquare, Utensils } from "lucide-react";
 import { generateWhatsAppTicketLink } from "@/lib/whatsapp";
 import { SaveTicketImageButton } from "@/components/save-ticket-image-button";
+import { getEventAnnouncements } from "@/lib/data";
+import { PastoralBroadcastBanner } from "@/components/pastoral-broadcast-banner";
 
 export const metadata: Metadata = {
   title: "My Ticket | Selah",
@@ -39,6 +41,7 @@ export default async function TicketViewPage({
   }
 
   const { registration, event, ticketType } = results[0];
+  const announcements = await getEventAnnouncements(event.id, true);
   const qrCodeUrl = `https://quickchart.io/qr?text=${encodeURIComponent(registration.ticketCode)}&size=300&margin=1`;
 
   return (
@@ -47,7 +50,15 @@ export default async function TicketViewPage({
         <SelahMark />
       </div>
 
-      <div className="w-full max-w-md overflow-hidden rounded-[24px] bg-white shadow-sm border border-[rgba(22,19,17,0.1)]">
+      <div className="w-full max-w-md space-y-4">
+        {announcements && announcements.length > 0 && (
+          <PastoralBroadcastBanner
+            announcements={announcements as any}
+            className="rounded-[20px] shadow-sm overflow-hidden"
+          />
+        )}
+
+        <div className="overflow-hidden rounded-[24px] bg-white shadow-sm border border-[rgba(22,19,17,0.1)]">
         {/* Header Image */}
         <div className="relative h-48 w-full overflow-hidden bg-warm-200 flex items-center justify-center">
           {event.coverImage ? (
@@ -115,65 +126,68 @@ export default async function TicketViewPage({
             )}
           </div>
 
-          <hr className="my-8 border-dashed border-[rgba(22,19,17,0.15)]" />
+          <div className="px-8 pb-8">
+            <hr className="mb-6 border-dashed border-[rgba(22,19,17,0.15)]" />
 
-          <div className="grid grid-cols-2 gap-6 text-left">
-            <div>
-              <p className="text-[0.75rem] font-medium text-warm-400 uppercase tracking-wider">Date & Time</p>
-              <p className="mt-1.5 text-[0.95rem] font-medium text-ink">{formatDate(event.startsAt)}</p>
-              <p className="mt-0.5 text-[0.875rem] text-warm-500">{formatTime(event.startsAt)}</p>
+            <div className="grid grid-cols-2 gap-6 text-left">
+              <div>
+                <p className="text-[0.75rem] font-medium text-warm-400 uppercase tracking-wider">Date & Time</p>
+                <p className="mt-1.5 text-[0.95rem] font-medium text-ink">{formatDate(event.startsAt)}</p>
+                <p className="mt-0.5 text-[0.875rem] text-warm-500">{formatTime(event.startsAt)}</p>
+              </div>
+              <div>
+                <p className="text-[0.75rem] font-medium text-warm-400 uppercase tracking-wider">Location</p>
+                <p className="mt-1.5 text-[0.95rem] font-medium text-ink line-clamp-2">{event.venueName || "TBA"}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-[0.75rem] font-medium text-warm-400 uppercase tracking-wider">Location</p>
-              <p className="mt-1.5 text-[0.95rem] font-medium text-ink line-clamp-2">{event.venueName || "TBA"}</p>
+            
+            <div className="mt-8 flex flex-col gap-3">
+              <a 
+                href={`/api/tickets/${registration.ticketCode}/pdf`}
+                download
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink px-6 py-3.5 text-[0.9rem] font-semibold text-parchment transition-all hover:bg-brass-deep hover:text-white"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                Download PDF Ticket
+              </a>
+
+              <SaveTicketImageButton
+                ticket={{
+                  eventTitle: event.title,
+                  attendeeName: `${registration.firstName} ${registration.lastName}`,
+                  ticketCode: registration.ticketCode,
+                  ticketTier: ticketType?.name || registration.attendeeType,
+                  qrCodeUrl,
+                  dateStr: `${formatDate(event.startsAt)} · ${formatTime(event.startsAt)}`,
+                  venueName: event.venueName || event.city,
+                  tableNumber: registration.tableNumber,
+                  seatNumber: registration.seatNumber,
+                  accommodationType: registration.accommodationType,
+                }}
+              />
+
+              <a
+                href={generateWhatsAppTicketLink({
+                  phone: registration.phone,
+                  eventTitle: event.title,
+                  attendeeName: `${registration.firstName} ${registration.lastName}`,
+                  ticketCode: registration.ticketCode,
+                  ticketTier: ticketType?.name || registration.attendeeType,
+                  tableNumber: registration.tableNumber,
+                  seatNumber: registration.seatNumber,
+                  venueName: event.venueName,
+                  eventDate: formatDate(event.startsAt),
+                  passUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://selahevent.vercel.app'}/my-tickets/${registration.ticketCode}`,
+                })}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-emerald-600/30 bg-emerald-500/10 px-6 py-3.5 text-[0.9rem] font-semibold text-emerald-800 transition-all hover:bg-emerald-500/20"
+              >
+                <MessageSquare size={17} className="text-emerald-600" />
+                Save Pass to WhatsApp
+              </a>
             </div>
           </div>
-          
-          <div className="mt-10 flex flex-col gap-3">
-            <a 
-              href={`/api/tickets/${registration.ticketCode}/pdf`}
-              download
-              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-ink px-6 py-3.5 text-[0.9rem] font-semibold text-parchment transition-all hover:bg-brass-deep hover:text-white"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-              Download PDF Ticket
-            </a>
-
-            <SaveTicketImageButton
-              ticket={{
-                eventTitle: event.title,
-                attendeeName: `${registration.firstName} ${registration.lastName}`,
-                ticketCode: registration.ticketCode,
-                ticketTier: ticketType?.name || registration.attendeeType,
-                qrCodeUrl,
-                dateStr: `${formatDate(event.startsAt)} · ${formatTime(event.startsAt)}`,
-                venueName: event.venueName || event.city,
-                tableNumber: registration.tableNumber,
-                seatNumber: registration.seatNumber,
-                accommodationType: registration.accommodationType,
-              }}
-            />
-
-            <a
-              href={generateWhatsAppTicketLink({
-                phone: registration.phone,
-                eventTitle: event.title,
-                attendeeName: `${registration.firstName} ${registration.lastName}`,
-                ticketCode: registration.ticketCode,
-                ticketTier: ticketType?.name || registration.attendeeType,
-                tableNumber: registration.tableNumber,
-                seatNumber: registration.seatNumber,
-                venueName: event.venueName,
-                eventDate: formatDate(event.startsAt),
-                passUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://selahevent.vercel.app'}/my-tickets/${registration.ticketCode}`,
-              })}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-emerald-600/30 bg-emerald-500/10 px-6 py-3.5 text-[0.9rem] font-semibold text-emerald-800 transition-all hover:bg-emerald-500/20"
-            >
-              <MessageSquare size={17} className="text-emerald-600" />
-              Save Pass to WhatsApp
-            </a>
         </div>
       </div>
     </div>

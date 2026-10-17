@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { events, eventAnnouncements } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { getOrganization, getCurrentUser } from "@/lib/data";
+import { revalidatePath } from "next/cache";
 
 export async function GET(
   req: Request,
@@ -30,11 +31,11 @@ export async function POST(
   try {
     const { id: eventId } = await params;
     const org = await getOrganization();
-    const user = await getCurrentUser();
-
-    if (!org || !user) {
-      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
+    if (!org) {
+      return NextResponse.json({ ok: false, error: "Unauthorized: Please sign in as an organizer." }, { status: 401 });
     }
+
+    const user = await getCurrentUser().catch(() => null);
 
     const event = await db
       .select()
@@ -44,7 +45,7 @@ export async function POST(
       .then((r) => r[0]);
 
     if (!event) {
-      return NextResponse.json({ ok: false, error: "Event not found" }, { status: 404 });
+      return NextResponse.json({ ok: false, error: "Event not found or unauthorized" }, { status: 404 });
     }
 
     const body = await req.json();
@@ -53,6 +54,8 @@ export async function POST(
     if (!title || !message) {
       return NextResponse.json({ ok: false, error: "Title and message are required" }, { status: 400 });
     }
+
+    const authorName = user?.name || org.name || "Pastoral Secretariat";
 
     const [created] = await db
       .insert(eventAnnouncements)
@@ -63,15 +66,20 @@ export async function POST(
         type,
         isPinned: Boolean(isPinned),
         isActive: true,
-        authorName: user.name || "Pastoral Secretariat",
+        authorName,
         actionUrl: actionUrl?.trim() || null,
         actionLabel: actionLabel?.trim() || null,
       })
       .returning();
 
+    revalidatePath(`/e/${event.slug}`);
+    revalidatePath(`/e/${event.slug}/wallet`);
+    revalidatePath(`/my-tickets`);
+    revalidatePath(`/dashboard/events/${eventId}/broadcasts`);
+
     return NextResponse.json({ ok: true, announcement: created });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Failed to create announcement:", error);
-    return NextResponse.json({ ok: false, error: "Failed to publish announcement" }, { status: 500 });
+    return NextResponse.json({ ok: false, error: error?.message || "Failed to publish announcement" }, { status: 500 });
   }
 }
