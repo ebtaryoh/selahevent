@@ -146,7 +146,6 @@ export async function POST(
             fulfillmentStatus: "collected",
             collectedAt: new Date(),
             collectedByStaffName: staffName,
-            updatedAt: new Date(),
           })
           .where(eq(orderItems.id, productItem.id));
 
