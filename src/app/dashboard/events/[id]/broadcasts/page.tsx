@@ -4,7 +4,7 @@ import { ArrowLeft, Megaphone, Radio } from "lucide-react";
 import { db } from "@/db";
 import { events } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
-import { getOrganization, getEventAnnouncements } from "@/lib/data";
+import { getOrganization, getEventById, getEventAnnouncements } from "@/lib/data";
 import { DashboardBroadcastsManager } from "@/components/dashboard-broadcasts-manager";
 
 export const dynamic = "force-dynamic";
@@ -18,12 +18,7 @@ export default async function EventBroadcastsPage({
   if (!org) return notFound();
 
   const { id } = await params;
-  const event = await db
-    .select()
-    .from(events)
-    .where(and(eq(events.id, id), eq(events.organizationId, org.id)))
-    .limit(1)
-    .then((r) => r[0]);
+  const event = await getEventById(id, org.id);
 
   if (!event) return notFound();
 

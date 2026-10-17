@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 import { SelahMark } from "@/components/logo";
 import { formatDate, formatTime } from "@/lib/format";
 import Image from "next/image";
-import { CalendarDays, MessageSquare, Utensils } from "lucide-react";
+import { CalendarDays, MessageSquare, Utensils, AlertTriangle } from "lucide-react";
 import { generateWhatsAppTicketLink } from "@/lib/whatsapp";
 import { SaveTicketImageButton } from "@/components/save-ticket-image-button";
 import { getEventAnnouncements } from "@/lib/data";
@@ -86,7 +86,7 @@ export default async function TicketViewPage({
 
         {/* Ticket Details */}
         <div className="p-8 pb-10 text-center">
-          <div className="mb-8">
+          <div className="mb-6">
             <p className="text-[0.8125rem] font-medium text-warm-500 uppercase tracking-wider">
               {ticketType.name}
             </p>
@@ -96,8 +96,33 @@ export default async function TicketViewPage({
             <p className="mt-2 text-[0.95rem] text-warm-500">{registration.email}</p>
           </div>
 
+          {/* Event Status Alert: Cancelled / Postponed Notice */}
+          {event.status === "cancelled" && (
+            <div className="mb-6 rounded-2xl border border-red-500/40 bg-red-500/10 p-4 text-left shadow-xs">
+              <div className="flex items-center gap-2 font-bold text-red-800 text-xs sm:text-sm">
+                <AlertTriangle size={16} className="text-red-600 shrink-0" />
+                <span>Event Cancelled by Organizers</span>
+              </div>
+              <p className="mt-1.5 text-xs text-red-700 leading-relaxed">
+                {event.cancellationReason || "This gathering has been officially cancelled. Your pass is deactivated and check-in scanning is closed."}
+              </p>
+            </div>
+          )}
+
+          {event.status === "postponed" && (
+            <div className="mb-6 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-left shadow-xs">
+              <div className="flex items-center gap-2 font-bold text-amber-800 text-xs sm:text-sm">
+                <AlertTriangle size={16} className="text-amber-600 shrink-0" />
+                <span>Event Postponed</span>
+              </div>
+              <p className="mt-1.5 text-xs text-amber-700 leading-relaxed">
+                {event.cancellationReason || "This program has been postponed. Your registration remains reserved while new dates are scheduled."}
+              </p>
+            </div>
+          )}
+
           <div className="mx-auto flex justify-center">
-            <div className="rounded-[16px] border-[2px] border-[rgba(22,19,17,0.1)] p-4">
+            <div className={`rounded-[16px] border-[2px] p-4 ${event.status === "cancelled" ? "border-red-300 opacity-60 bg-red-50/50" : "border-[rgba(22,19,17,0.1)]"}`}>
               <img src={qrCodeUrl} alt="QR Code" className="h-48 w-48 rounded-[8px]" />
             </div>
           </div>

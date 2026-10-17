@@ -108,17 +108,30 @@ export async function getEventBySlug(slug: string) {
     });
 }
 
-export async function getEventById(id: string) {
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export async function getEventById(id: string, customOrgId?: string) {
   if (!id || id === "undefined") return null;
-  const session = await getOrgSession();
-  if (!session) return null;
+  const orgId = customOrgId || (await getOrgSession())?.orgId;
+  if (!orgId) return null;
   await ensureSeed();
-  return db
-    .select()
-    .from(events)
-    .where(and(eq(events.id, id), eq(events.organizationId, session.orgId)))
-    .limit(1)
-    .then((r) => r[0] ?? null);
+
+  const isUuid = UUID_REGEX.test(id);
+  const condition = isUuid
+    ? and(eq(events.id, id), eq(events.organizationId, orgId))
+    : and(eq(events.slug, id), eq(events.organizationId, orgId));
+
+  try {
+    return await db
+      .select()
+      .from(events)
+      .where(condition)
+      .limit(1)
+      .then((r) => r[0] ?? null);
+  } catch (err) {
+    console.error("[getEventById error]:", err);
+    return null;
+  }
 }
 
 export async function getTickets(eventId: string) {
@@ -279,80 +292,88 @@ export type EventStats = {
 };
 
 export async function getEventStats(eventId: string): Promise<EventStats> {
-  if (!eventId || eventId === "undefined") {
-    return {
-      registered: 0,
-      checkedIn: 0,
-      revenue: 0,
-      pendingPayments: 0,
-      accommodation: 0,
-      transport: 0,
-      volunteerCount: 0,
-      confirmedVolunteers: 0,
-      openTasks: 0,
-      sessionCount: 0,
-    };
-  }
-  await ensureSeed();
-
-  const [regAgg] = await db
-    .select({
-      registered: count(),
-      revenue: sum(registrations.amount),
-      accommodation: sql<number>`coalesce(sum(case when ${registrations.accommodation} then 1 else 0 end), 0)`,
-      transport: sql<number>`coalesce(sum(case when ${registrations.transport} then 1 else 0 end), 0)`,
-    })
-    .from(registrations)
-    .where(eq(registrations.eventId, eventId));
-
-  const [checkAgg] = await db
-    .select({ checkedIn: count() })
-    .from(checkIns)
-    .where(eq(checkIns.eventId, eventId));
-
-  const [payAgg] = await db
-    .select({ pending: count() })
-    .from(payments)
-    .where(
-      and(eq(payments.eventId, eventId), eq(payments.status, "pending"))
-    );
-
-  const [volAgg] = await db
-    .select({ total: count() })
-    .from(volunteers)
-    .where(eq(volunteers.eventId, eventId));
-
-  const [volConfirmed] = await db
-    .select({ total: count() })
-    .from(volunteers)
-    .where(
-      and(eq(volunteers.eventId, eventId), eq(volunteers.status, "confirmed"))
-    );
-
-  const [taskAgg] = await db
-    .select({ open: count() })
-    .from(tasks)
-    .where(
-      and(eq(tasks.eventId, eventId), eq(tasks.status, "not_started"))
-    );
-
-  const [sessionAgg] = await db
-    .select({ total: count() })
-    .from(sessions)
-    .where(eq(sessions.eventId, eventId));
-
-  return {
-    registered: Number(regAgg?.registered ?? 0),
-    checkedIn: Number(checkAgg?.checkedIn ?? 0),
-    revenue: Number(regAgg?.revenue ?? 0),
-    pendingPayments: Number(payAgg?.pending ?? 0),
-    accommodation: Number(regAgg?.accommodation ?? 0),
-    transport: Number(regAgg?.transport ?? 0),
-    volunteerCount: Number(volAgg?.total ?? 0),
-    confirmedVolunteers: Number(volConfirmed?.total ?? 0),
-    openTasks: Number(taskAgg?.open ?? 0),
-    sessionCount: Number(sessionAgg?.total ?? 0),
+  const fallbackStats: EventStats = {
+    registered: 0,
+    checkedIn: 0,
+    revenue: 0,
+    pendingPayments: 0,
+    accommodation: 0,
+    transport: 0,
+    volunteerCount: 0,
+    confirmedVolunteers: 0,
+    openTasks: 0,
+    sessionCount: 0,
   };
+
+  if (!eventId || eventId === "undefined" || !UUID_REGEX.test(eventId)) {
+    return fallbackStats;
+  }
+
+  try {
+    await ensureSeed();
+
+    const [regAgg] = await db
+      .select({
+        registered: count(),
+        revenue: sum(registrations.amount),
+        accommodation: sql<number>`coalesce(sum(case when ${registrations.accommodation} then 1 else 0 end), 0)`,
+        transport: sql<number>`coalesce(sum(case when ${registrations.transport} then 1 else 0 end), 0)`,
+      })
+      .from(registrations)
+      .where(eq(registrations.eventId, eventId));
+
+    const [checkAgg] = await db
+      .select({ checkedIn: count() })
+      .from(checkIns)
+      .where(eq(checkIns.eventId, eventId));
+
+    const [payAgg] = await db
+      .select({ pending: count() })
+      .from(payments)
+      .where(
+        and(eq(payments.eventId, eventId), eq(payments.status, "pending"))
+      );
+
+    const [volAgg] = await db
+      .select({ total: count() })
+      .from(volunteers)
+      .where(eq(volunteers.eventId, eventId));
+
+    const [volConfirmed] = await db
+      .select({ total: count() })
+      .from(volunteers)
+      .where(
+        and(eq(volunteers.eventId, eventId), eq(volunteers.status, "confirmed"))
+      );
+
+    const [taskAgg] = await db
+      .select({ open: count() })
+      .from(tasks)
+      .where(
+        and(eq(tasks.eventId, eventId), eq(tasks.status, "not_started"))
+      );
+
+    const [sessionAgg] = await db
+      .select({ total: count() })
+      .from(sessions)
+      .where(eq(sessions.eventId, eventId));
+
+    return {
+      registered: Number(regAgg?.registered ?? 0),
+      checkedIn: Number(checkAgg?.checkedIn ?? 0),
+      revenue: Number(regAgg?.revenue ?? 0),
+      pendingPayments: Number(payAgg?.pending ?? 0),
+      accommodation: Number(regAgg?.accommodation ?? 0),
+      transport: Number(regAgg?.transport ?? 0),
+      volunteerCount: Number(volAgg?.total ?? 0),
+      confirmedVolunteers: Number(volConfirmed?.total ?? 0),
+      openTasks: Number(taskAgg?.open ?? 0),
+      sessionCount: Number(sessionAgg?.total ?? 0),
+    };
+  } catch (err) {
+    console.error("[getEventStats error]:", err);
+    return fallbackStats;
+  }
 }
 
 export async function getRecentCheckIns(eventId: string, limit = 12) {
@@ -533,34 +554,53 @@ export async function getEventTicketDistribution(eventId: string) {
 }
 
 export async function getEventRegistrationHistory(eventId: string, days = 14) {
-  await ensureSeed();
-
-  const rawHistory = await db
-    .select({
-      date: sql<string>`DATE(${registrations.createdAt})::text`,
-      count: sql<number>`count(*)::int`,
-    })
-    .from(registrations)
-    .where(eq(registrations.eventId, eventId))
-    .groupBy(sql`DATE(${registrations.createdAt})`)
-    .orderBy(sql`DATE(${registrations.createdAt})`);
-
-  // Fill in missing days
-  const history = [];
+  const fallbackHistory = [];
   const now = new Date();
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().split("T")[0]; // YYYY-MM-DD
-    
-    const found = rawHistory.find(h => h.date === dateStr);
-    history.push({
-      date: dateStr,
-      count: found ? found.count : 0
+    fallbackHistory.push({
+      date: d.toISOString().split("T")[0],
+      count: 0,
     });
   }
 
-  return history;
+  if (!eventId || !UUID_REGEX.test(eventId)) {
+    return fallbackHistory;
+  }
+
+  try {
+    await ensureSeed();
+
+    const rawHistory = await db
+      .select({
+        date: sql<string>`DATE(${registrations.createdAt})::text`,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(registrations)
+      .where(eq(registrations.eventId, eventId))
+      .groupBy(sql`DATE(${registrations.createdAt})`)
+      .orderBy(sql`DATE(${registrations.createdAt})`);
+
+    // Fill in missing days
+    const history = [];
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split("T")[0]; // YYYY-MM-DD
+      
+      const found = rawHistory.find(h => h.date === dateStr);
+      history.push({
+        date: dateStr,
+        count: found ? found.count : 0
+      });
+    }
+
+    return history;
+  } catch (err) {
+    console.error("[getEventRegistrationHistory error]:", err);
+    return fallbackHistory;
+  }
 }
 
 /* ------------------------------------------------------------------ */
