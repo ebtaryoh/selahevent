@@ -92,6 +92,8 @@ export type EventSummary = {
   collectGender?: boolean;
   collectAgeBracket?: boolean;
   collectOccupation?: boolean;
+  callForVolunteers?: boolean;
+  volunteerUnits?: string[] | null;
 };
 
 type FormState = {
@@ -110,6 +112,9 @@ type FormState = {
   accommodation: boolean;
   accommodationPreference: "none" | "free" | "paid";
   transport: boolean;
+  isVolunteer: boolean;
+  volunteerUnit: string;
+  volunteerNotes: string;
   dietary: string;
   emergencyName: string;
   emergencyPhone: string;
@@ -134,6 +139,9 @@ const initial = (firstTicketId: string): FormState => ({
   accommodation: false,
   accommodationPreference: "none",
   transport: false,
+  isVolunteer: false,
+  volunteerUnit: "",
+  volunteerNotes: "",
   dietary: "",
   emergencyName: "",
   emergencyPhone: "",
@@ -181,6 +189,8 @@ export function RegistrationForm({
     paymentRequired: boolean;
     paymentMessage: string | null;
     status?: string;
+    isVolunteer?: boolean;
+    volunteerUnit?: string | null;
     allTickets?: Array<{
       code: string;
       ticketCode: string;
@@ -188,6 +198,8 @@ export function RegistrationForm({
       ticketName: string;
       email?: string;
       relationship?: string | null;
+      isVolunteer?: boolean;
+      volunteerUnit?: string | null;
     }>;
   }>(null);
 
@@ -413,6 +425,9 @@ export function RegistrationForm({
           accommodation: form.accommodation,
           accommodationType: form.accommodation ? form.accommodationPreference : "none",
           transport: form.transport,
+          isVolunteer: form.isVolunteer,
+          volunteerUnit: form.isVolunteer ? form.volunteerUnit : null,
+          volunteerNotes: form.isVolunteer ? form.volunteerNotes : null,
           dietary: form.dietary,
           emergencyName: form.emergencyName,
           emergencyPhone: form.emergencyPhone,
@@ -459,6 +474,8 @@ export function RegistrationForm({
         paymentRequired: data.payment.required,
         paymentMessage: data.payment.message,
         status: data.registration.status,
+        isVolunteer: data.registration.isVolunteer,
+        volunteerUnit: data.registration.volunteerUnit,
         allTickets: data.allTickets || [],
       });
 
@@ -1234,6 +1251,91 @@ export function RegistrationForm({
                   title="I need transport to the venue"
                   body="Pickup points and departure times are shared closer to the event date."
                 />
+
+                {/* Volunteer & Ministry Workforce Calling Section */}
+                {event.callForVolunteers !== false && (
+                  <div className="mt-4 rounded-2xl border border-brass/35 bg-brass/5 p-5 sm:p-6 shadow-sm">
+                    <div className="flex items-start gap-3.5">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brass/20 text-brass border border-brass/30 mt-0.5">
+                        <Sparkles size={18} />
+                      </div>
+                      <div className="flex-1">
+                        <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                          <input
+                            type="checkbox"
+                            checked={form.isVolunteer}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              update("isVolunteer", checked);
+                              if (checked && !form.volunteerUnit) {
+                                const units = event.volunteerUnits && event.volunteerUnits.length > 0 ? event.volunteerUnits : [
+                                  "Ushering & Protocol",
+                                  "Media & Live Stream",
+                                  "Choir & Music",
+                                  "Medical & First Aid",
+                                  "Prayer Intercessors",
+                                  "Sanitation & Venue Prep",
+                                  "Children & Sunday School",
+                                  "Transport & Logistics",
+                                ];
+                                update("volunteerUnit", units[0]);
+                              }
+                            }}
+                            className="h-4 w-4 rounded border-brass text-brass focus:ring-brass"
+                          />
+                          <span className="font-display font-semibold text-ink text-base">
+                            I would like to serve as a Volunteer at this gathering
+                          </span>
+                        </label>
+                        <p className="mt-1 text-xs text-warm-500 leading-relaxed">
+                          Join the church workforce to minister, steward the sanctuary, and serve the brethren. Your gate pass will feature your active volunteer badge.
+                        </p>
+
+                        {form.isVolunteer && (
+                          <div className="mt-4 pt-4 border-t border-brass/20 grid gap-4 sm:grid-cols-2">
+                            <Field label="Choose Ministry Unit / Department" required>
+                              <select
+                                className="input"
+                                value={form.volunteerUnit}
+                                onChange={(e) => update("volunteerUnit", e.target.value)}
+                              >
+                                {(event.volunteerUnits && event.volunteerUnits.length > 0
+                                  ? event.volunteerUnits
+                                  : [
+                                      "Ushering & Protocol",
+                                      "Media & Live Stream",
+                                      "Choir & Music",
+                                      "Medical & First Aid",
+                                      "Prayer Intercessors",
+                                      "Sanitation & Venue Prep",
+                                      "Children & Sunday School",
+                                      "Transport & Logistics",
+                                    ]
+                                ).map((unit) => (
+                                  <option key={unit} value={unit}>
+                                    {unit}
+                                  </option>
+                                ))}
+                              </select>
+                            </Field>
+
+                            <Field
+                              label="Serving Skills / Prior Experience (Optional)"
+                              hint="e.g. Ushered at regional convention, First Aider, Camera Operator"
+                            >
+                              <input
+                                className="input"
+                                value={form.volunteerNotes}
+                                onChange={(e) => update("volunteerNotes", e.target.value)}
+                                placeholder="e.g. Protocol, Sound tech, Medical"
+                              />
+                            </Field>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ) : null}
@@ -2094,6 +2196,8 @@ function ConfirmationPanel({
     paymentRequired: boolean;
     paymentMessage: string | null;
     status?: string;
+    isVolunteer?: boolean;
+    volunteerUnit?: string | null;
     allTickets?: Array<{
       code: string;
       ticketCode: string;
@@ -2101,6 +2205,8 @@ function ConfirmationPanel({
       ticketName: string;
       email?: string;
       relationship?: string | null;
+      isVolunteer?: boolean;
+      volunteerUnit?: string | null;
     }>;
   };
   email: string;
@@ -2154,8 +2260,16 @@ function ConfirmationPanel({
 
         <div className="grid gap-0 md:grid-cols-[1fr_auto]">
           <div className="px-7 py-9 sm:px-10">
-            <div className="eyebrow text-[0.585rem] text-warm-400">
-              Digital ticket
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="eyebrow text-[0.585rem] text-warm-400">
+                Digital ticket
+              </span>
+              {confirmation.isVolunteer && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/20 border border-amber-500/40 px-2.5 py-0.5 text-[0.7rem] font-bold text-amber-500">
+                  <Sparkles size={11} className="text-amber-400" />
+                  VOLUNTEER · {confirmation.volunteerUnit || "Ministry Team"}
+                </span>
+              )}
             </div>
             <h3 className="font-display mt-3 text-[1.52rem] leading-tight font-semibold text-ink">
               {event.title}
@@ -2165,6 +2279,7 @@ function ConfirmationPanel({
               {[
                 ["Attendee", confirmation.name],
                 ["Ticket", confirmation.ticketName],
+                ...(confirmation.isVolunteer ? [["Ministry Unit", `Volunteer · ${confirmation.volunteerUnit || "Ministry Team"}`]] : []),
                 [
                   "Dates",
                   formatRange(event.startsAt, event.endsAt),
@@ -2700,6 +2815,84 @@ function ExpressRegistrationPanel({
               </span>
             </div>
           </label>
+        </div>
+      )}
+
+      {/* Volunteer Workforce Calling */}
+      {event.callForVolunteers !== false && (
+        <div className="rounded-xl border border-brass/35 bg-brass/5 p-4 space-y-3">
+          <label className="flex items-start gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              className="checkbox mt-0.5"
+              checked={form.isVolunteer}
+              onChange={(e) => {
+                const checked = e.target.checked;
+                update("isVolunteer", checked);
+                if (checked && !form.volunteerUnit) {
+                  const units = event.volunteerUnits && event.volunteerUnits.length > 0 ? event.volunteerUnits : [
+                    "Ushering & Protocol",
+                    "Media & Live Stream",
+                    "Choir & Music",
+                    "Medical & First Aid",
+                    "Prayer Intercessors",
+                    "Sanitation & Venue Prep",
+                    "Children & Sunday School",
+                    "Transport & Logistics",
+                  ];
+                  update("volunteerUnit", units[0]);
+                }
+              }}
+            />
+            <div className="text-xs">
+              <span className="font-semibold text-ink flex items-center gap-1.5">
+                <Sparkles size={13} className="text-brass" />
+                Serve as a Volunteer at this gathering
+              </span>
+              <span className="text-warm-500 block mt-0.5">
+                Join the ministry workforce team. Your pass will display your active volunteer badge.
+              </span>
+            </div>
+          </label>
+
+          {form.isVolunteer && (
+            <div className="pt-3 border-t border-brass/20 grid gap-3 sm:grid-cols-2">
+              <Field label="Ministry Unit / Department" required>
+                <select
+                  className="input !py-1.5 !text-sm"
+                  value={form.volunteerUnit}
+                  onChange={(e) => update("volunteerUnit", e.target.value)}
+                >
+                  {(event.volunteerUnits && event.volunteerUnits.length > 0
+                    ? event.volunteerUnits
+                    : [
+                        "Ushering & Protocol",
+                        "Media & Live Stream",
+                        "Choir & Music",
+                        "Medical & First Aid",
+                        "Prayer Intercessors",
+                        "Sanitation & Venue Prep",
+                        "Children & Sunday School",
+                        "Transport & Logistics",
+                      ]
+                  ).map((unit) => (
+                    <option key={unit} value={unit}>
+                      {unit}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+
+              <Field label="Skills / Notes (Optional)">
+                <input
+                  className="input !py-1.5 !text-sm"
+                  value={form.volunteerNotes}
+                  onChange={(e) => update("volunteerNotes", e.target.value)}
+                  placeholder="e.g. Media tech, Usher"
+                />
+              </Field>
+            </div>
+          )}
         </div>
       )}
 

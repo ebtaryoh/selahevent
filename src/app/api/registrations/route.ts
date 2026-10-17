@@ -2,7 +2,7 @@ import { and, eq, sql, inArray } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { events, organizations, payments, registrations, ticketTypes, attendees, ticketReservations, ministryFollowers, eventProducts, orderItems } from "@/db/schema";
+import { events, organizations, payments, registrations, ticketTypes, attendees, ticketReservations, ministryFollowers, eventProducts, orderItems, volunteers } from "@/db/schema";
 import { sendTicketConfirmation } from "@/lib/email";
 import { enforceRateLimit, getClientAddress, rateLimitHeaders } from "@/lib/rate-limit";
 
@@ -371,6 +371,9 @@ export async function POST(request: Request) {
         accommodation: payload.accommodation === true,
         accommodationType: payload.accommodationType ? String(payload.accommodationType).trim() : (payload.accommodation === true ? "free" : "none"),
         transport: payload.transport === true,
+        isVolunteer: payload.isVolunteer === true,
+        volunteerUnit: payload.volunteerUnit ? String(payload.volunteerUnit).trim() : null,
+        volunteerNotes: payload.volunteerNotes ? String(payload.volunteerNotes).trim() : null,
         dietary: String(payload.dietary ?? "").trim(),
         emergencyName: String(payload.emergencyName ?? "").trim(),
         emergencyPhone: String(payload.emergencyPhone ?? "").trim(),
@@ -390,6 +393,25 @@ export async function POST(request: Request) {
       }).returning();
 
       if (!created) throw new Error("REGISTRATION_INSERT_FAILED");
+
+      // If attendee registered to volunteer, link them to the event's volunteer workforce
+      if (payload.isVolunteer === true && payload.volunteerUnit) {
+        try {
+          await tx.insert(volunteers).values({
+            organizationId: event.organizationId,
+            eventId: event.id,
+            name: `${firstName} ${lastName}`.trim(),
+            department: String(payload.volunteerUnit).trim(),
+            role: "Volunteer",
+            shift: payload.volunteerShift ? String(payload.volunteerShift).trim() : "General Assembly",
+            phone: String(payload.phone ?? "").trim(),
+            status: "confirmed",
+            isLeader: false,
+          });
+        } catch (vErr) {
+          console.warn("[registrations] auto volunteer insert notice:", vErr);
+        }
+      }
 
       // Insert all additional guests
       const createdGuests: Array<{
@@ -717,7 +739,8 @@ export async function POST(request: Request) {
         event.title,
         startsAtFormatted,
         venueFormatted,
-        ticketNameFormatted
+        ticketNameFormatted,
+        result.created.isVolunteer ? result.created.volunteerUnit : null
       );
 
       await sendTicketConfirmation(result.created.email, {
@@ -749,6 +772,8 @@ export async function POST(request: Request) {
         status: result.created.status,
         amount,
         currency: event.currency,
+        isVolunteer: result.created.isVolunteer,
+        volunteerUnit: result.created.volunteerUnit,
       },
       guests: result.createdGuests,
       allTickets: [
@@ -758,6 +783,8 @@ export async function POST(request: Request) {
           name: `${result.created.firstName} ${result.created.lastName}`,
           ticketName: ticket?.name ?? "General admission",
           email: result.created.email,
+          isVolunteer: result.created.isVolunteer,
+          volunteerUnit: result.created.volunteerUnit,
         },
         ...result.createdGuests.map((g) => ({
           code: g.code,

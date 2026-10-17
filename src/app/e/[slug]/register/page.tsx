@@ -184,6 +184,17 @@ export default async function RegisterPage({ params, searchParams }: Params) {
                 collectGender: Boolean(event.collectGender),
                 collectAgeBracket: Boolean(event.collectAgeBracket),
                 collectOccupation: Boolean(event.collectOccupation),
+                callForVolunteers: event.callForVolunteers !== false,
+                volunteerUnits: (event.volunteerUnits as string[]) || [
+                  "Ushering & Protocol",
+                  "Media & Live Stream",
+                  "Choir & Music",
+                  "Medical & First Aid",
+                  "Prayer Intercessors",
+                  "Sanitation & Venue Prep",
+                  "Children & Sunday School",
+                  "Transport & Logistics"
+                ],
               }}
               tickets={tickets}
               products={rawProducts}

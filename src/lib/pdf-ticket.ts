@@ -8,7 +8,8 @@ export async function generateTicketPdf(
   eventTitle: string,
   eventDate: string,
   eventLocation: string,
-  ticketName: string
+  ticketName: string,
+  volunteerUnit?: string | null
 ): Promise<Buffer> {
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([400, 750]);
@@ -83,10 +84,10 @@ export async function generateTicketPdf(
     borderWidth: 1,
   });
 
-  page.drawText("ADMIT ONE", {
+  page.drawText(volunteerUnit ? `VOLUNTEER · ${volunteerUnit.toUpperCase()}` : "ADMIT ONE", {
     x: 55,
     y: height - 330,
-    size: 9,
+    size: 8.5,
     font: fontBold,
     color: rgb(0.886, 0.753, 0.451),
   });

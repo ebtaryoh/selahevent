@@ -58,6 +58,14 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
   const [collectOccupation, setCollectOccupation] = useState<boolean>(
     initialData?.collectOccupation ?? false
   );
+  const [callForVolunteers, setCallForVolunteers] = useState<boolean>(
+    initialData ? (initialData.callForVolunteers !== false) : true
+  );
+  const [volunteerUnitsInput, setVolunteerUnitsInput] = useState<string>(
+    initialData?.volunteerUnits && Array.isArray(initialData.volunteerUnits)
+      ? initialData.volunteerUnits.join(", ")
+      : "Ushering & Protocol, Media & Live Stream, Choir & Music, Medical & First Aid, Prayer Intercessors, Sanitation & Venue Prep, Children & Sunday School, Transport & Logistics"
+  );
   const [selectedEventType, setSelectedEventType] = useState<string>(
     initialData?.eventType || "conference"
   );
@@ -538,6 +546,11 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
         formData.append("collectGender", String(collectGender));
         formData.append("collectAgeBracket", String(collectAgeBracket));
         formData.append("collectOccupation", String(collectOccupation));
+        formData.append("callForVolunteers", String(callForVolunteers));
+        formData.append(
+          "volunteerUnits",
+          JSON.stringify(volunteerUnitsInput.split(",").map((u: string) => u.trim()).filter(Boolean))
+        );
         const res = await updateEvent(initialData.id, formData);
         
         if (res && res.error) {
@@ -579,6 +592,11 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
         formData.append("collectGender", String(collectGender));
         formData.append("collectAgeBracket", String(collectAgeBracket));
         formData.append("collectOccupation", String(collectOccupation));
+        formData.append("callForVolunteers", String(callForVolunteers));
+        formData.append(
+          "volunteerUnits",
+          JSON.stringify(volunteerUnitsInput.split(",").map((u: string) => u.trim()).filter(Boolean))
+        );
         const res = await createEvent(formData);
         
         // createEvent redirects on success, so if it returns it's usually an error
@@ -1466,6 +1484,44 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
               className="input !w-full"
             />
           </div>
+        </div>
+
+        {/* Volunteer Workforce Configuration */}
+        <div className="rounded-[16px] border border-white/10 bg-[rgba(16,16,18,0.5)] backdrop-blur-md p-6 shadow-sm">
+          <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <h2 className="font-display flex items-center gap-2 text-lg font-semibold text-white">
+              <Sparkles size={18} className="text-brass" /> Volunteer Workforce &amp; Ministry Units
+            </h2>
+            <label className="flex items-center gap-2.5 text-xs font-semibold text-white cursor-pointer select-none bg-white/5 border border-white/10 rounded-full px-3.5 py-1.5 hover:bg-white/10 transition-colors">
+              <input
+                type="checkbox"
+                checked={callForVolunteers}
+                onChange={(e) => setCallForVolunteers(e.target.checked)}
+                className="checkbox"
+              />
+              Accept Volunteer Signups
+            </label>
+          </div>
+          <p className="mb-4 text-sm text-white/60">
+            Invite attendees to volunteer for specific ministry departments during registration.
+          </p>
+          {callForVolunteers && (
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-white">
+                Available Ministry Units / Departments (Comma-separated)
+              </label>
+              <input
+                type="text"
+                value={volunteerUnitsInput}
+                onChange={(e) => setVolunteerUnitsInput(e.target.value)}
+                placeholder="Ushering & Protocol, Media & Live Stream, Medical & First Aid, Choir, Prayer"
+                className="input !w-full"
+              />
+              <p className="mt-2 text-xs text-white/40 leading-relaxed">
+                Attendees pick their serving unit on checkout, and their assigned department appears directly on their gate pass and badge.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Media Upload */}

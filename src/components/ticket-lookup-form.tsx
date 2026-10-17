@@ -43,6 +43,9 @@ export interface RetrievedTicket {
   accommodation?: boolean;
   accommodationType?: string | null;
   gender?: string | null;
+  isVolunteer?: boolean;
+  volunteerUnit?: string | null;
+  volunteerNotes?: string | null;
   qrCodeUrl: string;
   passUrl: string;
   pdfUrl: string;
@@ -232,8 +235,14 @@ export function TicketLookupForm({
                       </p>
                     </div>
 
-                    {/* Table / Seating / Dorm Badges */}
+                    {/* Table / Seating / Dorm / Volunteer Badges */}
                     <div className="flex flex-wrap gap-1.5 self-start sm:self-center">
+                      {t.isVolunteer && (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/20 border border-amber-500/40 px-2.5 py-1 text-xs font-bold text-amber-600 dark:text-amber-300 shadow-sm">
+                          <Sparkles size={12} className="text-amber-500 shrink-0" />
+                          VOLUNTEER · {t.volunteerUnit || "Ministry Team"}
+                        </span>
+                      )}
                       {t.tableNumber && (
                         <span className="inline-flex items-center gap-1 rounded-md bg-brass/20 border border-brass/30 px-2.5 py-1 text-xs font-semibold text-brass">
                           <Utensils size={12} />

@@ -94,6 +94,12 @@ export default async function TicketViewPage({
             <p className="font-mono text-lg font-bold tracking-[0.2em] text-ink">
               {registration.ticketCode}
             </p>
+            {registration.isVolunteer && (
+              <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 border border-amber-500/35 px-4 py-1.5 text-xs font-bold text-amber-700">
+                <span>✨</span>
+                <span>VOLUNTEER · {registration.volunteerUnit || "Ministry Team"}</span>
+              </div>
+            )}
             {registration.tableNumber && (
               <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-[rgba(192,138,46,0.15)] border border-[rgba(192,138,46,0.3)] px-3.5 py-1 text-xs font-semibold text-[var(--color-brass-deep)]">
                 <Utensils size={13} />

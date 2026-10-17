@@ -48,7 +48,8 @@ export async function GET(
     event.title,
     startsAtFormatted,
     venueFormatted,
-    ticketType.name
+    ticketType.name,
+    registration.isVolunteer ? registration.volunteerUnit : null
   );
 
   return new NextResponse(pdfBuffer as any, {
