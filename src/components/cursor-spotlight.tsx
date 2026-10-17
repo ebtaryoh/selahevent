@@ -14,13 +14,52 @@ export function CursorSpotlight() {
     const mediaQuery = window.matchMedia("(pointer: fine)");
     if (!mediaQuery.matches) return;
 
+    let isRunning = false;
+
+    const animate = () => {
+      const target = posRef.current;
+      const current = currentPosRef.current;
+
+      const dx = target.x - current.x;
+      const dy = target.y - current.y;
+
+      if (Math.abs(dx) < 0.2 && Math.abs(dy) < 0.2) {
+        current.x = target.x;
+        current.y = target.y;
+        if (spotRef.current) {
+          spotRef.current.style.transform = `translate3d(${current.x}px, ${current.y}px, 0)`;
+        }
+        isRunning = false;
+        rafRef.current = null;
+        return;
+      }
+
+      current.x += dx * 0.2;
+      current.y += dy * 0.2;
+
+      if (spotRef.current) {
+        spotRef.current.style.transform = `translate3d(${current.x}px, ${current.y}px, 0)`;
+      }
+
+      rafRef.current = requestAnimationFrame(animate);
+    };
+
     const handlePointerMove = (e: PointerEvent) => {
       posRef.current = { x: e.clientX, y: e.clientY };
       if (!visible) setVisible(true);
+      if (!isRunning) {
+        isRunning = true;
+        rafRef.current = requestAnimationFrame(animate);
+      }
     };
 
     const handlePointerLeave = () => {
       setVisible(false);
+      isRunning = false;
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
     };
 
     const handlePointerEnter = () => {
@@ -30,23 +69,6 @@ export function CursorSpotlight() {
     window.addEventListener("pointermove", handlePointerMove, { passive: true });
     document.addEventListener("mouseleave", handlePointerLeave);
     document.addEventListener("mouseenter", handlePointerEnter);
-
-    // Smooth animation loop using lerp for sacred fluid trailing light
-    const animate = () => {
-      const target = posRef.current;
-      const current = currentPosRef.current;
-
-      current.x += (target.x - current.x) * 0.18;
-      current.y += (target.y - current.y) * 0.18;
-
-      if (spotRef.current) {
-        spotRef.current.style.transform = `translate3d(${current.x}px, ${current.y}px, 0)`;
-      }
-
-      rafRef.current = requestAnimationFrame(animate);
-    };
-
-    rafRef.current = requestAnimationFrame(animate);
 
     return () => {
       window.removeEventListener("pointermove", handlePointerMove);

@@ -97,7 +97,6 @@
 }
 
 html {
-  scroll-behavior: smooth;
   scroll-padding-top: 5rem;
   -webkit-text-size-adjust: 100%;
 }
@@ -109,7 +108,6 @@ body {
   font-synthesis-weight: none;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  transition: background-color 300ms ease, color 300ms ease;
   background-image: 
     radial-gradient(circle at 15% 50%, rgba(226, 192, 115, 0.03), transparent 25%),
     radial-gradient(circle at 85% 30%, rgba(226, 192, 115, 0.04), transparent 25%);

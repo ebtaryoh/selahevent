@@ -50,13 +50,10 @@ export default async function DashboardPage() {
   ]);
 
   const featured = events.filter((e) => e.status !== "completed").slice(0, 3);
-  const stats = await Promise.all(
-    featured.map((e) => getEventStats(e.id).then((s) => ({ event: e, s })))
-  );
-  
-  const ticketDist = featured.length > 0 
-    ? await getEventTicketDistribution(featured[0].id) 
-    : [];
+  const [stats, ticketDist] = await Promise.all([
+    Promise.all(featured.map((e) => getEventStats(e.id).then((s) => ({ event: e, s })))),
+    featured.length > 0 ? getEventTicketDistribution(featured[0].id) : Promise.resolve([]),
+  ]);
 
   const totalRegistered = stats.reduce((sum, row) => sum + row.s.registered, 0);
   const totalCheckedIn = stats.reduce((sum, row) => sum + row.s.checkedIn, 0);

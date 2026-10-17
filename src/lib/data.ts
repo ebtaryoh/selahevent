@@ -342,51 +342,61 @@ export async function getEventStats(eventId: string): Promise<EventStats> {
   try {
     await ensureSeed();
 
-    const [regAgg] = await db
-      .select({
-        registered: count(),
-        revenue: sum(registrations.amount),
-        accommodation: sql<number>`coalesce(sum(case when ${registrations.accommodation} then 1 else 0 end), 0)`,
-        transport: sql<number>`coalesce(sum(case when ${registrations.transport} then 1 else 0 end), 0)`,
-      })
-      .from(registrations)
-      .where(eq(registrations.eventId, eventId));
+    const [
+      [regAgg],
+      [checkAgg],
+      [payAgg],
+      [volAgg],
+      [volConfirmed],
+      [taskAgg],
+      [sessionAgg],
+    ] = await Promise.all([
+      db
+        .select({
+          registered: count(),
+          revenue: sum(registrations.amount),
+          accommodation: sql<number>`coalesce(sum(case when ${registrations.accommodation} then 1 else 0 end), 0)`,
+          transport: sql<number>`coalesce(sum(case when ${registrations.transport} then 1 else 0 end), 0)`,
+        })
+        .from(registrations)
+        .where(eq(registrations.eventId, eventId)),
 
-    const [checkAgg] = await db
-      .select({ checkedIn: count() })
-      .from(checkIns)
-      .where(eq(checkIns.eventId, eventId));
+      db
+        .select({ checkedIn: count() })
+        .from(checkIns)
+        .where(eq(checkIns.eventId, eventId)),
 
-    const [payAgg] = await db
-      .select({ pending: count() })
-      .from(payments)
-      .where(
-        and(eq(payments.eventId, eventId), eq(payments.status, "pending"))
-      );
+      db
+        .select({ pending: count() })
+        .from(payments)
+        .where(
+          and(eq(payments.eventId, eventId), eq(payments.status, "pending"))
+        ),
 
-    const [volAgg] = await db
-      .select({ total: count() })
-      .from(volunteers)
-      .where(eq(volunteers.eventId, eventId));
+      db
+        .select({ total: count() })
+        .from(volunteers)
+        .where(eq(volunteers.eventId, eventId)),
 
-    const [volConfirmed] = await db
-      .select({ total: count() })
-      .from(volunteers)
-      .where(
-        and(eq(volunteers.eventId, eventId), eq(volunteers.status, "confirmed"))
-      );
+      db
+        .select({ total: count() })
+        .from(volunteers)
+        .where(
+          and(eq(volunteers.eventId, eventId), eq(volunteers.status, "confirmed"))
+        ),
 
-    const [taskAgg] = await db
-      .select({ open: count() })
-      .from(tasks)
-      .where(
-        and(eq(tasks.eventId, eventId), eq(tasks.status, "not_started"))
-      );
+      db
+        .select({ open: count() })
+        .from(tasks)
+        .where(
+          and(eq(tasks.eventId, eventId), eq(tasks.status, "not_started"))
+        ),
 
-    const [sessionAgg] = await db
-      .select({ total: count() })
-      .from(sessions)
-      .where(eq(sessions.eventId, eventId));
+      db
+        .select({ total: count() })
+        .from(sessions)
+        .where(eq(sessions.eventId, eventId)),
+    ]);
 
     return {
       registered: Number(regAgg?.registered ?? 0),
