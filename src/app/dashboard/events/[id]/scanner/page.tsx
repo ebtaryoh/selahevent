@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { useParams } from "next/navigation";
-import { CheckCircle2, QrCode, XCircle, Radio, Utensils } from "lucide-react";
+import { CheckCircle2, QrCode, XCircle, Radio, Utensils, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { offlineGateCache } from "@/lib/offline-gate-cache";
 
@@ -201,12 +201,36 @@ export default function ScannerPage() {
           ${scanResult.status === "success" ? "border-green-500/30 bg-green-500/10 text-green-400" : ""}
           ${scanResult.status === "error" ? "border-red-500/30 bg-red-500/10 text-red-400" : ""}
         `}>
-          {scanResult.status === "success" && <CheckCircle2 size={32} className="mb-2 text-green-400" />}
+          {scanResult.status === "success" && (
+            scanResult.ticketDetails?.isProductVoucher ? (
+              <ShoppingBag size={32} className="mb-2 text-amber-400 animate-bounce" />
+            ) : (
+              <CheckCircle2 size={32} className="mb-2 text-green-400" />
+            )
+          )}
           {scanResult.status === "error" && <XCircle size={32} className="mb-2 text-red-400" />}
           
           <h3 className="font-semibold text-lg">{scanResult.message}</h3>
           
-          {scanResult.ticketDetails && (
+          {scanResult.ticketDetails?.isProductVoucher ? (
+            <div className="mt-3 w-full rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-left">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-400">
+                <ShoppingBag size={15} /> Resource Desk Pickup Voucher
+              </div>
+              <div className="mt-2 space-y-1 text-sm text-white font-medium">
+                <p><strong>Item:</strong> {scanResult.ticketDetails.productName}</p>
+                {scanResult.ticketDetails.variant && (
+                  <p><strong>Option:</strong> <span className="bg-amber-500/20 px-2 py-0.5 rounded text-xs text-amber-200">{scanResult.ticketDetails.variant}</span></p>
+                )}
+                <p><strong>Quantity:</strong> {scanResult.ticketDetails.quantity}</p>
+                <p><strong>Attendee:</strong> {scanResult.ticketDetails.customerName}</p>
+                <p className="text-xs font-mono text-white/60"><strong>Voucher:</strong> {scanResult.ticketDetails.pickupVoucherCode}</p>
+              </div>
+              <div className="mt-3 rounded-lg bg-emerald-500/20 border border-emerald-500/40 p-2 text-center text-xs font-bold text-emerald-300">
+                ✅ Marked as Collected &amp; Fulfilled
+              </div>
+            </div>
+          ) : scanResult.ticketDetails ? (
             <div className="mt-2 text-sm text-green-300">
               <p><strong>Name:</strong> {scanResult.ticketDetails.attendeeName}</p>
               <p><strong>Type:</strong> {scanResult.ticketDetails.ticketType}</p>
@@ -217,7 +241,7 @@ export default function ScannerPage() {
                 </p>
               )}
             </div>
-          )}
+          ) : null}
         </div>
 
         {/* Scanner Container */}

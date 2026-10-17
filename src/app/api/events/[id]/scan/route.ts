@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/db";
-import { registrations, checkIns, events } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
+import { registrations, checkIns, events, orderItems } from "@/db/schema";
+import { eq, and, or } from "drizzle-orm";
 import { getOrganization, requirePermission } from "@/lib/data";
 import { enforceRateLimit, getClientAddress, rateLimitHeaders } from "@/lib/rate-limit";
 import { createHmac } from "crypto";
@@ -103,7 +103,66 @@ export async function POST(
       .then(res => res[0]);
 
     if (!registration) {
-      return NextResponse.json({ error: "Invalid ticket for this event" }, { status: 404 });
+      // Check if this QR code is a Product/Merchandise collection voucher
+      const productItem = await db
+        .select()
+        .from(orderItems)
+        .where(
+          and(
+            eq(orderItems.eventId, eventId),
+            or(
+              eq(orderItems.pickupVoucherCode, cleanTicketCode),
+              eq(orderItems.orderCode, cleanTicketCode)
+            )
+          )
+        )
+        .limit(1)
+        .then((res) => res[0]);
+
+      if (productItem) {
+        if (productItem.fulfillmentStatus === "collected") {
+          const collectedTime = productItem.collectedAt
+            ? new Date(productItem.collectedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+            : "earlier";
+          return NextResponse.json(
+            {
+              error: `Item Already Claimed! Fulfilled at ${collectedTime} by "${productItem.collectedByStaffName || "Resource Desk"}".`,
+              isProductVoucher: true,
+              alreadyClaimed: true,
+              productName: productItem.productName,
+              variant: productItem.variant,
+              quantity: productItem.quantity,
+              customerName: productItem.customerName,
+              pickupVoucherCode: productItem.pickupVoucherCode,
+            },
+            { status: 409 }
+          );
+        }
+
+        const staffName = actor.name || "Resource Desk Staff";
+        await db
+          .update(orderItems)
+          .set({
+            fulfillmentStatus: "collected",
+            collectedAt: new Date(),
+            collectedByStaffName: staffName,
+            updatedAt: new Date(),
+          })
+          .where(eq(orderItems.id, productItem.id));
+
+        return NextResponse.json({
+          success: true,
+          isProductVoucher: true,
+          productName: productItem.productName,
+          variant: productItem.variant,
+          quantity: productItem.quantity,
+          customerName: productItem.customerName,
+          pickupVoucherCode: productItem.pickupVoucherCode,
+          message: `Resource Voucher Verified! Please hand over ${productItem.quantity}x "${productItem.productName}"${productItem.variant ? ` (${productItem.variant})` : ""}.`,
+        });
+      }
+
+      return NextResponse.json({ error: "Invalid ticket or voucher code for this event" }, { status: 404 });
     }
 
     // 2. Check if already checked in (Optional: you might allow multiple scans, but usually it's once per event)

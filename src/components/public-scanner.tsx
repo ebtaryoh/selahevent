@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { Html5QrcodeScanner } from "html5-qrcode";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle, ShoppingBag, AlertTriangle } from "lucide-react";
 
 export function PublicScanner({ eventId, magicToken }: { eventId: string, magicToken: string }) {
   const [scanResult, setScanResult] = useState<{
@@ -123,17 +123,41 @@ export function PublicScanner({ eventId, magicToken }: { eventId: string, magicT
         ${scanResult.status === "success" ? "border-green-200 bg-green-50 text-green-700" : ""}
         ${scanResult.status === "error" ? "border-red-200 bg-red-50 text-red-700" : ""}
       `}>
-        {scanResult.status === "success" && <CheckCircle2 size={32} className="mb-2 text-green-500" />}
+        {scanResult.status === "success" && (
+          scanResult.ticketDetails?.isProductVoucher ? (
+            <ShoppingBag size={32} className="mb-2 text-amber-500 animate-bounce" />
+          ) : (
+            <CheckCircle2 size={32} className="mb-2 text-green-500" />
+          )
+        )}
         {scanResult.status === "error" && <XCircle size={32} className="mb-2 text-red-500" />}
         
         <h3 className="font-semibold text-lg">{scanResult.message}</h3>
         
-        {scanResult.ticketDetails && (
+        {scanResult.ticketDetails?.isProductVoucher ? (
+          <div className="mt-3 w-full rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-left">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+              <ShoppingBag size={15} /> Resource Desk Pickup Voucher
+            </div>
+            <div className="mt-2 space-y-1 text-sm text-ink font-medium">
+              <p><strong>Item:</strong> {scanResult.ticketDetails.productName}</p>
+              {scanResult.ticketDetails.variant && (
+                <p><strong>Option:</strong> <span className="bg-amber-500/20 px-2 py-0.5 rounded text-xs">{scanResult.ticketDetails.variant}</span></p>
+              )}
+              <p><strong>Quantity:</strong> {scanResult.ticketDetails.quantity}</p>
+              <p><strong>Attendee:</strong> {scanResult.ticketDetails.customerName}</p>
+              <p className="text-xs font-mono text-warm-500"><strong>Voucher:</strong> {scanResult.ticketDetails.pickupVoucherCode}</p>
+            </div>
+            <div className="mt-2.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 p-2 text-center text-xs font-bold text-emerald-800 dark:text-emerald-300">
+              ✅ Marked as Collected &amp; Fulfilled
+            </div>
+          </div>
+        ) : scanResult.ticketDetails ? (
           <div className="mt-2 text-sm text-green-800 font-medium">
             <p><strong>Name:</strong> {scanResult.ticketDetails.attendeeName}</p>
             <p><strong>Type:</strong> {scanResult.ticketDetails.ticketType}</p>
           </div>
-        )}
+        ) : null}
       </div>
       
       <style dangerouslySetInnerHTML={{__html: `
