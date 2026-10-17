@@ -25,10 +25,12 @@ import {
   Bus,
   Utensils,
   Sparkles,
+  MessageSquare,
 } from "lucide-react";
 import { formatTime, formatRange, formatMoney } from "@/lib/format";
 import { QRCodeSVG } from "qrcode.react";
 import { PastoralBroadcastBanner } from "@/components/pastoral-broadcast-banner";
+import { generateWhatsAppTicketLink } from "@/lib/whatsapp";
 
 export const dynamic = "force-dynamic";
 
@@ -144,6 +146,54 @@ export default async function WalletPage({ params, searchParams }: Params) {
           </a>
         </div>
 
+        {/* Instant WhatsApp Delivery Banner */}
+        {myRegistrations.length > 0 && (
+          <div className="mb-8 rounded-2xl border border-emerald-600/30 bg-gradient-to-br from-emerald-500/[0.12] via-emerald-500/[0.05] to-transparent p-5 sm:p-6 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#25D366] text-white shadow-md shadow-emerald-500/20 ring-4 ring-emerald-500/15">
+                  <MessageSquare size={24} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-display text-base sm:text-lg font-semibold text-ink">
+                      Instant WhatsApp Pass Delivery
+                    </h3>
+                    <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[0.6875rem] font-bold text-emerald-800">
+                      1-Tap Save
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs sm:text-sm text-warm-600 leading-relaxed max-w-xl">
+                    Save your digital tickets, turnstile QR access badges, and seat assignments straight into your WhatsApp for offline gate entry.
+                  </p>
+                </div>
+              </div>
+              {myRegistrations[0] && (
+                <a
+                  href={generateWhatsAppTicketLink({
+                    phone: myRegistrations[0].registration.phone || profile?.phone,
+                    eventTitle: myRegistrations[0].event.title,
+                    attendeeName: `${myRegistrations[0].registration.firstName} ${myRegistrations[0].registration.lastName}`,
+                    ticketCode: myRegistrations[0].registration.ticketCode,
+                    ticketTier: myRegistrations[0].registration.attendeeType,
+                    tableNumber: myRegistrations[0].registration.tableNumber,
+                    seatNumber: myRegistrations[0].registration.seatNumber,
+                    venueName: myRegistrations[0].event.venueName,
+                    eventDate: formatRange(myRegistrations[0].event.startsAt, myRegistrations[0].event.endsAt),
+                    passUrl: `${process.env.NEXT_PUBLIC_SITE_URL || "https://selahevent.vercel.app"}/my-tickets/${myRegistrations[0].registration.ticketCode}`,
+                  })}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-[#25D366] px-5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-sm transition-all hover:bg-[#20ba5a] hover:shadow-md active:scale-[0.98]"
+                >
+                  <MessageSquare size={16} />
+                  Send to WhatsApp
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
         {myRegistrations.length === 0 ? (
           <div className="card p-12 text-center flex flex-col items-center">
             <div className="h-16 w-16 bg-warm-200 rounded-full flex items-center justify-center mb-4">
@@ -190,27 +240,58 @@ export default async function WalletPage({ params, searchParams }: Params) {
                       </div>
                     </div>
                     
-                    <div className="flex flex-col items-start sm:items-end gap-2 border-t sm:border-t-0 sm:border-l border-[rgba(22,19,17,0.1)] pt-4 sm:pt-0 sm:pl-6 mt-4 sm:mt-0 min-w-[200px]">
+                    <div className="flex flex-col items-start sm:items-end gap-2 border-t sm:border-t-0 sm:border-l border-[rgba(22,19,17,0.1)] pt-4 sm:pt-0 sm:pl-6 mt-4 sm:mt-0 min-w-[210px]">
                       <div className="text-[0.7rem] uppercase tracking-wider text-warm-400 font-semibold">
                         Ticket Code
                       </div>
                       <div className="font-mono text-lg font-medium text-ink bg-warm-100 px-3 py-1 rounded">
                         {registration.ticketCode}
                       </div>
-                      <p className="text-xs text-warm-500 mt-1 max-w-[200px] text-left sm:text-right">
+                      <p className="text-xs text-warm-500 mt-1 max-w-[210px] text-left sm:text-right">
                         Present this code or your email at the event check-in desk.
                       </p>
                       
-                      <a 
-                        href={`/api/tickets/${registration.ticketCode}/pdf`}
-                        className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--color-brass-deep)] hover:text-ink transition-colors bg-[rgba(226,192,115,0.1)] px-3 py-1.5 rounded-full"
-                        target="_blank"
-                        rel="noreferrer"
-                        download
-                      >
-                        <Download size={13} />
-                        Download PDF Ticket
-                      </a>
+                      <div className="mt-3 flex flex-col gap-2 w-full">
+                        <a
+                          href={generateWhatsAppTicketLink({
+                            phone: registration.phone || profile?.phone,
+                            eventTitle: e.title,
+                            attendeeName: `${registration.firstName} ${registration.lastName}`,
+                            ticketCode: registration.ticketCode,
+                            ticketTier: registration.attendeeType,
+                            tableNumber: registration.tableNumber,
+                            seatNumber: registration.seatNumber,
+                            venueName: e.venueName,
+                            eventDate: formatRange(e.startsAt, e.endsAt),
+                            passUrl: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://selahevent.vercel.app'}/my-tickets/${registration.ticketCode}`,
+                          })}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#25D366] px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all hover:bg-[#20ba5a] active:scale-[0.98]"
+                        >
+                          <MessageSquare size={14} />
+                          Send to WhatsApp
+                        </a>
+
+                        <a
+                          href={`/my-tickets/${registration.ticketCode}`}
+                          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-[rgba(22,19,17,0.15)] bg-white/60 dark:bg-black/30 px-3 py-1.5 text-xs font-semibold text-ink hover:border-brass transition-all"
+                        >
+                          <QrCode size={13} className="text-brass" />
+                          View QR Entry Pass
+                        </a>
+
+                        <a 
+                          href={`/api/tickets/${registration.ticketCode}/pdf`}
+                          className="inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-warm-600 hover:text-ink transition-colors bg-[rgba(226,192,115,0.1)] px-3 py-1.5 rounded-xl"
+                          target="_blank"
+                          rel="noreferrer"
+                          download
+                        >
+                          <Download size={13} />
+                          Download PDF Ticket
+                        </a>
+                      </div>
                     </div>
                   </div>
                 </div>
