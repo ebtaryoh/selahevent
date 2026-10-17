@@ -79,23 +79,23 @@ export default async function HomePage({
             <Image
               src="/images/hero-auditorium.jpg"
               alt="A reverent Christian gathering in a warmly lit sanctuary"
-              className="object-cover object-[62%_center] opacity-25 dark:opacity-30 mix-blend-luminosity"
+              className="object-cover object-[62%_center] opacity-15 dark:opacity-30 mix-blend-luminosity"
               priority
               fill
               sizes="100vw"
             />
-            {/* Deep radial gradient to fade out edges into the background */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(8,8,10,0.15)_0%,var(--color-parchment-deep)_85%)]" />
+            {/* Deep radial gradient to fade out edges into the background without muddying light mode */}
+            <div className="absolute inset-0 dark:bg-[radial-gradient(ellipse_at_top,rgba(8,8,10,0.15)_0%,var(--color-parchment-deep)_85%)] bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.75)_0%,var(--color-parchment-deep)_92%)]" />
             <div className="grain pointer-events-none absolute inset-0 opacity-[0.25]" />
 
             {/* Moving Celestial Glowing Orbs with multi-axis drift */}
-            <div className="absolute top-[18%] left-[10%] w-[320px] h-[320px] bg-purple-600/20 blur-[110px] rounded-full animate-celestial mix-blend-screen pointer-events-none" />
+            <div className="absolute top-[18%] left-[10%] w-[320px] h-[320px] bg-purple-600/10 dark:bg-purple-600/20 blur-[110px] rounded-full animate-celestial dark:mix-blend-screen pointer-events-none" />
             <div
-              className="absolute bottom-[20%] right-[10%] w-[420px] h-[420px] bg-brass/25 blur-[130px] rounded-full animate-celestial-slow mix-blend-screen pointer-events-none"
+              className="absolute bottom-[20%] right-[10%] w-[420px] h-[420px] bg-brass/15 dark:bg-brass/25 blur-[130px] rounded-full animate-celestial-slow dark:mix-blend-screen pointer-events-none"
               style={{ animationDelay: "2s" }}
             />
             <div
-              className="absolute top-[55%] left-[50%] w-[280px] h-[280px] bg-amber-500/15 blur-[100px] rounded-full animate-celestial-reverse mix-blend-screen pointer-events-none"
+              className="absolute top-[55%] left-[50%] w-[280px] h-[280px] bg-amber-500/10 dark:bg-amber-500/15 blur-[100px] rounded-full animate-celestial-reverse dark:mix-blend-screen pointer-events-none"
               style={{ animationDelay: "4s" }}
             />
 
@@ -125,7 +125,7 @@ export default async function HomePage({
             {/* Welcoming Scripture Badge */}
             <Reveal>
               <div className="mx-auto mb-7 inline-flex items-center gap-2.5 rounded-full border border-brass/35 bg-brass/10 px-4 py-2 backdrop-blur-md shadow-sm">
-                <Sparkles size={14} className="text-brass-light animate-spin" style={{ animationDuration: "12s" }} />
+                <Sparkles size={14} className="text-brass-deep dark:text-brass-light animate-spin" style={{ animationDuration: "12s" }} />
                 <span className="eyebrow text-[0.68rem] text-brass-deep dark:text-brass-light tracking-[0.16em] uppercase font-bold">
                   Gathering the Bride of Christ · Matthew 18:20
                 </span>
@@ -135,7 +135,7 @@ export default async function HomePage({
             <AnimatedHeroTitle className="font-display mx-auto max-w-5xl text-[clamp(2.9rem,7.5vw,6.2rem)] leading-[1.03] font-semibold tracking-[-0.03em] text-ink" />
 
             <Reveal delay={0.2}>
-              <p className="mx-auto mt-7 max-w-2xl text-[clamp(1.0625rem,1.7vw,1.325rem)] leading-[1.7] text-warm-500 font-light">
+              <p className="mx-auto mt-7 max-w-2xl text-[clamp(1.0625rem,1.7vw,1.325rem)] leading-[1.7] text-warm-600 dark:text-warm-500 font-normal">
                 Discover, register, and experience spirit-filled conferences, holy convocations, and leadership summits with reverent digital excellence.
               </p>
             </Reveal>
@@ -143,10 +143,10 @@ export default async function HomePage({
             {/* Contextual Welcoming Scripture Banner */}
             <Reveal delay={0.25}>
               <div className="mx-auto mt-6 max-w-lg rounded-2xl border border-brass/25 bg-brass/5 px-6 py-3.5 backdrop-blur-md shadow-sm">
-                <p className="font-display text-sm sm:text-[0.95rem] italic text-ink/90 font-light leading-relaxed">
+                <p className="font-display text-sm sm:text-[0.95rem] italic text-ink font-normal leading-relaxed">
                   &ldquo;For where two or three are gathered together in My name, there am I in the midst of them.&rdquo;
                 </p>
-                <span className="block mt-1 text-[0.65rem] font-bold uppercase tracking-widest text-brass">
+                <span className="block mt-1 text-[0.65rem] font-bold uppercase tracking-widest text-brass-deep dark:text-brass">
                   — Matthew 18:20
                 </span>
               </div>
@@ -163,15 +163,15 @@ export default async function HomePage({
                 </a>
                 <Link
                   href={session ? "/dashboard/events/new" : "/register"}
-                  className="btn btn-ghost !rounded-full !px-9 !py-4 !text-[1.025rem] border border-brass/30 hover:bg-brass/10 hover:border-brass/50 backdrop-blur-md text-ink transition-all duration-300 font-semibold"
+                  className="btn btn-ghost !rounded-full !px-9 !py-4 !text-[1.025rem] border border-brass/35 hover:bg-brass/10 hover:border-brass/50 backdrop-blur-md text-ink transition-all duration-300 font-semibold"
                 >
                   Host Ministry Event
                 </Link>
                 <Link
                   href="/my-tickets"
-                  className="btn btn-ghost !rounded-full !px-6 !py-4 !text-[0.95rem] border border-[var(--card-border)] hover:bg-brass/10 backdrop-blur-md text-warm-500 hover:text-ink transition-all"
+                  className="btn btn-ghost !rounded-full !px-6 !py-4 !text-[0.95rem] border border-[var(--card-border)] hover:bg-brass/10 backdrop-blur-md text-ink font-semibold transition-all"
                 >
-                  <Ticket size={16} className="text-brass mr-1" />
+                  <Ticket size={16} className="text-brass-deep dark:text-brass mr-1" />
                   Find My Pass
                 </Link>
               </div>
@@ -214,14 +214,14 @@ export default async function HomePage({
         {/* ===================== FEATURES SHOWCASE (KINGDOM ORDER) ===================== */}
         <section className="relative z-20 mx-auto max-w-[1240px] px-5 sm:px-8 pb-32">
           <div className="mb-14 text-center max-w-2xl mx-auto">
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-brass/25 bg-brass/10 px-3.5 py-1 text-xs font-bold text-brass uppercase tracking-widest mb-3">
-              <Sparkles size={12} className="text-brass-light" />
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-brass/25 bg-brass/10 px-3.5 py-1 text-xs font-bold text-brass-deep dark:text-brass uppercase tracking-widest mb-3">
+              <Sparkles size={12} className="text-brass-deep dark:text-brass-light" />
               <span>Ministry Order &amp; Excellence · 1 Cor 14:40</span>
             </div>
             <h2 className="font-display text-3xl sm:text-4xl font-semibold text-ink">
               Built for Holy Gatherings &amp; Kingdom Stewards
             </h2>
-            <p className="mt-3 text-base text-warm-500 font-light">
+            <p className="mt-3 text-base text-warm-600 dark:text-warm-500 font-normal">
               &ldquo;Let all things be done decently and in order.&rdquo; — 1 Corinthians 14:40
             </p>
           </div>
@@ -254,17 +254,17 @@ export default async function HomePage({
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-brass/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
                   <div className="relative z-10">
-                    <div className="mb-6 inline-flex h-13 w-13 items-center justify-center rounded-2xl bg-brass/15 text-brass border border-brass/30 shadow-sm">
+                    <div className="mb-6 inline-flex h-13 w-13 items-center justify-center rounded-2xl bg-brass/15 text-brass-deep dark:text-brass border border-brass/30 shadow-sm">
                       <f.icon size={24} strokeWidth={1.8} />
                     </div>
                     <h3 className="font-display text-[1.325rem] font-semibold text-ink mb-2.5">
                       {f.title}
                     </h3>
-                    <p className="text-warm-500 leading-relaxed text-[0.925rem] font-light mb-6">
+                    <p className="text-warm-600 dark:text-warm-500 leading-relaxed text-[0.925rem] font-normal mb-6">
                       {f.desc}
                     </p>
                     <div className="border-t border-[var(--card-border)] pt-4">
-                      <p className="font-display text-xs italic text-brass-deep dark:text-brass-light/85 leading-relaxed">
+                      <p className="font-display text-xs italic text-brass-deep dark:text-brass-light/85 leading-relaxed font-medium">
                         {f.verse}
                       </p>
                     </div>
@@ -291,20 +291,20 @@ export default async function HomePage({
             <Reveal>
               <div className="flex flex-col sm:flex-row sm:items-end justify-between border-b border-[var(--card-border)] pb-6 mb-14 gap-6">
                 <div>
-                  <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-brass mb-2">
-                    <Sparkles size={13} className="text-brass" />
+                  <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-brass-deep dark:text-brass mb-2">
+                    <Sparkles size={13} className="text-brass-deep dark:text-brass" />
                     <span>Holy Assembly · Hebrews 10:25</span>
                   </div>
                   <h2 className="font-display text-[2.4rem] leading-none font-semibold text-ink">
                     The Sacred Collection
                   </h2>
-                  <p className="mt-3 text-[1.05rem] text-warm-500 font-light max-w-xl">
+                  <p className="mt-3 text-[1.05rem] text-warm-600 dark:text-warm-500 font-normal max-w-xl">
                     &ldquo;Not forsaking the assembling of ourselves together... but exhorting one another.&rdquo;
                   </p>
                 </div>
                 <div className="flex">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-brass/35 bg-brass/15 px-4 py-1.5 text-[0.8rem] text-brass uppercase tracking-widest font-bold shadow-sm">
-                    <Star size={14} className="text-brass" fill="currentColor" /> Verified Ministries
+                  <span className="inline-flex items-center gap-2 rounded-full border border-brass/35 bg-brass/15 px-4 py-1.5 text-[0.8rem] text-brass-deep dark:text-brass uppercase tracking-widest font-bold shadow-sm">
+                    <Star size={14} className="text-brass-deep dark:text-brass" fill="currentColor" /> Verified Ministries
                   </span>
                 </div>
               </div>

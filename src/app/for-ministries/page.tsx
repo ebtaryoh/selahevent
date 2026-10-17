@@ -32,20 +32,20 @@ export default async function ForMinistriesPage() {
         {/* ------------- Hero Section ------------- */}
         <section className="relative isolate overflow-hidden pt-[140px] pb-32">
           <div className="absolute inset-0 -z-10 bg-parchment-deep">
-            {/* Dark gradient background */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(14,42,34,0.15)_0%,rgba(8,8,10,1)_85%)]" />
+            {/* Gradient background */}
+            <div className="absolute inset-0 dark:bg-[radial-gradient(ellipse_at_top,rgba(14,42,34,0.15)_0%,rgba(8,8,10,1)_85%)] bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.75)_0%,var(--color-parchment-deep)_92%)]" />
             <div className="grain pointer-events-none absolute inset-0 opacity-[0.25]" />
             
             {/* Glowing Orbs */}
-            <div className="absolute top-[10%] left-[20%] w-[400px] h-[400px] bg-brass/10 blur-[120px] rounded-full animate-float mix-blend-screen pointer-events-none" />
-            <div className="absolute bottom-[20%] right-[10%] w-[350px] h-[350px] bg-cypress/20 blur-[100px] rounded-full animate-float mix-blend-screen pointer-events-none" style={{ animationDelay: "2s" }} />
+            <div className="absolute top-[10%] left-[20%] w-[400px] h-[400px] bg-brass/10 blur-[120px] rounded-full animate-float dark:mix-blend-screen pointer-events-none" />
+            <div className="absolute bottom-[20%] right-[10%] w-[350px] h-[350px] bg-cypress/20 blur-[100px] rounded-full animate-float dark:mix-blend-screen pointer-events-none" style={{ animationDelay: "2s" }} />
           </div>
 
           <div className="mx-auto w-full max-w-[1180px] px-5 sm:px-8 relative z-10 text-center">
             <Reveal>
-              <div className="mx-auto mb-8 inline-flex items-center gap-2.5 rounded-full border border-brass/20 bg-brass/10 px-4 py-2 backdrop-blur-md">
-                <Building2 size={14} className="text-brass-light" />
-                <span className="eyebrow text-[0.65rem] text-brass-light tracking-[0.15em] uppercase font-semibold">
+              <div className="mx-auto mb-8 inline-flex items-center gap-2.5 rounded-full border border-brass/25 bg-brass/10 px-4 py-2 backdrop-blur-md">
+                <Building2 size={14} className="text-brass-deep dark:text-brass-light" />
+                <span className="eyebrow text-[0.65rem] text-brass-deep dark:text-brass-light tracking-[0.15em] uppercase font-semibold">
                   Built exclusively for Ministries
                 </span>
               </div>
@@ -58,7 +58,7 @@ export default async function ForMinistriesPage() {
             </Reveal>
             
             <Reveal delay={0.2}>
-              <p className="mx-auto mt-8 max-w-2xl text-[clamp(1.05rem,1.5vw,1.25rem)] leading-[1.7] text-warm-500 font-light">
+              <p className="mx-auto mt-8 max-w-2xl text-[clamp(1.05rem,1.5vw,1.25rem)] leading-[1.7] text-warm-600 dark:text-warm-500 font-normal">
                 Generic event platforms weren&apos;t built for church logistics. Selah brings your ticketing, check-ins, volunteers, and reporting into one beautiful, unified command center.
               </p>
             </Reveal>
@@ -69,7 +69,7 @@ export default async function ForMinistriesPage() {
                   Start your Organization
                   <ArrowRight size={17} strokeWidth={2.1} className="ml-2" />
                 </Link>
-                <a href="#features" className="btn btn-ghost !rounded-full !px-10 !py-4.5 !text-[1.05rem] border border-white/10 hover:bg-white/5 hover:border-white/20 backdrop-blur-md text-ink transition-all duration-300">
+                <a href="#features" className="btn btn-ghost !rounded-full !px-10 !py-4.5 !text-[1.05rem] border border-[var(--card-border)] hover:bg-brass/10 backdrop-blur-md text-ink transition-all duration-300 font-semibold">
                   See how it works
                 </a>
               </div>
@@ -128,7 +128,7 @@ export default async function ForMinistriesPage() {
                       <feature.icon size={26} strokeWidth={1.5} />
                     </div>
                     <h3 className="font-display text-[1.35rem] font-semibold text-ink mb-3">{feature.title}</h3>
-                    <p className="text-warm-500 leading-relaxed text-[0.95rem]">{feature.desc}</p>
+                    <p className="text-warm-600 dark:text-warm-500 leading-relaxed text-[0.95rem] font-normal">{feature.desc}</p>
                   </div>
                 </Reveal>
               ))}
@@ -143,18 +143,18 @@ export default async function ForMinistriesPage() {
           <div className="relative z-10 mx-auto max-w-[1180px] px-5 sm:px-8">
             <Reveal>
               <div className="mx-auto max-w-4xl text-center">
-                <h2 className="font-display text-[clamp(1.8rem,4vw,3rem)] leading-[1.2] font-semibold text-[var(--color-brass-light)]">
+                <h2 className="font-display text-[clamp(1.8rem,4vw,3rem)] leading-[1.2] font-semibold text-[#fceec5]">
                   &quot;Our vision is to equip every ministry with the technology they need to host life-changing gatherings, without the administrative chaos.&quot;
                 </h2>
                 <div className="mt-10 flex flex-col items-center justify-center gap-4">
-                  <div className="h-16 w-16 overflow-hidden rounded-full border-2 border-[var(--color-brass-deep)]">
-                    <div className="h-full w-full bg-[rgba(232,211,166,0.1)] flex items-center justify-center text-[var(--color-brass-light)] font-display font-semibold text-xl">
+                  <div className="h-16 w-16 overflow-hidden rounded-full border-2 border-brass">
+                    <div className="h-full w-full bg-[rgba(232,211,166,0.1)] flex items-center justify-center text-brass font-display font-semibold text-xl">
                       S
                     </div>
                   </div>
                   <div>
                     <div className="text-[1.05rem] font-semibold text-white">The Selah Team</div>
-                    <div className="text-[0.85rem] text-[var(--color-brass-light)] mt-1 opacity-70">Building for the Kingdom</div>
+                    <div className="text-[0.85rem] text-[#e2c073] mt-1 opacity-80">Building for the Kingdom</div>
                   </div>
                 </div>
               </div>
@@ -172,7 +172,7 @@ export default async function ForMinistriesPage() {
             </Reveal>
             
             <Reveal delay={0.1}>
-              <p className="mx-auto mt-6 max-w-2xl text-[1.15rem] leading-[1.7] text-warm-500 font-light">
+              <p className="mx-auto mt-6 max-w-2xl text-[1.15rem] leading-[1.7] text-warm-600 dark:text-warm-500 font-normal">
                 Join the ministries already using Selah to deliver seamless, world-class event experiences.
               </p>
             </Reveal>
@@ -182,11 +182,11 @@ export default async function ForMinistriesPage() {
                 <Link href="/register" className="btn btn-brass !rounded-full !px-10 !py-4.5 !text-[1.05rem]">
                   Create Free Account
                 </Link>
-                <a href="mailto:sales@selahevent.com" className="btn btn-light !rounded-full !px-10 !py-4.5 !text-[1.05rem]">
+                <a href="mailto:sales@selahevent.com" className="btn btn-ghost !rounded-full !px-10 !py-4.5 !text-[1.05rem] border border-[var(--card-border)] hover:bg-brass/10 backdrop-blur-md text-ink transition-all font-semibold">
                   Contact Sales
                 </a>
               </div>
-              <p className="mt-6 text-[0.85rem] text-warm-400">
+              <p className="mt-6 text-[0.85rem] text-warm-500 dark:text-warm-400">
                 No credit card required. Setup takes 2 minutes.
               </p>
             </Reveal>

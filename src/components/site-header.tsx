@@ -54,7 +54,7 @@ export function SiteHeader({ isSignedIn = false }: { isSignedIn?: boolean }) {
               <Link
                 key={link.label}
                 href={link.href}
-                className="relative text-[0.875rem] font-medium text-warm-600 transition-colors hover:text-ink after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-0 after:bg-[var(--color-brass)] after:transition-[width] after:duration-300 hover:after:w-full"
+                className="relative text-[0.875rem] font-semibold text-ink/80 transition-colors hover:text-ink after:absolute after:-bottom-1.5 after:left-0 after:h-px after:w-0 after:bg-[var(--color-brass)] after:transition-[width] after:duration-300 hover:after:w-full"
               >
                 {link.label}
               </Link>

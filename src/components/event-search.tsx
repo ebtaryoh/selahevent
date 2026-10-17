@@ -58,10 +58,10 @@ export function EventSearch({ defaultGeoCity }: { defaultGeoCity?: string }) {
               key={c}
               onClick={() => setCategory(c === "All" ? "" : c.toLowerCase())}
               className={clsx(
-                "whitespace-nowrap rounded-full px-5 py-2 text-[0.875rem] font-semibold transition-all duration-200 cursor-pointer shadow-sm",
+                "whitespace-nowrap rounded-full px-5 py-2 text-[0.875rem] transition-all duration-200 cursor-pointer shadow-sm",
                 isActive
-                  ? "bg-brass text-parchment-deep shadow-md font-bold"
-                  : "bg-[var(--card-bg)] text-warm-500 border border-[var(--card-border)] hover:border-brass/50 hover:text-ink"
+                  ? "bg-brass text-white dark:text-parchment-deep shadow-md font-bold"
+                  : "bg-[var(--card-bg)] text-ink/85 dark:text-warm-500 border border-[var(--card-border)] hover:border-brass/50 hover:text-ink font-semibold"
               )}
             >
               {c}
@@ -74,7 +74,7 @@ export function EventSearch({ defaultGeoCity }: { defaultGeoCity?: string }) {
       <div className="flex flex-wrap items-center gap-3">
         {/* City Select */}
         <div className="relative flex items-center rounded-full bg-[var(--card-bg)] border border-[var(--card-border)] px-4 py-2.5 transition-colors focus-within:ring-2 focus-within:ring-brass/40 hover:border-brass/40 shadow-sm">
-          <MapPin size={15} className="text-brass mr-2 shrink-0" />
+          <MapPin size={15} className="text-brass-deep dark:text-brass mr-2 shrink-0" />
           <select
             value={city}
             onChange={(e) => setCity(e.target.value)}
