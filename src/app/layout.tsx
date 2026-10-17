@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
+import { ThemeProvider } from "@/components/theme-provider";
+import { CursorSpotlight } from "@/components/cursor-spotlight";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://selahevent.vercel.app";
 
@@ -69,8 +71,13 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=localStorage.getItem("selah-theme");var t=s||"dark";document.documentElement.setAttribute("data-theme",t);if(t==="dark"){document.documentElement.classList.add("dark");document.documentElement.classList.remove("light");}else{document.documentElement.classList.add("light");document.documentElement.classList.remove("dark");}}catch(e){}})();`,
+          }}
+        />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
@@ -88,13 +95,17 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Selah" />
       </head>
       <body>
-        <a href="#main-content" className="skip-link">
-          Skip to content
-        </a>
-        {children}
-        <PwaInstallPrompt />
+        <ThemeProvider>
+          <CursorSpotlight />
+          <a href="#main-content" className="skip-link">
+            Skip to content
+          </a>
+          {children}
+          <PwaInstallPrompt />
+        </ThemeProvider>
       </body>
     </html>
   );
 }
+
 

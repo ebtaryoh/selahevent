@@ -106,9 +106,9 @@ export function TicketLookupForm({
   return (
     <div className="w-full">
       {status === "idle" || status === "loading" || (status === "error" && tickets.length === 0) ? (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label htmlFor="lookup-query" className="block text-xs font-semibold uppercase tracking-wider text-white/80 mb-1.5">
+            <label htmlFor="lookup-query" className="block text-xs font-bold uppercase tracking-wider text-ink mb-2">
               Email Address, Phone Number or Ticket Code
             </label>
             <div className="relative">
@@ -119,11 +119,11 @@ export function TicketLookupForm({
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="e.g. 08012345678, name@gmail.com, or TKT-..."
                 required
-                className="w-full rounded-xl border border-white/20 bg-black/40 px-4 py-3.5 pl-11 text-sm text-white placeholder-white/40 focus:border-brass focus:outline-none focus:ring-1 focus:ring-brass transition-all"
+                className="w-full rounded-xl border border-[var(--input-border)] bg-[var(--input-bg)] px-4 py-3.5 pl-11 text-sm font-medium text-ink placeholder:text-warm-400 focus:border-brass focus:outline-none focus:ring-2 focus:ring-brass/30 transition-all shadow-inner"
               />
-              <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
+              <Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brass" />
             </div>
-            <p className="mt-1.5 text-[0.75rem] text-white/60">
+            <p className="mt-2 text-xs text-warm-500">
               {eventTitle
                 ? `Retrieving your pass for ${eventTitle}. Enter the phone or email you used.`
                 : "Enter the email or phone number you used when registering on Selah."}
@@ -133,25 +133,25 @@ export function TicketLookupForm({
           <button
             type="submit"
             disabled={status === "loading" || !query.trim()}
-            className="w-full btn btn-primary flex items-center justify-center gap-2 py-3.5 text-sm font-semibold disabled:opacity-50 shadow-md cursor-pointer"
+            className="w-full btn btn-brass flex items-center justify-center gap-2 py-4 text-sm font-bold shadow-lift cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {status === "loading" ? (
               <>
-                <Loader2 size={16} className="animate-spin" />
-                Searching for your pass...
+                <Loader2 size={18} className="animate-spin text-parchment-deep" />
+                <span>Searching the Gate Register...</span>
               </>
             ) : (
               <>
-                <Ticket size={16} />
-                Find My Pass
+                <Ticket size={18} />
+                <span>Find My Pass</span>
               </>
             )}
           </button>
 
           {errorMessage && (
-            <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-3.5 text-xs text-rose-300 flex items-start gap-2.5">
-              <AlertCircle size={16} className="shrink-0 mt-0.5 text-rose-400" />
-              <span>{errorMessage}</span>
+            <div className="rounded-xl border border-rose-500/40 bg-rose-500/10 p-4 text-xs font-medium text-rose-400 dark:text-rose-300 flex items-start gap-2.5 shadow-sm">
+              <AlertCircle size={17} className="shrink-0 mt-0.5 text-rose-500" />
+              <span className="leading-relaxed">{errorMessage}</span>
             </div>
           )}
         </form>
@@ -161,27 +161,27 @@ export function TicketLookupForm({
       {status === "success" && (
         <div className="space-y-6">
           {tickets.length === 0 ? (
-            <div className="rounded-2xl border border-white/10 bg-black/30 p-6 text-center space-y-3">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                <Search size={22} />
+            <div className="rounded-2xl border border-[var(--card-border)] bg-[var(--card-bg)] p-7 text-center space-y-4 shadow-lg">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/30">
+                <Search size={24} />
               </div>
-              <h3 className="font-semibold text-white text-base">No Registration Found</h3>
-              <p className="text-xs text-white/70 max-w-sm mx-auto leading-relaxed">
-                We couldn&apos;t find an active registration matching <strong className="text-white">&quot;{searchedQuery}&quot;</strong>.
+              <h3 className="font-display font-semibold text-ink text-lg">No Registration Found</h3>
+              <p className="text-xs sm:text-sm text-warm-500 max-w-sm mx-auto leading-relaxed">
+                We couldn&apos;t find an active registration matching <strong className="text-ink font-semibold">&quot;{searchedQuery}&quot;</strong>.
                 Please check for typos, try your phone number instead of email, or register below.
               </p>
               <div className="pt-2 flex flex-wrap items-center justify-center gap-3">
                 <button
                   type="button"
                   onClick={resetSearch}
-                  className="btn btn-secondary !text-xs !py-2 !px-4"
+                  className="btn btn-ghost !text-xs !py-2.5 !px-5 border-brass/30"
                 >
                   <RefreshCw size={13} className="mr-1.5" /> Try Another Search
                 </button>
                 {eventSlug && (
                   <Link
                     href={`/e/${eventSlug}/register`}
-                    className="btn btn-primary !text-xs !py-2 !px-4"
+                    className="btn btn-brass !text-xs !py-2.5 !px-5 font-bold"
                   >
                     Register for Event
                   </Link>
@@ -190,19 +190,19 @@ export function TicketLookupForm({
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center justify-between border-b border-[var(--card-border)] pb-3">
                 <div className="flex items-center gap-2">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
                     <CheckCircle2 size={14} />
                   </span>
-                  <span className="text-xs font-semibold text-white">
+                  <span className="text-xs font-bold text-ink">
                     Found {tickets.length} {tickets.length === 1 ? "Registration" : "Registrations"}
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={resetSearch}
-                  className="text-xs text-brass hover:underline flex items-center gap-1 font-medium"
+                  className="text-xs text-brass hover:underline flex items-center gap-1 font-semibold cursor-pointer"
                 >
                   <RefreshCw size={12} /> New Search
                 </button>
@@ -211,24 +211,24 @@ export function TicketLookupForm({
               {tickets.map((t) => (
                 <div
                   key={t.id}
-                  className="overflow-hidden rounded-2xl border border-brass/40 bg-gradient-to-b from-white/10 to-black/60 shadow-xl transition-all"
+                  className="overflow-hidden rounded-2xl border border-brass/35 bg-[var(--card-bg)] shadow-xl transition-all"
                 >
                   {/* Card Header */}
-                  <div className="p-4 sm:p-5 border-b border-white/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-black/40">
+                  <div className="p-4 sm:p-5 border-b border-[var(--card-border)] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-brass/5">
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="pill border-brass/40 bg-brass/20 text-brass-light !text-[0.65rem] !py-0.5 !px-2 font-semibold">
+                        <span className="pill border-brass/40 bg-brass/20 text-brass-deep dark:text-brass-light !text-[0.68rem] !py-0.5 !px-2.5 font-bold uppercase tracking-wider">
                           {t.ticketName}
                         </span>
-                        <span className="font-mono text-xs text-white/60">
+                        <span className="font-mono text-xs text-warm-500 font-semibold">
                           {t.ticketCode}
                         </span>
                       </div>
-                      <h4 className="font-display font-semibold text-white text-lg mt-1 line-clamp-1">
+                      <h4 className="font-display font-semibold text-ink text-lg mt-1 line-clamp-1">
                         {t.eventTitle}
                       </h4>
-                      <p className="text-xs text-white/70">
-                        Attendee: <strong className="text-white">{t.firstName} {t.lastName}</strong>
+                      <p className="text-xs text-warm-500">
+                        Attendee: <strong className="text-ink">{t.firstName} {t.lastName}</strong>
                       </p>
                     </div>
 
@@ -241,7 +241,7 @@ export function TicketLookupForm({
                         </span>
                       )}
                       {t.accommodation && (
-                        <span className="inline-flex items-center gap-1 rounded-md bg-sky-500/20 border border-sky-500/30 px-2.5 py-1 text-xs font-semibold text-sky-300">
+                        <span className="inline-flex items-center gap-1 rounded-md bg-sky-500/20 border border-sky-500/30 px-2.5 py-1 text-xs font-semibold text-sky-400">
                           <BedDouble size={12} />
                           {t.accommodationType || (t.gender ? `${t.gender === 'male' ? "Men's" : "Women's"} Dorm` : "Lodging")}
                         </span>
@@ -252,43 +252,43 @@ export function TicketLookupForm({
                   {/* QR Code and Quick Details */}
                   <div className="p-5 flex flex-col sm:flex-row items-center gap-5">
                     {/* QR Code */}
-                    <div className="shrink-0 rounded-xl bg-white p-2.5 shadow-md border border-white/20">
+                    <div className="shrink-0 rounded-xl bg-white p-2.5 shadow-md border border-neutral-200">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={t.qrCodeUrl}
                         alt="Ticket QR Code"
                         className="h-28 w-28 rounded-lg object-contain"
                       />
-                      <p className="mt-1 text-center font-mono text-[0.65rem] font-bold text-black tracking-wider">
+                      <p className="mt-1 text-center font-mono text-[0.65rem] font-bold text-neutral-900 tracking-wider">
                         {t.ticketCode}
                       </p>
                     </div>
 
                     {/* Event Logistics */}
-                    <div className="flex-1 space-y-2 text-xs text-white/80">
+                    <div className="flex-1 space-y-2.5 text-xs text-ink/80">
                       {t.eventStartsAt && (
                         <div className="flex items-center gap-2">
                           <CalendarDays size={14} className="text-brass shrink-0" />
-                          <span>{new Date(t.eventStartsAt).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" })} · {formatTime(t.eventStartsAt)}</span>
+                          <span className="font-medium text-ink">{new Date(t.eventStartsAt).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" })} · {formatTime(t.eventStartsAt)}</span>
                         </div>
                       )}
                       <div className="flex items-center gap-2">
                         <MapPin size={14} className="text-brass shrink-0" />
-                        <span className="line-clamp-1">{t.eventVenue}, {t.eventCity}</span>
+                        <span className="line-clamp-1 font-medium text-ink">{t.eventVenue}, {t.eventCity}</span>
                       </div>
-                      <p className="text-[0.725rem] text-white/50 pt-1">
-                        Present this QR code to the usher or turnstile scanner at the venue entrance.
+                      <p className="text-[0.725rem] text-warm-500 pt-1 leading-relaxed">
+                        Present this QR entry badge to the gatekeeper or usher upon arrival.
                       </p>
                     </div>
                   </div>
 
                   {/* Quick Action Footer */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 p-3 bg-black/50 border-t border-white/10">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 p-3 bg-brass/5 border-t border-[var(--card-border)]">
                     <a
                       href={t.whatsappUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="btn !bg-emerald-600 hover:!bg-emerald-500 !text-white !text-xs !py-2.5 flex items-center justify-center gap-1.5 rounded-lg font-medium shadow-sm"
+                      className="btn !bg-emerald-600 hover:!bg-emerald-500 !text-white !text-xs !py-2.5 flex items-center justify-center gap-1.5 rounded-lg font-semibold shadow-sm"
                     >
                       <MessageSquare size={14} /> WhatsApp
                     </a>
@@ -305,18 +305,18 @@ export function TicketLookupForm({
                         seatNumber: t.seatNumber,
                         accommodationType: t.accommodationType,
                       }}
-                      className="btn !bg-sky-600 hover:!bg-sky-500 !text-white !text-xs !py-2.5 flex items-center justify-center gap-1.5 rounded-lg font-medium shadow-sm cursor-pointer"
+                      className="btn !bg-sky-600 hover:!bg-sky-500 !text-white !text-xs !py-2.5 flex items-center justify-center gap-1.5 rounded-lg font-semibold shadow-sm cursor-pointer"
                     />
                     <Link
                       href={t.passUrl}
-                      className="btn btn-primary !text-xs !py-2.5 flex items-center justify-center gap-1.5 rounded-lg font-medium shadow-sm"
+                      className="btn btn-brass !text-xs !py-2.5 flex items-center justify-center gap-1.5 rounded-lg font-bold shadow-sm"
                     >
                       <ExternalLink size={14} /> Live Badge
                     </Link>
                     <a
                       href={t.pdfUrl}
                       download={`ticket-${t.ticketCode}.pdf`}
-                      className="btn btn-secondary !text-xs !py-2.5 flex items-center justify-center gap-1.5 rounded-lg font-medium"
+                      className="btn btn-ghost !text-xs !py-2.5 flex items-center justify-center gap-1.5 rounded-lg font-semibold border-brass/25"
                     >
                       <Download size={14} /> PDF Ticket
                     </a>

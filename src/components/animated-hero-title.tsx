@@ -64,7 +64,7 @@ export function AnimatedHeroTitle({ className = "" }: AnimatedHeroTitleProps) {
               variants={wordVariants}
               className="inline-block relative mr-[0.26em] last:mr-0"
             >
-              <span className="relative z-10 italic font-light text-brass-light px-1 inline-block drop-shadow-[0_0_24px_rgba(226,192,115,0.35)]">
+              <span className="relative z-10 italic font-serif text-brass-deep dark:text-brass-light px-1 inline-block drop-shadow-[0_0_24px_rgba(226,192,115,0.35)] font-medium">
                 {item.text}
               </span>
               {/* Subtle ambient luxury aura behind 'modern' */}

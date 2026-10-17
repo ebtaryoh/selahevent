@@ -1,37 +1,49 @@
-import { Mic2, Users, Tent, BookOpen, Music, Video, Briefcase, Flame, UserPlus, Coffee, HeartHandshake } from "lucide-react";
+import { Mic2, Users, Tent, BookOpen, Music, Video, Briefcase, Flame, UserPlus, Coffee, HeartHandshake, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 const CATEGORIES = [
-  { name: "Conferences", icon: Users, color: "text-brass", bg: "bg-brass/20" },
-  { name: "Worship", icon: Mic2, color: "text-brass", bg: "bg-brass/20" },
-  { name: "Business", icon: Briefcase, color: "text-brass", bg: "bg-brass/20" },
-  { name: "Youth Meetings", icon: Flame, color: "text-brass", bg: "bg-brass/20" },
-  { name: "Singles Program", icon: UserPlus, color: "text-brass", bg: "bg-brass/20" },
-  { name: "Christian Hangout", icon: Coffee, color: "text-brass", bg: "bg-brass/20" },
-  { name: "Married & Singles", icon: HeartHandshake, color: "text-brass", bg: "bg-brass/20" },
-  { name: "Retreats", icon: Tent, color: "text-brass", bg: "bg-brass/20" },
-  { name: "Seminars", icon: BookOpen, color: "text-brass", bg: "bg-brass/20" },
-  { name: "Concerts", icon: Music, color: "text-brass", bg: "bg-brass/20" },
-  { name: "Online", icon: Video, color: "text-brass", bg: "bg-brass/20" },
+  { name: "Conferences", icon: Users },
+  { name: "Worship", icon: Mic2 },
+  { name: "Business", icon: Briefcase },
+  { name: "Youth Meetings", icon: Flame },
+  { name: "Singles Program", icon: UserPlus },
+  { name: "Christian Hangout", icon: Coffee },
+  { name: "Married & Singles", icon: HeartHandshake },
+  { name: "Retreats", icon: Tent },
+  { name: "Seminars", icon: BookOpen },
+  { name: "Concerts", icon: Music },
+  { name: "Online", icon: Video },
 ];
 
 export function CategoryGrid() {
   return (
     <div className="mb-20 text-center">
-      <h2 className="font-display text-4xl font-semibold text-white">There&apos;s something here for everyone</h2>
-      <p className="mt-3 text-lg text-white/60 font-light">Explore Christian events across categories that matter to you</p>
+      <div className="inline-flex items-center gap-2 rounded-full border border-brass/25 bg-brass/10 px-4 py-1.5 text-xs font-bold text-brass uppercase tracking-widest mb-3">
+        <Sparkles size={13} className="text-brass-light" />
+        <span>Fellowships of Faith · Psalm 133:1</span>
+      </div>
+
+      <h2 className="font-display text-3xl sm:text-4xl font-semibold text-ink">
+        Gatherings Across the Body of Christ
+      </h2>
+
+      <p className="mt-3 text-base sm:text-lg text-warm-500 font-light max-w-2xl mx-auto">
+        &ldquo;Behold, how good and how pleasant it is for brethren to dwell together in unity!&rdquo; — Psalm 133:1
+      </p>
       
-      <div className="mt-12 flex flex-nowrap items-center justify-start sm:justify-center gap-4 overflow-x-auto pb-6 scrollbar-hide snap-x">
+      <div className="mt-10 flex flex-nowrap items-center justify-start sm:justify-center gap-4 overflow-x-auto pb-6 scrollbar-hide snap-x">
         {CATEGORIES.map((cat) => (
           <Link
             key={cat.name}
             href={`/?category=${cat.name.toLowerCase()}#events`}
-            className="group flex-shrink-0 snap-start flex flex-col items-center justify-center w-40 h-40 rounded-[24px] border border-white/10 bg-[rgba(22,19,17,0.4)] shadow-sm hover:border-brass/40 hover:bg-white/5 transition-all"
+            className="group flex-shrink-0 snap-start flex flex-col items-center justify-center w-36 h-36 sm:w-40 sm:h-40 rounded-[24px] border border-[var(--card-border)] bg-[var(--card-bg)] shadow-md hover:border-brass/60 hover:shadow-lift transition-all duration-300 hover:-translate-y-1"
           >
-            <div className={`mb-4 inline-flex h-[60px] w-[60px] items-center justify-center rounded-[18px] ${cat.bg} group-hover:scale-110 transition-transform duration-300`}>
-              <cat.icon size={28} className={cat.color} />
+            <div className="mb-3.5 inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brass/15 border border-brass/30 text-brass group-hover:scale-110 transition-transform duration-300 shadow-sm">
+              <cat.icon size={26} className="text-brass" />
             </div>
-            <span className="font-display font-semibold text-white/90">{cat.name}</span>
+            <span className="font-display font-semibold text-ink text-sm sm:text-[0.925rem] group-hover:text-brass transition-colors">
+              {cat.name}
+            </span>
           </Link>
         ))}
       </div>
