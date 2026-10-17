@@ -101,7 +101,13 @@ export function relativeDays(date: Date | string) {
 }
 
 export function timeUntil(target: Date | string) {
+  if (!target) {
+    return { passed: true, days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
+  }
   const d = typeof target === "string" ? new Date(target) : target;
+  if (!d || Number.isNaN(d.getTime())) {
+    return { passed: true, days: 0, hours: 0, minutes: 0, seconds: 0, total: 0 };
+  }
   const ms = d.getTime() - Date.now();
   const clamped = Math.max(ms, 0);
   return {

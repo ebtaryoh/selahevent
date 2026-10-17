@@ -118,8 +118,8 @@ export default async function EventPage({ params, searchParams }: Params) {
     "@type": "Event",
     name: event.title,
     description: event.tagline ?? event.description,
-    startDate: event.startsAt.toISOString(),
-    endDate: event.endsAt.toISOString(),
+    startDate: new Date(event.startsAt || Date.now()).toISOString(),
+    endDate: new Date(event.endsAt || Date.now()).toISOString(),
     eventStatus: isCancelled
       ? "https://schema.org/EventCancelled"
       : isPostponed
@@ -357,7 +357,7 @@ export default async function EventPage({ params, searchParams }: Params) {
                   ? "Counting down to"
                   : "This event"}
               </div>
-              <Countdown target={event.startsAt.toISOString()} />
+              <Countdown target={new Date(event.startsAt).toISOString()} />
 
               <dl className="mt-7 space-y-0">
                 {[
@@ -495,14 +495,15 @@ export default async function EventPage({ params, searchParams }: Params) {
             </div>
           </div>
 
-          <div className="relative h-[300px] w-full overflow-hidden rounded-[16px] border border-[rgba(22,19,17,0.1)]">
+          <div className="relative min-h-[320px] w-full overflow-hidden rounded-[16px] border border-[rgba(22,19,17,0.1)] flex flex-col justify-end">
             <Image
               src="/images/welcome-desk.jpg"
               alt="Volunteers preparing the welcome desk before the event"
               className="object-cover"
               fill
+              sizes="(max-width: 1024px) 100vw, 500px"
             />
-            <div className="bg-paper p-7">
+            <div className="relative z-10 bg-paper/95 p-7 backdrop-blur-md border-t border-[rgba(22,19,17,0.1)]">
               <h3 className="font-display text-[1.22rem] leading-tight font-semibold text-ink">
                 Registration progress
               </h3>
