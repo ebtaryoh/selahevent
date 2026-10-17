@@ -26,6 +26,7 @@ import {
   Info,
 } from "lucide-react";
 import { createEvent, createEventFromBlueprint, updateEvent } from "@/lib/actions";
+import { validateChristianEventContent } from "@/lib/christian-moderation";
 import { useRouter } from "next/navigation";
 import { FocusImageUpload } from "./focus-image-upload";
 
@@ -490,6 +491,28 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
     setError(null);
     const formData = new FormData(e.currentTarget);
     
+    // Client-side Christian Ministry Moderation Guard
+    const candidateTitle = (formData.get("title") as string) || "";
+    const candidateTheme = (formData.get("theme") as string) || "";
+    const candidateTagline = (formData.get("tagline") as string) || "";
+    const candidateDescription = (formData.get("description") as string) || "";
+    const candidateEventType = (formData.get("eventType") as string) || "";
+
+    const moderation = validateChristianEventContent({
+      title: candidateTitle,
+      theme: candidateTheme,
+      tagline: candidateTagline,
+      description: candidateDescription,
+      eventType: candidateEventType,
+    });
+
+    if (!moderation.isValid) {
+      setError(moderation.reason || "This event does not comply with the Christian Ministry Covenant.");
+      setIsPending(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
     // Override media files with the React state to support removals
     formData.delete("media");
     if (coverImageFile) {
@@ -583,6 +606,23 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8 max-w-2xl">
+      {/* Christian Ministry Guard & Covenant Notice */}
+      <div className="rounded-2xl border border-brass/35 bg-brass/10 p-5 backdrop-blur-md shadow-sm">
+        <div className="flex items-start gap-3.5">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brass/20 text-brass border border-brass/40 shadow-sm mt-0.5">
+            <Sparkles size={18} />
+          </div>
+          <div className="space-y-1">
+            <h3 className="font-display text-sm font-bold text-ink">
+              Selah Christian Ministry Covenant · 1 Corinthians 14:40
+            </h3>
+            <p className="text-xs text-warm-500 leading-relaxed font-light">
+              Selah is consecrated exclusively for Christ-honoring church programs, conferences, camp retreats, and Christian fellowships. All events are automatically screened to protect the sanctuary of this platform. Secular parties, nightclubs, gambling, and worldly entertainment cannot be hosted on Selah.
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="space-y-6">
         
         {!isEditing && blueprints && blueprints.length > 0 && (

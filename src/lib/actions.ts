@@ -287,6 +287,19 @@ export async function updateEvent(eventId: string, formData: FormData) {
     return { error: "Missing required fields" };
   }
 
+  // Automated Christian Ministry Content Moderation Guard
+  const moderation = validateChristianEventContent({
+    title,
+    theme,
+    tagline,
+    description,
+    eventType,
+  });
+
+  if (!moderation.isValid) {
+    return { error: moderation.reason };
+  }
+
   let coverImage = existingEvent.coverImage;
   const mediaPaths: { type: "image" | "video"; url: string, focus?: {x: number, y: number} }[] = Array.isArray(existingEvent.media) 
     ? (existingEvent.media as any) 
@@ -895,6 +908,16 @@ export async function createEventFromBlueprint(blueprintId: string, overrides: {
 
   if (!blueprint) {
     return { error: "Blueprint not found" };
+  }
+
+  // Automated Christian Ministry Content Moderation Guard
+  const moderation = validateChristianEventContent({
+    title: overrides.title,
+    description: overrides.description,
+  });
+
+  if (!moderation.isValid) {
+    return { error: moderation.reason };
   }
 
   const s = blueprint.structure as any;

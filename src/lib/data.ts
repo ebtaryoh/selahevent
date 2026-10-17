@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { and, asc, count, desc, eq, sql, sum, or, ilike, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { getDbEventTypesForCategory } from "./event-tags";
+import { validateChristianEventContent } from "./christian-moderation";
 import {
   auditLogs,
   blueprints,
@@ -95,6 +96,14 @@ export async function getEventBySlug(slug: string) {
     .limit(1)
     .then((r) => {
       if (!r[0]) return null;
+      const moderation = validateChristianEventContent({
+        title: r[0].event.title,
+        theme: r[0].event.theme,
+        tagline: r[0].event.tagline,
+        description: r[0].event.description,
+        eventType: r[0].event.eventType,
+      });
+      if (!moderation.isValid) return null;
       return { ...r[0].event, organization: r[0].organization };
     });
 }
@@ -429,7 +438,21 @@ export async function getAllPublicEvents(filters?: { query?: string; city?: stri
     
   if (results.length === 0) return [];
   
-  const eventIds = results.map(r => r.event.id);
+  // Strict moderation gate: filter out any secular or non-Christian events
+  const approvedResults = results.filter((r) => {
+    const moderation = validateChristianEventContent({
+      title: r.event.title,
+      theme: r.event.theme,
+      tagline: r.event.tagline,
+      description: r.event.description,
+      eventType: r.event.eventType,
+    });
+    return moderation.isValid;
+  });
+
+  if (approvedResults.length === 0) return [];
+
+  const eventIds = approvedResults.map(r => r.event.id);
   const tickets = await db
     .select({ eventId: ticketTypes.eventId, price: ticketTypes.price })
     .from(ticketTypes)
@@ -443,7 +466,7 @@ export async function getAllPublicEvents(filters?: { query?: string; city?: stri
     }
   }
   
-  return results.map(r => ({
+  return approvedResults.map(r => ({
     ...r,
     minPrice: minPriceByEvent.get(r.event.id) ?? 0
   }));
