@@ -3,6 +3,8 @@ import "./globals.css";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { ThemeProvider } from "@/components/theme-provider";
 import { CursorSpotlight } from "@/components/cursor-spotlight";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://selahevent.vercel.app";
 
@@ -102,6 +104,8 @@ export default function RootLayout({
           </a>
           {children}
           <PwaInstallPrompt />
+          <Analytics />
+          <SpeedInsights />
         </ThemeProvider>
       </body>
     </html>
