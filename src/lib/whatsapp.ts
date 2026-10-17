@@ -145,6 +145,29 @@ export async function sendWhatsAppPass(data: WhatsAppTicketPayload): Promise<{ s
     }
   }
 
+  // 3. If Twilio WhatsApp is configured
+  const twilioSid = process.env.TWILIO_ACCOUNT_SID;
+  const twilioToken = process.env.TWILIO_AUTH_TOKEN;
+  const twilioFrom = process.env.TWILIO_WHATSAPP_NUMBER;
+  if (twilioSid && twilioToken && data.phone) {
+    try {
+      const twilioModule = await import("twilio");
+      const client = twilioModule.default(twilioSid, twilioToken);
+      const cleanPhone = formatWhatsAppPhoneNumber(data.phone);
+      const message = buildWhatsAppTicketMessage(data);
+
+      await client.messages.create({
+        from: twilioFrom ? (twilioFrom.startsWith("whatsapp:") ? twilioFrom : `whatsapp:${twilioFrom}`) : "whatsapp:+14155238886",
+        to: `whatsapp:+${cleanPhone}`,
+        body: message,
+      });
+
+      return { success: true, url: directUrl };
+    } catch (err: any) {
+      console.warn("[whatsapp] Automated Twilio dispatch failed, falling back to direct link:", err);
+    }
+  }
+
   // Fallback: direct share URL
   return { success: true, url: directUrl };
 }
