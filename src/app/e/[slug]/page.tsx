@@ -58,8 +58,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return {
     title: `${event.title} · ${event.city}`,
     description:
-      event.tagline ??
-      event.description.slice(0, 170) ??
+      event.tagline ||
+      event.description?.slice(0, 170) ||
       "Register for this event on Selah.",
     alternates: {
       canonical: `/e/${event.slug}`,
@@ -67,7 +67,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     openGraph: {
       type: "website",
       title: event.title,
-      description: event.tagline ?? event.description.slice(0, 170),
+      description: event.tagline || event.description?.slice(0, 170) || "Register for this event on Selah.",
       images: event.coverImage
         ? [{ url: event.coverImage, width: 1536, height: 1024 }]
         : undefined,
@@ -408,10 +408,10 @@ export default async function EventPage({ params, searchParams }: Params) {
                 <a
                   href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
                     event.title
-                  )}&dates=${event.startsAt
+                  )}&dates=${(new Date(event.startsAt || Date.now()))
                     .toISOString()
                     .replace(/[-:]/g, "")
-                    .replace(/\.\d{3}/, "")}/${event.endsAt
+                    .replace(/\.\d{3}/, "")}/${(new Date(event.endsAt || Date.now()))
                     .toISOString()
                     .replace(/[-:]/g, "")
                     .replace(/\.\d{3}/, "")}&location=${encodeURIComponent(

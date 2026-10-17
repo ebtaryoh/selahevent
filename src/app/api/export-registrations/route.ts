@@ -115,7 +115,7 @@ export async function GET(request: Request) {
         : "No",
       reg.transport ? "Yes" : "No",
       reg.amount,
-      reg.createdAt?.toISOString(),
+      reg.createdAt ? new Date(reg.createdAt).toISOString() : "",
     ];
 
     const answers = reg.customAnswers as Record<string, string> | null;

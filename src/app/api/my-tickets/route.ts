@@ -111,7 +111,7 @@ export async function POST(req: Request) {
         status: reg.status,
         eventTitle: evt.title,
         eventSlug: evt.slug,
-        eventStartsAt: evt.startsAt ? evt.startsAt.toISOString() : null,
+        eventStartsAt: evt.startsAt ? new Date(evt.startsAt).toISOString() : null,
         eventVenue: evt.venueName || "Venue Announced on Pass",
         eventCity: evt.city,
         coverImage: evt.coverImage,
