@@ -8,18 +8,31 @@ if (!databaseUrl) {
   throw new Error("DATABASE_URL is required");
 }
 
+const dbUrl: string = databaseUrl;
+
 const globalForDb = globalThis as typeof globalThis & {
   __arenaNextJsPostgresqlPool?: Pool;
 };
 
-export const pool =
-  globalForDb.__arenaNextJsPostgresqlPool ??
-  new Pool({
-    connectionString: databaseUrl,
+function createPool(url: string): Pool {
+  const isLocal = !url.includes("supabase.com") && !url.includes("neon.tech");
+  const p = new Pool({
+    connectionString: url,
     max: 10,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 5000,
+    idleTimeoutMillis: 20000,
+    connectionTimeoutMillis: 10000,
+    ssl: isLocal ? false : { rejectUnauthorized: false },
   });
+
+  p.on("error", (err) => {
+    // Prevent unhandled error events from crashing the process when remote poolers close idle sockets
+    console.error("[PostgreSQL Pool Background Error]:", err?.message || err);
+  });
+
+  return p;
+}
+
+export const pool = globalForDb.__arenaNextJsPostgresqlPool ?? createPool(dbUrl);
 
 if (process.env.NODE_ENV !== "production") {
   globalForDb.__arenaNextJsPostgresqlPool = pool;

@@ -60,27 +60,48 @@ export async function requirePermission(permission: string) {
 }
 
 export async function getOrganization() {
-
   const session = await getOrgSession();
   if (!session) return null;
 
-  const org = await db
-    .select()
-    .from(organizations)
-    .where(eq(organizations.id, session.orgId))
-    .limit(1)
-    .then((r) => r[0] ?? null);
+  try {
+    const org = await db
+      .select()
+      .from(organizations)
+      .where(eq(organizations.id, session.orgId))
+      .limit(1)
+      .then((r) => r[0] ?? null);
 
-  return org;
+    return org;
+  } catch (error) {
+    console.error("[getOrganization] Initial fetch failed, retrying once...", error);
+    try {
+      // Retry once in case of a transient remote connection reset or pooler recycle
+      const org = await db
+        .select()
+        .from(organizations)
+        .where(eq(organizations.id, session.orgId))
+        .limit(1)
+        .then((r) => r[0] ?? null);
+      return org;
+    } catch (retryError) {
+      console.error("[getOrganization] Retry failed:", retryError);
+      return null;
+    }
+  }
 }
 
 export async function getEventsForOrganization(orgId: string) {
-  await ensureSeed();
-  return db
-    .select()
-    .from(events)
-    .where(eq(events.organizationId, orgId))
-    .orderBy(asc(events.startsAt));
+  try {
+    await ensureSeed();
+    return await db
+      .select()
+      .from(events)
+      .where(eq(events.organizationId, orgId))
+      .orderBy(asc(events.startsAt));
+  } catch (err) {
+    console.error("[getEventsForOrganization error]:", err);
+    return [];
+  }
 }
 
 export async function getEventBySlug(slug: string) {
@@ -276,14 +297,19 @@ export async function getVolunteers(eventId: string) {
 }
 
 export async function getTasks(orgId: string, eventId?: string) {
-  await ensureSeed();
-  const base = db.select().from(tasks);
-  return eventId
-    ? base.where(and(eq(tasks.eventId, eventId), eq(tasks.organizationId, orgId))).orderBy(asc(tasks.dueAt))
-    : base
-        .where(eq(tasks.organizationId, orgId))
-        .orderBy(asc(tasks.dueAt))
-        .limit(24);
+  try {
+    await ensureSeed();
+    const base = db.select().from(tasks);
+    return await (eventId
+      ? base.where(and(eq(tasks.eventId, eventId), eq(tasks.organizationId, orgId))).orderBy(asc(tasks.dueAt))
+      : base
+          .where(eq(tasks.organizationId, orgId))
+          .orderBy(asc(tasks.dueAt))
+          .limit(24));
+  } catch (err) {
+    console.error("[getTasks error]:", err);
+    return [];
+  }
 }
 
 
@@ -534,63 +560,78 @@ export async function getAllPublicEvents(filters?: { query?: string; city?: stri
 }
 
 export async function getBlueprints(orgId: string) {
-  const allBlueprints = await db.query.blueprints.findMany({
-    where: eq(blueprints.organizationId, orgId),
-    orderBy: [desc(blueprints.createdAt)],
-  });
+  try {
+    const allBlueprints = await db.query.blueprints.findMany({
+      where: eq(blueprints.organizationId, orgId),
+      orderBy: [desc(blueprints.createdAt)],
+    });
 
-  // Count real usage — events whose blueprintId matches this blueprint
-  const usageCounts = await db
-    .select({ blueprintId: events.blueprintId, total: count() })
-    .from(events)
-    .where(eq(events.organizationId, orgId))
-    .groupBy(events.blueprintId);
+    // Count real usage — events whose blueprintId matches this blueprint
+    const usageCounts = await db
+      .select({ blueprintId: events.blueprintId, total: count() })
+      .from(events)
+      .where(eq(events.organizationId, orgId))
+      .groupBy(events.blueprintId);
 
-  const usageMap = new Map(
-    usageCounts
-      .filter((r) => r.blueprintId != null)
-      .map((r) => [r.blueprintId!, Number(r.total)])
-  );
+    const usageMap = new Map(
+      usageCounts
+        .filter((r) => r.blueprintId != null)
+        .map((r) => [r.blueprintId!, Number(r.total)])
+    );
 
-  return allBlueprints.map((bp) => {
-    const s = bp.structure as any;
-    return {
-      id: bp.id,
-      name: bp.name,
-      description: bp.description,
-      category: s.eventType || "General",
-      useCount: usageMap.get(bp.id) ?? 0,
-      lastUsedAt: bp.createdAt,
-      includes: [
-        "Registration flow",
-        s.ticketTypes?.length ? `${s.ticketTypes.length} Ticket tiers` : null,
-        s.customQuestions?.length ? `${s.customQuestions.length} Custom questions` : null,
-        s.sessions?.length ? `${s.sessions.length} Sessions` : null,
-      ].filter(Boolean),
-    };
-  });
+    return allBlueprints.map((bp) => {
+      const s = bp.structure as any;
+      return {
+        id: bp.id,
+        name: bp.name,
+        description: bp.description,
+        category: s?.eventType || "General",
+        useCount: usageMap.get(bp.id) ?? 0,
+        lastUsedAt: bp.createdAt,
+        includes: [
+          "Registration flow",
+          s?.ticketTypes?.length ? `${s.ticketTypes.length} Ticket tiers` : null,
+          s?.customQuestions?.length ? `${s.customQuestions.length} Custom questions` : null,
+          s?.sessions?.length ? `${s.sessions.length} Sessions` : null,
+        ].filter(Boolean),
+      };
+    });
+  } catch (err) {
+    console.error("[getBlueprints error]:", err);
+    return [];
+  }
 }
 
 export async function getAuditLogs(orgId: string, limitCount = 8) {
-  return db
-    .select()
-    .from(auditLogs)
-    .where(eq(auditLogs.organizationId, orgId))
-    .orderBy(desc(auditLogs.createdAt))
-    .limit(limitCount);
+  try {
+    return await db
+      .select()
+      .from(auditLogs)
+      .where(eq(auditLogs.organizationId, orgId))
+      .orderBy(desc(auditLogs.createdAt))
+      .limit(limitCount);
+  } catch (err) {
+    console.error("[getAuditLogs error]:", err);
+    return [];
+  }
 }
 
 /** Returns ticket type names + real sold/capacity counts for the dashboard distribution widget. */
 export async function getEventTicketDistribution(eventId: string) {
-  return db
-    .select({
-      name: ticketTypes.name,
-      sold: ticketTypes.sold,
-      capacity: ticketTypes.capacity,
-    })
-    .from(ticketTypes)
-    .where(eq(ticketTypes.eventId, eventId))
-    .orderBy(asc(ticketTypes.sortOrder));
+  try {
+    return await db
+      .select({
+        name: ticketTypes.name,
+        sold: ticketTypes.sold,
+        capacity: ticketTypes.capacity,
+      })
+      .from(ticketTypes)
+      .where(eq(ticketTypes.eventId, eventId))
+      .orderBy(asc(ticketTypes.sortOrder));
+  } catch (err) {
+    console.error("[getEventTicketDistribution error]:", err);
+    return [];
+  }
 }
 
 export async function getEventRegistrationHistory(eventId: string, days = 14) {

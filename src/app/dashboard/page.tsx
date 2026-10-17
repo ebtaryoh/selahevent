@@ -26,6 +26,7 @@ import {
   getOrganization,
   getTasks,
 } from "@/lib/data";
+import { getOrgSession } from "@/lib/session";
 import {
   formatDate,
   formatMoney,
@@ -39,8 +40,38 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const org = await getOrganization();
-  if (!org) return null;
+  let org = await getOrganization();
+  if (!org) {
+    const session = await getOrgSession().catch(() => null);
+    if (!session?.orgId) return null;
+    org = {
+      id: session.orgId,
+      name: "Selah Workspace",
+      slug: "workspace",
+      orgType: "church",
+      country: "NG",
+      currency: "NGN",
+      timezone: "Africa/Lagos",
+      email: null,
+      phone: null,
+      website: null,
+      logoUrl: null,
+      primaryColor: "#0e2a22",
+      accentColor: "#c08a2e",
+      plan: "growth",
+      eventCadence: "monthly",
+      paymentGateway: "paystack",
+      paymentGatewayMode: "test",
+      paystackPublicKey: null,
+      paystackSecretKey: null,
+      retentionAttendeeHistoryMonths: 24,
+      retentionSensitiveDataDays: 90,
+      retentionAutoSuggest: true,
+      retentionMarketingUse: false,
+      lastPolicyReviewAt: new Date(),
+      createdAt: new Date(),
+    };
+  }
 
   const [events, tasks, blueprints, audit] = await Promise.all([
     getEventsForOrganization(org.id),
