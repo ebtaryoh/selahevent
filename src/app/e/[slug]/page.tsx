@@ -14,6 +14,8 @@ import {
   Phone,
   Mail,
   Globe,
+  Sparkles,
+  Ticket,
 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -199,14 +201,33 @@ export default async function EventPage({ params, searchParams }: Params) {
       )}
 
       {/* ------------- Hero ------------- */}
-      <section className="relative isolate overflow-hidden pt-[72px]">
-        <div className="absolute inset-0 -z-10">
+      <section className="relative isolate overflow-hidden pt-[76px] pb-16 sm:pb-24">
+        {/* Layer 1: Ambient Blurred Aura of the Cover Flyer */}
+        <div className="absolute inset-0 -z-30 overflow-hidden pointer-events-none">
+          {event.coverImage ? (
+            <div className="relative h-full w-full scale-110 filter blur-[90px] opacity-35 dark:opacity-50 transform-gpu">
+              <Image
+                src={event.coverImage}
+                alt=""
+                aria-hidden="true"
+                fill
+                priority
+                className="object-cover"
+              />
+            </div>
+          ) : (
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(226,192,115,0.18)_0%,rgba(9,32,25,0.95)_75%)]" />
+          )}
+        </div>
+
+        {/* Layer 2: Main Background Artwork with Cinematic Vignette */}
+        <div className="absolute inset-0 -z-20">
           {event.coverImage ? (
             <Image
               src={event.coverImage}
-              alt=""
+              alt={event.title}
               aria-hidden="true"
-              className="object-cover"
+              className="object-cover object-center brightness-[0.7] contrast-[1.05]"
               style={{
                 objectPosition: (event.media as any[])?.[0]?.focus 
                   ? `${(event.media as any[])[0].focus.x}% ${(event.media as any[])[0].focus.y}%` 
@@ -214,238 +235,316 @@ export default async function EventPage({ params, searchParams }: Params) {
               }}
               priority
               fill
+              sizes="100vw"
             />
           ) : (
             <div className="absolute inset-0 bg-cypress text-brass-light flex items-center justify-end opacity-10">
               <CalendarDays size={400} className="-mr-20" />
             </div>
           )}
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "linear-gradient(178deg, rgba(9,32,25,0.9) 0%, rgba(9,32,25,0.82) 40%, rgba(9,32,25,0.94) 100%)",
-            }}
-          />
+
+          {/* Master Cinematic Gradient System:
+              - Left dark wash for ultra-sharp typography legibility
+              - Bottom smooth fade into parchment page background
+              - Top dark header blend */}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#07130e]/95 via-[#07130e]/82 to-[#07130e]/45 dark:from-[#050706]/98 dark:via-[#050706]/85 dark:to-[#050706]/50" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-parchment)] via-transparent to-[#07130e]/75" />
+          <div className="grain pointer-events-none absolute inset-0 opacity-[0.2]" />
+
+          {/* Subtle Ambient Golden Light Halo on the Title zone */}
+          <div className="absolute top-[20%] left-[10%] w-[450px] h-[450px] bg-brass/15 blur-[140px] rounded-full pointer-events-none -z-10 animate-sacred-breathe" />
         </div>
 
-        <div className="mx-auto w-full max-w-[1180px] px-5 pt-12 pb-16 sm:px-8 sm:pt-16 sm:pb-20">
-          <nav aria-label="Breadcrumb" className="flex items-center gap-2">
-            <Link
-              href="/"
-              className="eyebrow text-[0.58rem] text-[rgba(232,211,166,0.75)] transition-colors hover:text-brass-light"
-            >
-              Selah
-            </Link>
-            <span className="text-[rgba(232,211,166,0.45)]">/</span>
-            <span className="eyebrow text-[0.58rem] text-[rgba(232,211,166,0.75)] uppercase">
-              {getEventTag(event.eventType)}
-            </span>
-          </nav>
+        <div className="mx-auto w-full max-w-[1240px] px-5 pt-8 pb-10 sm:px-8 sm:pt-12 sm:pb-16">
+          {/* Top Bar: Breadcrumb + Host Ministry */}
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <nav aria-label="Breadcrumb" className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/40 px-3.5 py-1.5 backdrop-blur-md shadow-sm">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+              </span>
+              <Link
+                href="/"
+                className="text-[0.66rem] font-bold text-brass-light hover:text-white transition-colors uppercase tracking-widest"
+              >
+                Selah
+              </Link>
+              <span className="text-white/30 text-xs">/</span>
+              <span className="text-[0.66rem] font-bold text-white/90 uppercase tracking-widest">
+                {getEventTag(event.eventType)}
+              </span>
+            </nav>
+
+            {event.organization && (
+              <div className="hidden sm:inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/35 px-4 py-1.5 backdrop-blur-md text-xs text-white/80 shadow-sm">
+                <Building2 size={13} className="text-brass-light shrink-0" />
+                <span>Hosted by <strong className="text-white font-semibold">{event.organization.name}</strong></span>
+              </div>
+            )}
+          </div>
 
           <Reveal delay={0.08} y={24} className="mt-8">
-          <div className="grid gap-10 lg:grid-cols-[1.35fr_1fr] lg:items-end">
-            <div>
-              <div className="flex flex-wrap items-center gap-2.5">
-                {isCancelled ? (
-                  <span className="pill border-red-500/40 bg-red-950/70 text-red-200 font-medium">
-                    Event Cancelled
-                  </span>
-                ) : isPostponed ? (
-                  <span className="pill border-amber-500/40 bg-amber-950/70 text-amber-200 font-medium">
-                    Event Postponed
-                  </span>
-                ) : isRegistrationClosed ? (
-                  <span className="pill border-[rgba(232,211,166,0.28)] bg-[rgba(232,211,166,0.12)] text-[rgba(232,211,166,0.8)]">
-                    Registration closed
-                  </span>
-                ) : isRegistrationUpcoming ? (
-                  <span className="pill border-[rgba(232,211,166,0.28)] bg-[rgba(232,211,166,0.12)] text-[rgba(232,211,166,0.8)]">
-                    Registration opens {formatDate(event.registrationOpensAt!)}
-                  </span>
-                ) : (
-                  <span className="pill border-[rgba(232,211,166,0.28)] bg-[rgba(232,211,166,0.12)] text-brass-light">
-                    Registration open
-                  </span>
-                )}
-                <span className="pill border-[rgba(247,243,236,0.18)] bg-[rgba(247,243,236,0.08)] text-[rgba(247,243,236,0.8)]">
-                  <MapPin size={12} /> {event.city}, {event.country}
-                </span>
-                <span className="pill border-[rgba(247,243,236,0.18)] bg-[rgba(247,243,236,0.08)] text-[rgba(247,243,236,0.8)]">
-                  <Users size={12} /> {formatNumber(totalSold)} registered
-                </span>
-                {isSeatedEvent(event.eventType) && (
-                  <span className="pill border-brass/50 bg-brass/15 text-brass-light font-medium shadow-sm">
-                    🍽️ {getEventTypeLabel(event.eventType)} • Table Seating
-                  </span>
-                )}
-              </div>
+            <div className="grid gap-10 lg:grid-cols-[1.32fr_1fr] lg:items-end">
+              <div>
+                {/* Live Status & Social Proof Badges */}
+                <div className="flex flex-wrap items-center gap-2.5">
+                  {isCancelled ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-red-500/50 bg-red-950/80 px-3.5 py-1 text-xs font-bold text-red-200 backdrop-blur-md shadow-sm">
+                      <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
+                      Event Cancelled
+                    </span>
+                  ) : isPostponed ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/50 bg-amber-950/80 px-3.5 py-1 text-xs font-bold text-amber-200 backdrop-blur-md shadow-sm">
+                      <Clock size={12} className="text-amber-300" />
+                      Event Postponed
+                    </span>
+                  ) : isRegistrationClosed ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1 text-xs font-semibold text-white/70 backdrop-blur-md">
+                      Registration Closed
+                    </span>
+                  ) : isRegistrationUpcoming ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-brass/40 bg-brass/15 px-3.5 py-1 text-xs font-bold text-brass-light backdrop-blur-md">
+                      <Sparkles size={12} className="text-brass-light" />
+                      Opens {formatDate(event.registrationOpensAt!)}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-950/70 px-3.5 py-1 text-xs font-bold text-emerald-300 backdrop-blur-md shadow-[0_0_18px_rgba(16,185,129,0.25)]">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
+                      </span>
+                      Registration Open
+                    </span>
+                  )}
 
-              <h1 className="font-display mt-6 text-[clamp(2.35rem,5.6vw,4.25rem)] leading-[1.02] font-semibold tracking-[-0.026em] text-parchment">
-                {event.title}
-              </h1>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/40 px-3.5 py-1 text-xs font-medium text-white/90 backdrop-blur-md">
+                    <MapPin size={12} className="text-brass-light shrink-0" />
+                    <span>{event.city}, {event.country}</span>
+                  </span>
 
-              {event.theme ? (
-                <p
-                  className="mt-5 text-[clamp(1.15rem,2.4vw,1.65rem)] leading-[1.42]"
-                  style={{
-                    fontStyle: "italic",
-                    color: "var(--color-brass-light)",
-                  }}
-                >
-                  “{event.theme}”
-                </p>
-              ) : null}
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/40 px-3.5 py-1 text-xs font-medium text-white/90 backdrop-blur-md">
+                    <Users size={12} className="text-brass-light shrink-0" />
+                    <span><strong className="text-white font-semibold">{formatNumber(totalSold)}</strong> registered</span>
+                  </span>
 
-              <p className="mt-6 max-w-[42rem] text-[clamp(1rem,1.55vw,1.125rem)] leading-[1.75] text-[rgba(247,243,236,0.82)]">
-                {event.tagline}
-              </p>
+                  {isSeatedEvent(event.eventType) && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-brass/50 bg-brass/15 px-3.5 py-1 text-xs font-semibold text-brass-light backdrop-blur-md shadow-sm">
+                      🍽️ Table Seating
+                    </span>
+                  )}
+                </div>
 
-              <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                {isRegistrationClosed ? (
-                  <button
-                    disabled
-                    className="btn btn-brass opacity-50 cursor-not-allowed !px-7 !py-4 !text-[0.95rem]"
-                  >
-                    Registration closed
-                  </button>
-                ) : isRegistrationUpcoming ? (
-                  <button
-                    disabled
-                    className="btn btn-brass opacity-50 cursor-not-allowed !px-7 !py-4 !text-[0.95rem]"
-                  >
-                    Opens {formatDate(event.registrationOpensAt!)}
-                  </button>
-                ) : (
-                  <Link
-                    href={`/e/${event.slug}/register`}
-                    className="btn btn-brass !px-7 !py-4 !text-[0.95rem]"
-                  >
-                    Register now
-                    <ArrowUpRight size={17} strokeWidth={2.1} />
-                  </Link>
-                )}
-                <a
-                  href="#tickets"
-                  className="btn btn-light !px-7 !py-4 !text-[0.95rem]"
-                >
-                  View tickets
-                </a>
-                {sessions.length > 0 && (
-                  <a
-                    href="#schedule"
-                    className="btn btn-light !px-7 !py-4 !text-[0.95rem]"
-                  >
-                    See the schedule
-                  </a>
-                )}
-                {products.length > 0 && (
-                  <a
-                    href="#store"
-                    className="btn btn-light !px-7 !py-4 !text-[0.95rem] inline-flex items-center gap-1.5"
-                  >
-                    🛍️ Event Store ({products.length})
-                  </a>
-                )}
-              </div>
-            </div>
+                {/* Event Main Title */}
+                <h1 className="font-display mt-6 text-[clamp(2.4rem,6vw,4.5rem)] leading-[1.04] font-bold tracking-tight text-white drop-shadow-[0_4px_30px_rgba(0,0,0,0.85)]">
+                  {event.title}
+                </h1>
 
-            {/* Countdown + key facts */}
-            <div className="rounded-[18px] border border-[rgba(247,243,236,0.16)] bg-[rgba(247,243,236,0.08)] p-6 backdrop-blur-xl sm:p-7">
-              <div className="eyebrow text-[0.585rem] text-brass-light">
-                {/* eslint-disable-next-line react-hooks/purity */}
-                {new Date(event.startsAt).getTime() > Date.now()
-                  ? "Counting down to"
-                  : "This event"}
-              </div>
-              <Countdown target={new Date(event.startsAt).toISOString()} />
-
-              <dl className="mt-7 space-y-0">
-                {[
-                  {
-                    icon: CalendarDays,
-                    term: "Dates",
-                    value: formatRange(event.startsAt, event.endsAt),
-                  },
-                  {
-                    icon: Clock,
-                    term: "Doors open",
-                    value: `${formatTime(event.startsAt)} (WAT)`,
-                  },
-                  {
-                    icon: Building2,
-                    term: "Venue",
-                    value: `${event.venueName ?? "To be confirmed"}${
-                      event.venueAddress ? `, ${event.venueAddress}` : ""
-                    }`,
-                  },
-                  {
-                    icon: Users,
-                    term: "Capacity",
-                    value: `${formatNumber(event.capacity)} · ${fillRate}% filled`,
-                  },
-                ].map((row) => (
-                  <div
-                    key={row.term}
-                    className="flex items-start gap-3.5 border-t border-[rgba(247,243,236,0.14)] py-4 first:border-t-0 first:pt-0"
-                  >
-                    <row.icon
-                      size={17}
-                      className="mt-0.5 shrink-0 text-brass-light"
-                    />
-                    <div>
-                      <dt className="eyebrow text-[0.545rem] text-[rgba(247,243,236,0.6)]">
-                        {row.term}
-                      </dt>
-                      <dd className="mt-1 text-[0.9125rem] leading-snug font-medium text-parchment">
-                        {row.value}
-                      </dd>
-                    </div>
+                {/* Event Theme Card */}
+                {event.theme ? (
+                  <div className="mt-5 inline-flex items-center gap-3 rounded-2xl border border-brass/35 bg-gradient-to-r from-brass/25 via-brass/10 to-transparent px-5 py-2.5 backdrop-blur-md shadow-sm">
+                    <Sparkles size={16} className="text-brass-light shrink-0 animate-pulse" />
+                    <p className="font-display text-[clamp(1.1rem,2.2vw,1.45rem)] leading-snug font-serif italic text-brass-light tracking-wide">
+                      &ldquo;{event.theme}&rdquo;
+                    </p>
                   </div>
-                ))}
-              </dl>
+                ) : null}
 
-              <div className="mt-6 flex flex-wrap gap-2.5">
-                <a
-                  href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
-                    event.title
-                  )}&dates=${(new Date(event.startsAt || Date.now()))
-                    .toISOString()
-                    .replace(/[-:]/g, "")
-                    .replace(/\.\d{3}/, "")}/${(new Date(event.endsAt || Date.now()))
-                    .toISOString()
-                    .replace(/[-:]/g, "")
-                    .replace(/\.\d{3}/, "")}&location=${encodeURIComponent(
-                    `${event.venueName ?? ""} ${event.venueAddress ?? ""} ${event.city}`
-                  )}&details=${encodeURIComponent(event.tagline ?? "")}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn btn-light !px-4 !py-2.5 !text-[0.78rem]"
-                >
-                  <Download size={14} /> Google Calendar
-                </a>
-                <ShareEventButton
-                  event={{
-                    title: event.title,
-                    slug: event.slug,
-                    description: event.description,
-                    tagline: event.tagline,
-                    theme: event.theme,
-                    startsAt: event.startsAt,
-                    endsAt: event.endsAt,
-                    venueName: event.venueName,
-                    venueAddress: event.venueAddress,
-                    city: event.city,
-                    organizationName: event.organization?.name,
-                    coverImage: event.coverImage,
-                  }}
-                  variant="light"
-                  size="md"
-                  label="Share event"
-                />
+                {/* Event Tagline */}
+                {event.tagline ? (
+                  <p className="mt-6 max-w-[42rem] text-[clamp(1.025rem,1.6vw,1.175rem)] leading-[1.75] text-white/85 font-normal drop-shadow-[0_2px_10px_rgba(0,0,0,0.6)]">
+                    {event.tagline}
+                  </p>
+                ) : null}
+
+                {/* Action Suite (CTAs) */}
+                <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                  {isRegistrationClosed ? (
+                    <button
+                      disabled
+                      className="btn btn-brass opacity-50 cursor-not-allowed !rounded-full !px-8 !py-4.5 !text-[1rem] font-bold"
+                    >
+                      Registration Closed
+                    </button>
+                  ) : isRegistrationUpcoming ? (
+                    <button
+                      disabled
+                      className="btn btn-brass opacity-50 cursor-not-allowed !rounded-full !px-8 !py-4.5 !text-[1rem] font-bold"
+                    >
+                      Opens {formatDate(event.registrationOpensAt!)}
+                    </button>
+                  ) : (
+                    <Link
+                      href={`/e/${event.slug}/register`}
+                      className="btn btn-brass !rounded-full !px-8 !py-4.5 !text-[1.025rem] font-bold shadow-[0_0_35px_rgba(226,192,115,0.45)] hover:shadow-[0_0_55px_rgba(226,192,115,0.65)] transition-all duration-300 hover:-translate-y-0.5 inline-flex items-center gap-2 group"
+                    >
+                      <span>Register now</span>
+                      <ArrowUpRight size={18} strokeWidth={2.5} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    </Link>
+                  )}
+
+                  <a
+                    href="#tickets"
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-white/25 bg-white/10 hover:bg-white/20 px-7 py-4 text-[0.95rem] font-semibold text-white backdrop-blur-md shadow-sm transition-all hover:-translate-y-0.5"
+                  >
+                    <Ticket size={16} className="text-brass-light" />
+                    <span>View tickets</span>
+                  </a>
+
+                  {sessions.length > 0 && (
+                    <a
+                      href="#schedule"
+                      className="inline-flex items-center justify-center gap-2 rounded-full border border-white/25 bg-white/10 hover:bg-white/20 px-6 py-4 text-[0.95rem] font-semibold text-white backdrop-blur-md shadow-sm transition-all hover:-translate-y-0.5"
+                    >
+                      <CalendarDays size={16} className="text-brass-light" />
+                      <span>Schedule</span>
+                    </a>
+                  )}
+
+                  {products.length > 0 && (
+                    <a
+                      href="#store"
+                      className="inline-flex items-center justify-center gap-2 rounded-full border border-brass/35 bg-brass/15 hover:bg-brass/25 px-6 py-4 text-[0.95rem] font-semibold text-brass-light backdrop-blur-md shadow-sm transition-all hover:-translate-y-0.5"
+                    >
+                      <span>🛍️ Event Store</span>
+                      <span className="rounded-full bg-brass/35 px-2 py-0.5 text-xs font-bold text-white">
+                        {products.length}
+                      </span>
+                    </a>
+                  )}
+                </div>
+              </div>
+
+              {/* Right Column: Command Pass Countdown & Live Venue Card */}
+              <div className="relative overflow-hidden rounded-[26px] border border-white/20 bg-black/45 p-6 sm:p-8 backdrop-blur-2xl shadow-[0_30px_70px_-15px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.25)]">
+                {/* Top Card Ambient Gradient Hairline */}
+                <div className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-brass to-transparent" />
+
+                <div className="flex items-center justify-between mb-4">
+                  <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-brass-light">
+                    <Clock size={13} className="text-brass-light" />
+                    {/* eslint-disable-next-line react-hooks/purity */}
+                    <span>
+                      {new Date(event.startsAt).getTime() > Date.now()
+                        ? "Countdown to Assembly"
+                        : "Assembly Underway"}
+                    </span>
+                  </div>
+                  <span className="inline-flex h-2 w-2 rounded-full bg-brass animate-ping" />
+                </div>
+
+                <Countdown target={new Date(event.startsAt).toISOString()} variant="hero-glass" />
+
+                <dl className="mt-7 space-y-0 divide-y divide-white/10 border-y border-white/10">
+                  {[
+                    {
+                      icon: CalendarDays,
+                      term: "Dates",
+                      value: formatRange(event.startsAt, event.endsAt),
+                    },
+                    {
+                      icon: Clock,
+                      term: "Doors open",
+                      value: `${formatTime(event.startsAt)} (WAT)`,
+                    },
+                    {
+                      icon: Building2,
+                      term: "Venue",
+                      value: `${event.venueName ?? "To be confirmed"}${
+                        event.venueAddress ? `, ${event.venueAddress}` : ""
+                      }`,
+                      isMapLink: !!(event.venueAddress || event.venueName),
+                      mapUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                        `${event.venueName ?? ""} ${event.venueAddress ?? ""} ${event.city}`
+                      )}`,
+                    },
+                    {
+                      icon: Users,
+                      term: "Capacity & Progress",
+                      value: `${formatNumber(event.capacity)} total capacity · ${fillRate}% filled`,
+                      progress: fillRate,
+                    },
+                  ].map((row) => (
+                    <div
+                      key={row.term}
+                      className="flex items-start gap-3.5 py-3.5 first:pt-4 last:pb-4"
+                    >
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 border border-white/15 text-brass-light shadow-inner">
+                        <row.icon size={16} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <dt className="eyebrow text-[0.58rem] font-bold text-white/50 uppercase tracking-widest">
+                          {row.term}
+                        </dt>
+                        {row.isMapLink && row.mapUrl ? (
+                          <a
+                            href={row.mapUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-0.5 inline-flex items-center gap-1.5 text-[0.88rem] leading-snug font-medium text-parchment hover:text-brass-light transition-colors group"
+                          >
+                            <span className="truncate">{row.value}</span>
+                            <ArrowUpRight size={13} className="shrink-0 text-brass-light group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                          </a>
+                        ) : (
+                          <dd className="mt-0.5 text-[0.88rem] leading-snug font-medium text-parchment">
+                            {row.value}
+                          </dd>
+                        )}
+                        {typeof row.progress === "number" && (
+                          <div className="mt-2 h-1.5 w-full rounded-full bg-white/15 overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-brass-deep to-brass transition-all duration-1000"
+                              style={{ width: `${Math.min(100, Math.max(5, row.progress))}%` }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </dl>
+
+                <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <a
+                    href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(
+                      event.title
+                    )}&dates=${(new Date(event.startsAt || Date.now()))
+                      .toISOString()
+                      .replace(/[-:]/g, "")
+                      .replace(/\.\d{3}/, "")}/${(new Date(event.endsAt || Date.now()))
+                      .toISOString()
+                      .replace(/[-:]/g, "")
+                      .replace(/\.\d{3}/, "")}&location=${encodeURIComponent(
+                      `${event.venueName ?? ""} ${event.venueAddress ?? ""} ${event.city}`
+                    )}&details=${encodeURIComponent(event.tagline ?? "")}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-4 py-3 text-xs font-semibold text-white backdrop-blur-md shadow-sm transition-all hover:-translate-y-0.5"
+                  >
+                    <Download size={14} className="text-brass-light" />
+                    <span>Google Calendar</span>
+                  </a>
+                  <ShareEventButton
+                    event={{
+                      title: event.title,
+                      slug: event.slug,
+                      description: event.description,
+                      tagline: event.tagline,
+                      theme: event.theme,
+                      startsAt: event.startsAt,
+                      endsAt: event.endsAt,
+                      venueName: event.venueName,
+                      venueAddress: event.venueAddress,
+                      city: event.city,
+                      organizationName: event.organization?.name,
+                      coverImage: event.coverImage,
+                    }}
+                    variant="light"
+                    size="md"
+                    label="Share event"
+                  />
+                </div>
               </div>
             </div>
-          </div>
           </Reveal>
         </div>
       </section>

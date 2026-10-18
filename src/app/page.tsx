@@ -29,6 +29,7 @@ import { CategoryGrid } from "@/components/category-grid";
 import { formatMoney } from "@/lib/format";
 import { getOrgSession } from "@/lib/session";
 import { getEventTag, isSeatedEvent } from "@/lib/event-tags";
+import { HeroSanctuaryShowcase } from "@/components/hero-sanctuary-showcase";
 
 type SearchParams = {
   query?: string;
@@ -124,57 +125,51 @@ export default async function HomePage({
           <div className="mx-auto w-full max-w-[1240px] px-5 sm:px-8 text-center relative z-10">
             {/* Welcoming Scripture Badge */}
             <Reveal>
-              <div className="mx-auto mb-7 inline-flex items-center gap-2.5 rounded-full border border-brass/35 bg-brass/10 px-4 py-2 backdrop-blur-md shadow-sm">
+              <div className="mx-auto mb-6 inline-flex items-center gap-2.5 rounded-full border border-brass/35 bg-brass/10 px-4 py-1.5 backdrop-blur-md shadow-sm">
                 <Sparkles size={14} className="text-brass-deep dark:text-brass-light animate-spin" style={{ animationDuration: "12s" }} />
                 <span className="eyebrow text-[0.68rem] text-brass-deep dark:text-brass-light tracking-[0.16em] uppercase font-bold">
-                  Gathering the Bride of Christ · Matthew 18:20
+                  The Christian Event Operating System &amp; Digital Sanctuary
                 </span>
               </div>
             </Reveal>
 
-            <AnimatedHeroTitle className="font-display mx-auto max-w-5xl text-[clamp(2.9rem,7.5vw,6.2rem)] leading-[1.03] font-semibold tracking-[-0.03em] text-ink" />
+            <AnimatedHeroTitle className="font-display mx-auto max-w-5xl text-[clamp(2.75rem,7vw,5.8rem)] leading-[1.04] font-semibold tracking-[-0.03em] text-ink" />
 
-            <Reveal delay={0.2}>
-              <p className="mx-auto mt-7 max-w-2xl text-[clamp(1.0625rem,1.7vw,1.325rem)] leading-[1.7] text-warm-600 dark:text-warm-500 font-normal">
-                Discover, register, and experience spirit-filled conferences, holy convocations, and leadership summits with reverent digital excellence.
+            <Reveal delay={0.18}>
+              <p className="mx-auto mt-6 max-w-2xl text-[clamp(1.05rem,1.6vw,1.25rem)] leading-[1.7] text-warm-600 dark:text-warm-500 font-normal">
+                Discover, register, and experience spirit-filled conferences, camp meetings, and holy convocations with offline turnstiles, WhatsApp passes, and reverent digital excellence.
               </p>
             </Reveal>
 
-            {/* Contextual Welcoming Scripture Banner */}
+            {/* CTAs */}
             <Reveal delay={0.25}>
-              <div className="mx-auto mt-6 max-w-lg rounded-2xl border border-brass/25 bg-brass/5 px-6 py-3.5 backdrop-blur-md shadow-sm">
-                <p className="font-display text-sm sm:text-[0.95rem] italic text-ink font-normal leading-relaxed">
-                  &ldquo;For where two or three are gathered together in My name, there am I in the midst of them.&rdquo;
-                </p>
-                <span className="block mt-1 text-[0.65rem] font-bold uppercase tracking-widest text-brass-deep dark:text-brass">
-                  — Matthew 18:20
-                </span>
-              </div>
-            </Reveal>
-
-            <Reveal delay={0.3}>
-              <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <div className="mt-8 flex flex-col items-center justify-center gap-3.5 sm:flex-row">
                 <a
                   href="#events"
-                  className="btn btn-brass !rounded-full !px-9 !py-4 !text-[1.025rem] font-bold shadow-[0_0_30px_rgba(226,192,115,0.3)] hover:shadow-[0_0_45px_rgba(226,192,115,0.5)] transition-all duration-300 hover:-translate-y-0.5"
+                  className="btn btn-brass !rounded-full !px-8 !py-4 !text-[1rem] font-bold shadow-[0_0_35px_rgba(226,192,115,0.35)] hover:shadow-[0_0_50px_rgba(226,192,115,0.55)] transition-all duration-300 hover:-translate-y-0.5"
                 >
                   Explore Sacred Convocations
                   <ArrowRight size={17} strokeWidth={2.4} className="ml-2" />
                 </a>
                 <Link
                   href={session ? "/dashboard/events/new" : "/register"}
-                  className="btn btn-ghost !rounded-full !px-9 !py-4 !text-[1.025rem] border border-brass/35 hover:bg-brass/10 hover:border-brass/50 backdrop-blur-md text-ink transition-all duration-300 font-semibold"
+                  className="btn btn-ghost !rounded-full !px-8 !py-4 !text-[1rem] border border-brass/35 hover:bg-brass/10 hover:border-brass/50 backdrop-blur-md text-ink transition-all duration-300 font-semibold"
                 >
                   Host Ministry Event
                 </Link>
                 <Link
                   href="/my-tickets"
-                  className="btn btn-ghost !rounded-full !px-6 !py-4 !text-[0.95rem] border border-[var(--card-border)] hover:bg-brass/10 backdrop-blur-md text-ink font-semibold transition-all"
+                  className="btn btn-ghost !rounded-full !px-6 !py-4 !text-[0.925rem] border border-[var(--card-border)] hover:bg-brass/10 backdrop-blur-md text-ink font-semibold transition-all"
                 >
-                  <Ticket size={16} className="text-brass-deep dark:text-brass mr-1" />
+                  <Ticket size={16} className="text-brass-deep dark:text-brass mr-1.5" />
                   Find My Pass
                 </Link>
               </div>
+            </Reveal>
+
+            {/* Interactive Showcase Centerpiece */}
+            <Reveal delay={0.32}>
+              <HeroSanctuaryShowcase />
             </Reveal>
           </div>
 
