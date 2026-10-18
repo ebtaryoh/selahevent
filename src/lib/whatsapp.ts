@@ -151,18 +151,35 @@ export async function sendWhatsAppPass(data: WhatsAppTicketPayload): Promise<{ s
   const twilioFrom = process.env.TWILIO_WHATSAPP_NUMBER;
   if (twilioSid && twilioToken && data.phone) {
     try {
-      const twilioModule = await import("twilio");
-      const client = twilioModule.default(twilioSid, twilioToken);
       const cleanPhone = formatWhatsAppPhoneNumber(data.phone);
       const message = buildWhatsAppTicketMessage(data);
+      const fromNumber = twilioFrom
+        ? (twilioFrom.startsWith("whatsapp:") ? twilioFrom : `whatsapp:${twilioFrom}`)
+        : "whatsapp:+14155238886";
 
-      await client.messages.create({
-        from: twilioFrom ? (twilioFrom.startsWith("whatsapp:") ? twilioFrom : `whatsapp:${twilioFrom}`) : "whatsapp:+14155238886",
-        to: `whatsapp:+${cleanPhone}`,
-        body: message,
-      });
+      const auth = Buffer.from(`${twilioSid}:${twilioToken}`).toString("base64");
+      const params = new URLSearchParams();
+      params.append("From", fromNumber);
+      params.append("To", `whatsapp:+${cleanPhone}`);
+      params.append("Body", message);
 
-      return { success: true, url: directUrl };
+      const twilioRes = await fetch(
+        `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Basic ${auth}`,
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+          body: params.toString(),
+        }
+      );
+
+      if (twilioRes.ok) {
+        return { success: true, url: directUrl };
+      }
+      const errData = await twilioRes.json().catch(() => null);
+      console.warn("[whatsapp] Twilio API response error:", errData);
     } catch (err: any) {
       console.warn("[whatsapp] Automated Twilio dispatch failed, falling back to direct link:", err);
     }
