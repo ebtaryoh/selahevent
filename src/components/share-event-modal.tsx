@@ -664,7 +664,11 @@ export function ShareEventButton({
     <>
       <button
         type="button"
-        onClick={() => setIsOpen(true)}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setIsOpen(true);
+        }}
         className={cn(variantClass, sizeClass, className)}
         title={`Share ${event.title}`}
       >

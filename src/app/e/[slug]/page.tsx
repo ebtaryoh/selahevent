@@ -441,6 +441,7 @@ export default async function EventPage({ params, searchParams }: Params) {
                   }}
                   variant="light"
                   size="md"
+                  label="Share event"
                 />
               </div>
             </div>
