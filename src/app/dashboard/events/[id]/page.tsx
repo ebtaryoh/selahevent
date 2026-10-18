@@ -42,6 +42,7 @@ import { EventStatusButton } from "./event-status-button";
 import { RegistrationChart } from "@/components/registration-chart";
 import { AttendeeSeatingModal } from "@/components/attendee-seating-modal";
 import { WhatsAppShareButton } from "@/components/whatsapp-share-button";
+import { ShareEventButton } from "@/components/share-event-modal";
 import { AttendeeLedgerTable } from "@/components/attendee-ledger-table";
 import { getEventTag, isSeatedEvent, getEventTypeLabel } from "@/lib/event-tags";
 import {
@@ -199,11 +200,29 @@ export default async function EventManagePage({
                 <Link href={`/e/${event.slug}`} className="btn btn-light">
                   <ArrowUpRight size={16} /> View public page
                 </Link>
+                <ShareEventButton
+                  event={{
+                    title: event.title,
+                    slug: event.slug,
+                    description: event.description,
+                    tagline: event.tagline,
+                    theme: event.theme,
+                    startsAt: event.startsAt,
+                    endsAt: event.endsAt,
+                    venueName: event.venueName,
+                    venueAddress: event.venueAddress,
+                    city: event.city,
+                    organizationName: org.name,
+                    coverImage: event.coverImage,
+                  }}
+                  variant="light"
+                  label="Share event"
+                />
                 <Link
                   href={`/e/${event.slug}/register`}
                   className="btn btn-light"
                 >
-                  <Share2 size={16} /> Test registration
+                  <Ticket size={16} /> Test registration
                 </Link>
                 <Link
                   href={`/dashboard/events/${event.id}/tickets`}

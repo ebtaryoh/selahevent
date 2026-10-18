@@ -33,6 +33,7 @@ import {
 import { EventStore } from "@/components/event-store";
 import { PastoralBroadcastBanner } from "@/components/pastoral-broadcast-banner";
 import { CampLogisticsPortal } from "@/components/camp-logistics-portal";
+import { ShareEventButton } from "@/components/share-event-modal";
 import {
   formatDate,
   formatMoney,
@@ -423,12 +424,24 @@ export default async function EventPage({ params, searchParams }: Params) {
                 >
                   <Download size={14} /> Google Calendar
                 </a>
-                <a
-                  href={`/e/${event.slug}/register`}
-                  className="btn btn-light !px-4 !py-2.5 !text-[0.78rem]"
-                >
-                  <Share2 size={14} /> Share event
-                </a>
+                <ShareEventButton
+                  event={{
+                    title: event.title,
+                    slug: event.slug,
+                    description: event.description,
+                    tagline: event.tagline,
+                    theme: event.theme,
+                    startsAt: event.startsAt,
+                    endsAt: event.endsAt,
+                    venueName: event.venueName,
+                    venueAddress: event.venueAddress,
+                    city: event.city,
+                    organizationName: event.organization?.name,
+                    coverImage: event.coverImage,
+                  }}
+                  variant="light"
+                  size="md"
+                />
               </div>
             </div>
           </div>
@@ -1047,6 +1060,27 @@ export default async function EventPage({ params, searchParams }: Params) {
               <div className="truncate text-[0.78rem] font-semibold text-ink">{event.title}</div>
               <div className="mt-0.5 text-[0.68rem] text-warm-500">{formatDate(event.startsAt)} · {event.city}</div>
             </div>
+            <ShareEventButton
+              event={{
+                title: event.title,
+                slug: event.slug,
+                description: event.description,
+                tagline: event.tagline,
+                theme: event.theme,
+                startsAt: event.startsAt,
+                endsAt: event.endsAt,
+                venueName: event.venueName,
+                venueAddress: event.venueAddress,
+                city: event.city,
+                organizationName: event.organization?.name,
+                coverImage: event.coverImage,
+              }}
+              variant="light"
+              size="sm"
+              className="!px-3 !py-3 shrink-0"
+              showIcon={true}
+              label=""
+            />
             <Link href={`/e/${event.slug}/register`} className="btn btn-brass !px-5 !py-3 !text-[0.78rem]">
               Register <ArrowUpRight size={15} />
             </Link>

@@ -29,6 +29,7 @@ import { cn, formatMoney, formatRange, formatTime } from "@/lib/format";
 import { requestAttendeeOTP, verifyAttendeeOTP, getAttendeeProfile } from "@/lib/attendee";
 import { generateWhatsAppTicketLink } from "@/lib/whatsapp";
 import { SaveTicketImageButton } from "@/components/save-ticket-image-button";
+import { ShareEventButton } from "@/components/share-event-modal";
 
 export type TicketOption = {
   id: string;
@@ -2445,31 +2446,21 @@ function ConfirmationPanel({
               >
                 <CalendarPlus size={16} /> Add to calendar
               </a>
-              <button
-                type="button"
-                onClick={() => {
-                  navigator.clipboard
-                    ?.writeText(
-                      `${typeof window !== "undefined" ? window.location.origin : ""}/e/${event.slug}`
-                    )
-                    .then(() => {
-                      setCopied(true);
-                      window.setTimeout(() => setCopied(false), 2200);
-                    })
-                    .catch(() => setCopied(false));
+              <ShareEventButton
+                event={{
+                  title: event.title,
+                  slug: event.slug,
+                  startsAt: event.startsAt,
+                  endsAt: event.endsAt,
+                  venueName: event.venueName,
+                  venueAddress: event.venueAddress,
+                  city: event.city,
+                  coverImage: event.coverImage,
+                  attendeeName: confirmation.name,
                 }}
-                className="btn btn-ghost"
-              >
-                {copied ? (
-                  <>
-                    <Check size={16} /> Link copied
-                  </>
-                ) : (
-                  <>
-                    <Copy size={16} /> Share event
-                  </>
-                )}
-              </button>
+                variant="ghost"
+                label="Share event"
+              />
               <button
                 type="button"
                 onClick={() => window.print()}

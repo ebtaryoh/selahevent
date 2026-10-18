@@ -31,6 +31,7 @@ import { formatTime, formatRange, formatMoney } from "@/lib/format";
 import { QRCodeSVG } from "qrcode.react";
 import { PastoralBroadcastBanner } from "@/components/pastoral-broadcast-banner";
 import { generateWhatsAppTicketLink } from "@/lib/whatsapp";
+import { ShareEventButton } from "@/components/share-event-modal";
 
 export const dynamic = "force-dynamic";
 
@@ -141,9 +142,30 @@ export default async function WalletPage({ params, searchParams }: Params) {
               Welcome back, {profile?.firstName || session.email}
             </p>
           </div>
-          <a href={`/e/${event.slug}`} className="btn btn-ghost text-sm">
-            Go to Event Page
-          </a>
+          <div className="flex items-center gap-2">
+            <ShareEventButton
+              event={{
+                title: event.title,
+                slug: event.slug,
+                description: event.description,
+                tagline: event.tagline,
+                theme: event.theme,
+                startsAt: event.startsAt,
+                endsAt: event.endsAt,
+                venueName: event.venueName,
+                venueAddress: event.venueAddress,
+                city: event.city,
+                organizationName: event.organization?.name,
+                coverImage: event.coverImage,
+              }}
+              variant="light"
+              size="sm"
+              label="Share event"
+            />
+            <a href={`/e/${event.slug}`} className="btn btn-ghost text-sm">
+              Go to Event Page
+            </a>
+          </div>
         </div>
 
         {/* Instant WhatsApp Delivery Banner */}
