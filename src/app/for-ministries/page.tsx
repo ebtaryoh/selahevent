@@ -15,6 +15,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { Reveal, SectionHead } from "@/components/ui";
 import { getOrgSession } from "@/lib/session";
+import { HeroSanctuaryShowcase } from "@/components/hero-sanctuary-showcase";
 
 export const metadata: Metadata = {
   title: "Selah for Ministries | The Christian Event Operating System",
@@ -72,6 +73,13 @@ export default async function ForMinistriesPage() {
                 <a href="#features" className="btn btn-ghost !rounded-full !px-10 !py-4.5 !text-[1.05rem] border border-[var(--card-border)] hover:bg-brass/10 backdrop-blur-md text-ink transition-all duration-300 font-semibold">
                   See how it works
                 </a>
+              </div>
+            </Reveal>
+
+            {/* Interactive Ministry Command Center Showcase */}
+            <Reveal delay={0.4}>
+              <div className="mt-8">
+                <HeroSanctuaryShowcase />
               </div>
             </Reveal>
           </div>

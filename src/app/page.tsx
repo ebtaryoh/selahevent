@@ -18,6 +18,8 @@ import {
   Flame,
   Sun,
   BookOpen,
+  Zap,
+  MessageSquare,
 } from "lucide-react";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -29,7 +31,6 @@ import { CategoryGrid } from "@/components/category-grid";
 import { formatMoney } from "@/lib/format";
 import { getOrgSession } from "@/lib/session";
 import { getEventTag, isSeatedEvent } from "@/lib/event-tags";
-import { HeroSanctuaryShowcase } from "@/components/hero-sanctuary-showcase";
 
 type SearchParams = {
   query?: string;
@@ -167,9 +168,28 @@ export default async function HomePage({
               </div>
             </Reveal>
 
-            {/* Interactive Showcase Centerpiece */}
+            {/* Streamlined Discovery-First Trust Strip */}
             <Reveal delay={0.32}>
-              <HeroSanctuaryShowcase />
+              <div className="mx-auto mt-12 max-w-3xl rounded-2xl border border-[var(--card-border)] bg-[var(--card-bg)]/80 p-3 sm:p-4 backdrop-blur-xl shadow-lg">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs font-semibold text-warm-600 dark:text-warm-400">
+                  <div className="flex items-center justify-center gap-1.5 p-2 rounded-xl bg-paper/50 border border-[var(--card-border)]">
+                    <Zap size={14} className="text-brass shrink-0" />
+                    <span>&lt; 50ms Offline Gates</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-1.5 p-2 rounded-xl bg-paper/50 border border-[var(--card-border)]">
+                    <MessageSquare size={14} className="text-emerald-500 shrink-0" />
+                    <span>1-Tap WhatsApp Passes</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-1.5 p-2 rounded-xl bg-paper/50 border border-[var(--card-border)]">
+                    <Sparkles size={14} className="text-brass shrink-0" />
+                    <span>Daily Sanctuary &amp; Prayer</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-1.5 p-2 rounded-xl bg-paper/50 border border-[var(--card-border)]">
+                    <Star size={14} className="text-brass shrink-0" fill="currentColor" />
+                    <span>Verified Ministries</span>
+                  </div>
+                </div>
+              </div>
             </Reveal>
           </div>
 
