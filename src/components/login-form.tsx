@@ -174,6 +174,9 @@ export function LoginForm() {
                 <span className="font-semibold text-white">{email}</span>.{" "}
                 Enter it below to sign in.
               </p>
+              <div className="mt-3 rounded-xl border border-brass/25 bg-brass/10 p-2.5 text-xs text-brass-light leading-relaxed">
+                💡 <strong>Can&apos;t find the email?</strong> Please check your <strong>Spam</strong> or <strong>Junk</strong> folder.
+              </div>
               {process.env.NODE_ENV !== "production" && (
                 <p className="mt-2 text-xs text-white/40">
                   Dev mode: check server console, or use <span className="font-mono font-semibold text-brass">000000</span> to skip.

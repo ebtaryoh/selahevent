@@ -91,9 +91,12 @@ export function AttendeeLogin({ orgId }: { orgId: string }) {
               placeholder="000000"
               required
             />
-            <p className="text-xs text-white/60">
-              We sent a 6-digit code to {email}
+            <p className="text-xs text-white/70">
+              We sent a 6-digit code to <span className="font-semibold text-white">{email}</span>
             </p>
+            <div className="mt-2.5 rounded-xl border border-brass/25 bg-brass/10 p-3 text-[0.78rem] text-brass-light leading-relaxed">
+              💡 <strong>Can&apos;t find the email?</strong> Please check your <strong>Spam</strong>, <strong>Junk</strong>, or <strong>Promotions</strong> folder. Codes arrive within 30 seconds.
+            </div>
           </div>
           {error && <p className="text-sm text-[var(--color-signal-red)]">{error}</p>}
           <button
@@ -103,10 +106,18 @@ export function AttendeeLogin({ orgId }: { orgId: string }) {
           >
             {loading ? <Loader2 className="animate-spin h-5 w-5" /> : "Verify Code"}
           </button>
-          <div className="text-center pt-2">
+          <div className="flex items-center justify-between pt-2 text-xs">
             <button
               type="button"
-              className="text-[0.8rem] font-medium text-[var(--color-brass)] hover:underline"
+              disabled={loading}
+              className="font-medium text-white/60 hover:text-white transition-colors"
+              onClick={handleRequestOTP}
+            >
+              Resend code
+            </button>
+            <button
+              type="button"
+              className="font-medium text-[var(--color-brass)] hover:underline"
               onClick={() => {
                 setOtpMode(false);
                 setOtpCode("");
