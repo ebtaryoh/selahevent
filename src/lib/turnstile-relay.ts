@@ -80,7 +80,7 @@ export class TurnstileRelayController {
 
     // 1. Play pleasant acoustic unlock chime
     if (config.soundEnabled) {
-      this.playChime("unlocked");
+      void this.playChime("unlocked");
     }
 
     // 2. Trigger USB Relay if connected
@@ -130,19 +130,22 @@ export class TurnstileRelayController {
    */
   public triggerAccessDenied(config: TurnstileConfig): void {
     if (config.soundEnabled) {
-      this.playChime("denied");
+      void this.playChime("denied");
     }
     // We intentionally DO NOT send any relay signal, keeping the turnstile locked.
   }
 
-  /** Synthesizes audio feedback via Web Audio API */
-  private playChime(type: "unlocked" | "denied") {
+  /** Synthesizes audio feedback via Web Audio API with auto-resume */
+  private async playChime(type: "unlocked" | "denied") {
     try {
       const AudioCtxClass = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioCtxClass) return;
 
-      if (!this.audioCtx || this.audioCtx.state === "suspended") {
+      if (!this.audioCtx) {
         this.audioCtx = new AudioCtxClass();
+      }
+      if (this.audioCtx.state === "suspended") {
+        await this.audioCtx.resume();
       }
       const ctx = this.audioCtx;
 

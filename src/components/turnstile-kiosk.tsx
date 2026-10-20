@@ -96,13 +96,19 @@ export function TurnstileKiosk({
   const barcodeBufferRef = useRef("");
   const lastKeyTimeRef = useRef(0);
 
+  const [usbNotice, setUsbNotice] = useState<string | null>(null);
+
   // Connect USB Relay via Web Serial
   const handleConnectUsb = async () => {
+    setUsbNotice(null);
     const res = await turnstileRelay.connectUsbRelay();
     if (res.success) {
       setIsRelayConnected(true);
+      setUsbNotice("✓ Hardware USB relay connected successfully!");
+      setTimeout(() => setUsbNotice(null), 4000);
     } else if (res.error) {
-      alert(res.error);
+      setUsbNotice(res.error);
+      setTimeout(() => setUsbNotice(null), 6000);
     }
   };
 
@@ -110,6 +116,8 @@ export function TurnstileKiosk({
   const handleDisconnectUsb = async () => {
     await turnstileRelay.disconnectUsbRelay();
     setIsRelayConnected(false);
+    setUsbNotice("USB relay disconnected. Operating in Virtual Gate mode.");
+    setTimeout(() => setUsbNotice(null), 4000);
   };
 
   // Test pulse physical relay
@@ -217,6 +225,10 @@ export function TurnstileKiosk({
     [event.id, config]
   );
 
+  // Ref to verify handler to decouple camera lifecycle from state updates
+  const handleVerifyTicketRef = useRef(handleVerifyTicket);
+  handleVerifyTicketRef.current = handleVerifyTicket;
+
   // Direct Camera start/stop handlers
   const startCamera = useCallback(async () => {
     setCameraError(null);
@@ -232,7 +244,7 @@ export function TurnstileKiosk({
         { facingMode: "environment" },
         { fps: 15, qrbox: { width: 250, height: 250 } },
         (decodedText) => {
-          void handleVerifyTicket(decodedText);
+          void handleVerifyTicketRef.current(decodedText);
         },
         () => {}
       );
@@ -242,7 +254,7 @@ export function TurnstileKiosk({
       setCameraError(err?.message || "Webcam access unavailable or permission blocked.");
       setIsCameraActive(false);
     }
-  }, [handleVerifyTicket]);
+  }, []);
 
   const stopCamera = useCallback(async () => {
     if (qrScannerRef.current && qrScannerRef.current.isScanning) {
@@ -461,6 +473,13 @@ export function TurnstileKiosk({
           </button>
         </div>
       </header>
+
+      {/* Non-intrusive notification toast */}
+      {usbNotice && (
+        <div className="mx-auto mt-3 max-w-lg px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-xs font-mono text-white/90 text-center shadow-lg backdrop-blur-md animate-in fade-in slide-in-from-top-2">
+          {usbNotice}
+        </div>
+      )}
 
       {/* Main Dynamic Turnstile Gate Display */}
       <main className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-4xl mx-auto w-full">
