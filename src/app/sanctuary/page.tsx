@@ -8,7 +8,6 @@ import { PrayerWall } from "@/components/prayer-wall";
 import { DailyFellowshipsFeed } from "@/components/daily-fellowships-feed";
 import { LockscreenWallpaperCard } from "@/components/lockscreen-wallpaper-card";
 import { MinistryChannelsFeed } from "@/components/ministry-channels-feed";
-import { SoakingAudioPlayer } from "@/components/soaking-audio-player";
 
 export const metadata: Metadata = {
   title: "Daily Sanctuary & Community Prayer Wall · Selah",
@@ -90,9 +89,6 @@ export default function SanctuaryPage() {
           </div>
         </div>
       </main>
-
-      {/* Floating Background Instrumental Soaking Audio Player */}
-      <SoakingAudioPlayer />
 
       <SiteFooter />
     </div>

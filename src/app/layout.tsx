@@ -69,6 +69,8 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+import { SoakingAudioPlayer } from "@/components/soaking-audio-player";
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -92,7 +94,7 @@ export default function RootLayout({
         />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Selah" />
       </head>
@@ -103,6 +105,7 @@ export default function RootLayout({
             Skip to content
           </a>
           {children}
+          <SoakingAudioPlayer />
           <PwaInstallPrompt />
           <Analytics />
           <SpeedInsights />
