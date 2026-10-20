@@ -381,8 +381,16 @@ export default async function HomePage({
                       </div>
 
                       <div className="flex flex-1 flex-col px-7 pb-8 pt-6 relative -mt-8 z-10 bg-[var(--card-bg)] rounded-t-[24px]">
-                        <div className="mb-2.5 text-[0.7rem] font-bold text-brass uppercase tracking-widest">
-                          {organization.name}
+                        <div className="mb-2.5 text-[0.7rem] font-bold text-brass uppercase tracking-widest flex items-center justify-between">
+                          <span className="truncate">{organization.name}</span>
+                          {organization.isVerified && (
+                            <span
+                              className="inline-flex items-center gap-1 rounded-full bg-brass/15 border border-brass/30 px-2 py-0.5 text-[0.62rem] text-brass-deep dark:text-brass-light font-bold shrink-0 ml-2"
+                              title="Verified Ministry • Official Christian organization verified by Selah Platform"
+                            >
+                              <CheckCircle2 size={10} className="text-brass" /> Verified
+                            </span>
+                          )}
                         </div>
 
                         <h3 className="font-display mb-3 text-[1.45rem] leading-[1.2] font-semibold text-ink transition-colors duration-300 group-hover:text-brass">

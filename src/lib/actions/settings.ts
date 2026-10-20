@@ -46,6 +46,20 @@ export async function updateOrganizationSettings(orgId: string, formData: FormDa
   const paystackPublicKey = formData.get("paystackPublicKey") as string;
   const paystackSecretKey = formData.get("paystackSecretKey") as string;
   
+  const officialRegistrationNumber = formData.get("officialRegistrationNumber") as string | null;
+  let verificationDocUrl = (sessionOrg as any).verificationDocUrl;
+  const verificationDoc = formData.get("verificationDoc") as File | null;
+  if (verificationDoc && verificationDoc.size > 0) {
+    if (verificationDoc.size > 8 * 1024 * 1024) {
+      return { error: "Verification document must be 8 MB or smaller." };
+    }
+    const uploadResult = await saveUploadedMedia(verificationDoc);
+    if (uploadResult.error || !uploadResult.url) {
+      return { error: uploadResult.error || "Document upload failed. Please try again." };
+    }
+    verificationDocUrl = uploadResult.url;
+  }
+
   let logoUrl = sessionOrg.logoUrl;
   const avatarFile = formData.get("avatar") as File | null;
   if (avatarFile && avatarFile.size > 0) {
@@ -71,33 +85,73 @@ export async function updateOrganizationSettings(orgId: string, formData: FormDa
   }
 
   try {
+    const updatePayload: Record<string, any> = {
+      name,
+      email,
+      phone,
+      country,
+      currency,
+      timezone,
+      website,
+      primaryColor,
+      accentColor,
+      orgType,
+      paymentGateway: paymentGateway || "paystack",
+      paymentGatewayMode: paymentGatewayMode || "test",
+      paystackPublicKey: paystackPublicKey || null,
+      paystackSecretKey: paystackSecretKey || null,
+      logoUrl,
+    };
+
+    if (officialRegistrationNumber !== null) {
+      updatePayload.officialRegistrationNumber = officialRegistrationNumber.trim() || null;
+    }
+    if (verificationDocUrl) {
+      updatePayload.verificationDocUrl = verificationDocUrl;
+      if (!(sessionOrg as any).isVerified) {
+        updatePayload.verificationStatus = "pending";
+      }
+    }
+
     await db
       .update(organizations)
-      .set({
-        name,
-        email,
-        phone,
-        country,
-        currency,
-        timezone,
-        website,
-        primaryColor,
-        accentColor,
-        orgType,
-        paymentGateway: paymentGateway || "paystack",
-        paymentGatewayMode: paymentGatewayMode || "test",
-        paystackPublicKey: paystackPublicKey || null,
-        paystackSecretKey: paystackSecretKey || null,
-        logoUrl,
-      })
+      .set(updatePayload)
       .where(eq(organizations.id, orgId));
 
     revalidatePath("/dashboard");
     revalidatePath("/dashboard/settings");
+    revalidatePath("/");
     
     return { success: true };
   } catch (dbError: any) {
     console.error("Database Update Error:", dbError);
     return { error: dbError.message || String(dbError) };
+  }
+}
+
+/** Admin / Developer action to toggle verified ministry status */
+export async function toggleMinistryVerification(orgId: string, targetVerified: boolean) {
+  await ensureSeed();
+  const actor = await requirePermission("settings.write");
+  if (!actor) return { error: "Unauthorized" };
+
+  try {
+    await db
+      .update(organizations)
+      .set({
+        isVerified: targetVerified,
+        verificationStatus: targetVerified ? "verified" : "unverified",
+        verifiedAt: targetVerified ? new Date() : null,
+        verifiedBy: targetVerified ? actor.email || "Platform Oversight" : null,
+      })
+      .where(eq(organizations.id, orgId));
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/settings");
+    revalidatePath("/");
+
+    return { success: true };
+  } catch (err: any) {
+    return { error: err.message || "Failed to update verification status" };
   }
 }

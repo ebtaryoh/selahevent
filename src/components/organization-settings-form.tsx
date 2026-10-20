@@ -1,10 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Loader2, Building, Globe, Mail, Phone, Clock, DollarSign, Palette, UploadCloud, X } from "lucide-react";
+import {
+  Check,
+  Loader2,
+  Building,
+  Globe,
+  Mail,
+  Phone,
+  Clock,
+  DollarSign,
+  Palette,
+  UploadCloud,
+  X,
+  ShieldCheck,
+  CheckCircle2,
+  FileText,
+  ExternalLink,
+} from "lucide-react";
 import { Field } from "@/components/ui";
-import { updateOrganizationSettings } from "@/lib/actions/settings";
+import { updateOrganizationSettings, toggleMinistryVerification } from "@/lib/actions/settings";
 import { useRouter } from "next/navigation";
+import { cn } from "@/lib/format";
 
 export function OrganizationSettingsForm({
   org,
@@ -255,6 +272,122 @@ export function OrganizationSettingsForm({
                 </span>
               </div>
             </Field>
+          </div>
+        </div>
+
+        {/* Ministry Trust & Verification */}
+        <div className="rounded-[16px] border border-[rgba(255,255,255,0.09)] bg-[rgba(16,16,18,0.5)] backdrop-blur-md p-7">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <h2 className="font-display flex items-center gap-2 text-[1.25rem] font-medium text-white">
+              <ShieldCheck size={20} className="text-[var(--color-brass)]" />
+              Ministry Trust &amp; Verification
+            </h2>
+
+            {org.isVerified ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
+                <CheckCircle2 size={13} className="text-emerald-400" />
+                Verified Ministry Partner
+              </span>
+            ) : org.verificationStatus === "pending" ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-semibold animate-pulse">
+                <Clock size={13} className="text-amber-400" />
+                Audit In Progress
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-white/60 text-xs font-medium">
+                Unverified
+              </span>
+            )}
+          </div>
+
+          <p className="mb-6 text-sm text-white/60 leading-relaxed">
+            Verified Christian ministries receive the gold verified shield across all event discovery pages and attendee ticket passes, signaling legitimate kingdom oversight, financial transparency, and protection against impersonation.
+          </p>
+
+          <div className="grid gap-6">
+            <Field
+              label="Official Ministry Registration / CAC Number"
+              description="e.g. CAC/IT/NO 14285 (Nigeria), 501(c)(3) EIN (USA), or Registered Charity Number (UK)"
+            >
+              <input
+                type="text"
+                name="officialRegistrationNumber"
+                defaultValue={org.officialRegistrationNumber || ""}
+                placeholder="e.g. CAC/IT/NO 14285"
+                className="input font-mono"
+              />
+            </Field>
+
+            <Field
+              label="Official Verification Certificate / Document"
+              description="Upload your Certificate of Incorporation, Church Headquarters Affiliation Letter, or Ordination Credential (PDF, PNG, JPG up to 8MB)"
+            >
+              <div className="space-y-3">
+                {org.verificationDocUrl && (
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/10 text-xs">
+                    <div className="flex items-center gap-2 text-brass-light font-mono">
+                      <FileText size={16} />
+                      <span>Certificate currently on file</span>
+                    </div>
+                    <a
+                      href={org.verificationDocUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-brass hover:underline inline-flex items-center gap-1"
+                    >
+                      View Document <ExternalLink size={12} />
+                    </a>
+                  </div>
+                )}
+
+                <div className="relative flex flex-col items-center justify-center rounded-[12px] border-2 border-dashed border-[rgba(255,255,255,0.15)] bg-parchment py-6 transition-colors hover:border-[var(--color-brass)] hover:bg-[rgba(226,192,115,0.05)] cursor-pointer">
+                  <UploadCloud size={24} className="mb-2 text-brass-light" />
+                  <p className="mb-1 text-xs font-semibold text-white">
+                    {org.verificationDocUrl ? "Click to replace document" : "Click to upload verification certificate"}
+                  </p>
+                  <p className="text-[10px] text-white/60">PDF, JPG, PNG (max 8MB)</p>
+                  <input
+                    type="file"
+                    name="verificationDoc"
+                    accept=".pdf,image/*"
+                    className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                  />
+                </div>
+              </div>
+            </Field>
+
+            {/* Instant Verification Sandbox Toggle for Admins/Developers */}
+            <div className="pt-2 border-t border-white/10 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <span className="text-xs font-semibold text-white/80 block">
+                  Platform Oversight &amp; Verification Toggle:
+                </span>
+                <span className="text-[0.7rem] text-white/50">
+                  Quickly toggle the verified badge for this organization.
+                </span>
+              </div>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  setSubmitting(true);
+                  const res = await toggleMinistryVerification(org.id, !org.isVerified);
+                  if (res?.success) {
+                    router.refresh();
+                  }
+                  setSubmitting(false);
+                }}
+                disabled={submitting}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer",
+                  org.isVerified
+                    ? "border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20"
+                    : "border-brass/50 bg-brass/20 text-brass-light hover:bg-brass/30"
+                )}
+              >
+                {org.isVerified ? "Revoke Verification" : "✓ Grant Verified Badge"}
+              </button>
+            </div>
           </div>
         </div>
 

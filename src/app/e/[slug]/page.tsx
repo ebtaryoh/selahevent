@@ -10,6 +10,7 @@ import {
   MapPin,
   Share2,
   ShieldCheck,
+  CheckCircle2,
   Users,
   Phone,
   Mail,
@@ -276,9 +277,18 @@ export default async function EventPage({ params, searchParams }: Params) {
             </nav>
 
             {event.organization && (
-              <div className="hidden sm:inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/35 px-4 py-1.5 backdrop-blur-md text-xs text-white/80 shadow-sm">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/35 px-4 py-1.5 backdrop-blur-md text-xs text-white/80 shadow-sm">
                 <Building2 size={13} className="text-brass-light shrink-0" />
                 <span>Hosted by <strong className="text-white font-semibold">{event.organization.name}</strong></span>
+                {event.organization.isVerified && (
+                  <span
+                    className="inline-flex items-center gap-1 rounded-full bg-brass/20 border border-brass/40 px-2 py-0.5 text-[0.68rem] font-bold text-brass-light ml-0.5"
+                    title="Verified Ministry • Official Christian organization verified by Selah Platform"
+                  >
+                    <CheckCircle2 size={11} className="text-brass-light" />
+                    Verified
+                  </span>
+                )}
               </div>
             )}
           </div>

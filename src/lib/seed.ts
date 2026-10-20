@@ -32,10 +32,24 @@ const wofbecId = "88888888-8888-4888-8888-888888888888";
 const soarId = "99999999-9999-4999-8999-999999999999";
 const hcEventId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 
-let seedPromise: Promise<void> | null = null;
+let migrationEnsured = false;
 
-export function ensureSeed(): Promise<void> {
-  return Promise.resolve();
+export async function ensureSeed(): Promise<void> {
+  if (migrationEnsured) return;
+  migrationEnsured = true;
+  try {
+    const { pool } = await import("@/db");
+    await pool.query(`
+      ALTER TABLE organizations ADD COLUMN IF NOT EXISTS is_verified boolean DEFAULT false NOT NULL;
+      ALTER TABLE organizations ADD COLUMN IF NOT EXISTS verification_status text DEFAULT 'unverified' NOT NULL;
+      ALTER TABLE organizations ADD COLUMN IF NOT EXISTS verification_doc_url text;
+      ALTER TABLE organizations ADD COLUMN IF NOT EXISTS official_registration_number text;
+      ALTER TABLE organizations ADD COLUMN IF NOT EXISTS verified_at timestamp with time zone;
+      ALTER TABLE organizations ADD COLUMN IF NOT EXISTS verified_by text;
+    `);
+  } catch (e) {
+    // Migration safe fallback
+  }
 }
 
 async function runSeed() {

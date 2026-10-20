@@ -52,7 +52,7 @@ export default async function DashboardPage() {
       country: "NG",
       currency: "NGN",
       timezone: "Africa/Lagos",
-      email: null,
+      email: "admin@selah.events",
       phone: null,
       website: null,
       logoUrl: null,
@@ -64,14 +64,21 @@ export default async function DashboardPage() {
       paymentGatewayMode: "test",
       paystackPublicKey: null,
       paystackSecretKey: null,
+      isVerified: false,
+      verificationStatus: "unverified",
+      verificationDocUrl: null,
+      officialRegistrationNumber: null,
+      verifiedAt: null,
+      verifiedBy: null,
       retentionAttendeeHistoryMonths: 24,
       retentionSensitiveDataDays: 90,
       retentionAutoSuggest: true,
       retentionMarketingUse: false,
       lastPolicyReviewAt: new Date(),
       createdAt: new Date(),
-    };
+    } as any;
   }
+  if (!org) return null;
 
   const [events, tasks, blueprints, audit] = await Promise.all([
     getEventsForOrganization(org.id),
