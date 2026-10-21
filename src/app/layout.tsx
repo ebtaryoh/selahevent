@@ -67,6 +67,7 @@ export const viewport: Viewport = {
   themeColor: "#08080a",
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
 };
 
 import { SoakingAudioPlayer } from "@/components/soaking-audio-player";
@@ -93,7 +94,6 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Manrope:wght@300..800&display=swap"
         />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Selah" />

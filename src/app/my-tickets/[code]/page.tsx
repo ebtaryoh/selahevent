@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { db } from "@/db";
 import { registrations, events, ticketTypes } from "@/db/schema";
@@ -6,7 +7,7 @@ import { eq } from "drizzle-orm";
 import { SelahMark } from "@/components/logo";
 import { formatDate, formatTime } from "@/lib/format";
 import Image from "next/image";
-import { CalendarDays, MessageSquare, Utensils, AlertTriangle } from "lucide-react";
+import { CalendarDays, MessageSquare, Utensils, AlertTriangle, Sparkles } from "lucide-react";
 import { generateWhatsAppTicketLink } from "@/lib/whatsapp";
 import { SaveTicketImageButton } from "@/components/save-ticket-image-button";
 import { getEventAnnouncements } from "@/lib/data";
@@ -47,7 +48,9 @@ export default async function TicketViewPage({
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#fdf8f4] p-4 pt-16 sm:p-8">
       <div className="absolute top-8 left-8">
-        <SelahMark />
+        <Link href="/" title="Back to Selah Home" className="transition-opacity hover:opacity-80">
+          <SelahMark />
+        </Link>
       </div>
 
       <div className="w-full max-w-md space-y-4">
@@ -211,6 +214,14 @@ export default async function TicketViewPage({
                 <MessageSquare size={17} className="text-emerald-600" />
                 Save Pass to WhatsApp
               </a>
+
+              <Link
+                href={`/e/${event.slug}/poster?name=${encodeURIComponent(`${registration.firstName} ${registration.lastName}`)}`}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[rgba(192,138,46,0.4)] bg-[rgba(192,138,46,0.12)] px-6 py-3.5 text-[0.9rem] font-bold text-brass-deep transition-all hover:bg-[rgba(192,138,46,0.22)] shadow-xs"
+              >
+                <Sparkles size={17} className="text-brass-deep" />
+                Create &ldquo;I Will Be Attending&rdquo; Poster
+              </Link>
             </div>
           </div>
         </div>

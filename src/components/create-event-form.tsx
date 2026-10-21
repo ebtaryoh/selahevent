@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   Plus,
   X,
@@ -25,6 +26,7 @@ import {
   CheckCircle2,
   Info,
   Clock,
+  ExternalLink,
 } from "lucide-react";
 import { createEvent, createEventFromBlueprint, updateEvent } from "@/lib/actions";
 import { validateChristianEventContent } from "@/lib/christian-moderation";
@@ -94,10 +96,11 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
   const [city, setCity] = useState(initialData?.city || "");
   const [country, setCountry] = useState(initialData?.country || "Nigeria");
 
-  // Draft recovery state
+  // Draft recovery & success states
   const [savedDraft, setSavedDraft] = useState<any | null>(null);
   const [showDraftNotice, setShowDraftNotice] = useState<boolean>(false);
   const [draftRestoredAt, setDraftRestoredAt] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const isEditing = !!initialData;
   const isDateInvalid = Boolean(startsAt && endsAt && new Date(endsAt) <= new Date(startsAt));
@@ -686,6 +689,9 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
         if (res && res.error) {
           throw new Error(res.error);
         }
+        setIsPending(false);
+        setSuccessMessage("✨ Event saved successfully! All updates, details, and branding are live.");
+        window.scrollTo({ top: 0, behavior: "smooth" });
       } else if (selectedBlueprintId) {
         // Create from blueprint
         const title = formData.get("title") as string;
@@ -757,6 +763,81 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8 max-w-2xl">
+      {/* Top Save & Action Bar (dual placement: top & bottom) */}
+      <div className="sticky top-4 z-30 flex items-center justify-between gap-4 rounded-2xl border border-[var(--card-border)] bg-[var(--card-bg)]/95 p-4 backdrop-blur-xl shadow-xl transition-all">
+        <div className="min-w-0">
+          <div className="font-display text-sm sm:text-base font-semibold text-ink truncate">
+            {isEditing ? (title || initialData?.title || "Edit Event") : (title || "Create Event")}
+          </div>
+          <div className="text-[0.72rem] text-warm-500 truncate">
+            {isEditing ? "Save your updates from either the top or bottom" : "Fill required fields to publish your gathering"}
+          </div>
+        </div>
+        <button
+          type="submit"
+          disabled={isPending || isDateInvalid}
+          className="btn btn-primary !px-5 sm:!px-7 !py-2.5 text-xs sm:text-sm font-semibold shadow-md shadow-brass/20 shrink-0 cursor-pointer"
+        >
+          {isPending ? (
+            <>
+              <Loader2 size={16} className="mr-2 animate-spin" />
+              {isEditing ? "Saving..." : "Creating..."}
+            </>
+          ) : (
+            <>
+              <CheckCircle2 size={16} className="mr-2" />
+              {isEditing ? "Save Changes" : "Create Event"}
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Success Note Notification Banner */}
+      {successMessage && (
+        <div className="rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-5 backdrop-blur-md shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="flex items-start gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 mt-0.5">
+              <CheckCircle2 size={20} />
+            </div>
+            <div>
+              <div className="font-display text-sm font-bold text-ink">
+                Event Saved Successfully!
+              </div>
+              <p className="text-xs text-emerald-600 dark:text-emerald-300 mt-0.5 leading-relaxed">
+                {successMessage}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {initialData?.id && (
+              <Link
+                href={`/dashboard/events/${initialData.id}`}
+                className="btn btn-secondary !py-2 !px-3.5 !text-xs font-semibold"
+              >
+                Event Dashboard
+              </Link>
+            )}
+            {initialData?.slug && (
+              <Link
+                href={`/e/${initialData.slug}`}
+                target="_blank"
+                className="btn btn-primary !py-2 !px-3.5 !text-xs font-semibold"
+              >
+                Public Page <ExternalLink size={12} className="ml-1" />
+              </Link>
+            )}
+            <button
+              type="button"
+              onClick={() => setSuccessMessage(null)}
+              className="text-warm-400 hover:text-ink p-1 rounded-lg"
+              title="Dismiss"
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Christian Ministry Guard & Covenant Notice */}
       <div className="rounded-2xl border border-brass/35 bg-brass/10 p-5 backdrop-blur-md shadow-sm">
         <div className="flex items-start gap-3.5">
@@ -1830,6 +1911,22 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
         {error && (
           <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-[var(--color-signal-red)]">
             {error}
+          </div>
+        )}
+        {successMessage && (
+          <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-4 text-xs font-semibold text-emerald-300 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+              <span>{successMessage}</span>
+            </div>
+            {initialData?.id && (
+              <Link
+                href={`/dashboard/events/${initialData.id}`}
+                className="text-brass hover:underline font-bold text-xs shrink-0"
+              >
+                Go to Dashboard &rarr;
+              </Link>
+            )}
           </div>
         )}
         <div className="flex justify-end">

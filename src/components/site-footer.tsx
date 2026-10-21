@@ -52,17 +52,17 @@ export function SiteFooter() {
 
         <div className="grid gap-12 lg:grid-cols-[1.45fr_1fr_1fr_1fr]">
           <div>
-            <div className="flex items-center gap-3">
-              <SelahMark className="h-11 w-11" />
+            <Link href="/" title="Selah Home" className="group flex items-center gap-3 transition-opacity hover:opacity-90">
+              <SelahMark className="h-11 w-11 transition-transform group-hover:scale-105" />
               <div>
-                <div className="font-display text-[1.55rem] leading-none font-semibold text-ink">
+                <div className="font-display text-[1.55rem] leading-none font-semibold text-ink group-hover:text-brass transition-colors">
                   Selah
                 </div>
                 <div className="eyebrow mt-1 text-[0.56rem] text-brass uppercase font-bold tracking-widest">
                   Christian Event Operating System
                 </div>
               </div>
-            </div>
+            </Link>
             <p className="mt-6 max-w-sm text-[0.925rem] leading-[1.8] text-warm-500 font-light">
               Christ-centered digital sanctuary and event operating system for the global church — planned once, reused for years. Built with reverent care for ministry stewards.
             </p>

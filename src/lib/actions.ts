@@ -427,15 +427,11 @@ export async function updateEvent(eventId: string, formData: FormData) {
     revalidatePath(`/dashboard/events/${eventId}`);
     revalidatePath(`/dashboard/events/${eventId}/edit`);
     revalidatePath(`/e/${existingEvent.slug}`);
-    
-    redirectUrl = `/dashboard/events/${eventId}`;
+
+    return { success: true, eventId, slug: existingEvent.slug };
   } catch (dbError: any) {
     console.error("Database Update Error:", dbError);
     return { error: dbError.message || String(dbError) };
-  }
-  
-  if (redirectUrl) {
-    redirect(redirectUrl);
   }
 }
 

@@ -421,6 +421,14 @@ export default async function EventPage({ params, searchParams }: Params) {
                       </span>
                     </a>
                   )}
+
+                  <Link
+                    href={`/e/${event.slug}/poster`}
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-brass/40 bg-black/40 hover:bg-brass/20 px-6 py-4 text-[0.95rem] font-semibold text-brass-light backdrop-blur-md shadow-sm transition-all hover:-translate-y-0.5"
+                  >
+                    <Sparkles size={16} className="text-brass-light" />
+                    <span>Attendance Poster / DP</span>
+                  </Link>
                 </div>
               </div>
 

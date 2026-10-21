@@ -104,17 +104,21 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen bg-parchment selection:bg-brass selection:text-black">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[252px] flex-col border-r border-white/10 bg-[#08080a] lg:flex shadow-[4px_0_24px_rgba(0,0,0,0.5)] z-50">
-        <div className="flex items-center gap-3 border-b border-[rgba(255,255,255,0.09)] px-6 py-6">
-          <SelahMark className="h-9 w-9" />
+        <Link
+          href="/"
+          title="Back to Selah Home"
+          className="group flex items-center gap-3 border-b border-[rgba(255,255,255,0.09)] px-6 py-6 transition-all hover:opacity-90"
+        >
+          <SelahMark className="h-9 w-9 transition-transform group-hover:scale-105" />
           <div>
-            <div className="font-display text-[1.125rem] leading-none font-semibold text-ink">
+            <div className="font-display text-[1.125rem] leading-none font-semibold text-ink group-hover:text-brass transition-colors">
               Selah
             </div>
             <div className="eyebrow mt-1 text-[0.5rem] text-warm-400">
               Event Operating System
             </div>
           </div>
-        </div>
+        </Link>
 
         <div className="px-5 pt-6">
           <Link
@@ -245,7 +249,9 @@ export default async function DashboardLayout({
 
       {/* Mobile top bar */}
       <div className="sticky top-0 z-40 flex items-center gap-3 border-b border-white/10 bg-[rgba(16,16,18,0.8)] backdrop-blur-xl px-4 py-3 lg:hidden shadow-lg shadow-black/40">
-        <SelahMark className="h-8 w-8" />
+        <Link href="/" title="Back to Selah Home" className="shrink-0 transition-opacity hover:opacity-80">
+          <SelahMark className="h-8 w-8" />
+        </Link>
         <div className="min-w-0 flex-1">
           <div className="truncate text-[0.8125rem] font-semibold text-ink">
             {org?.name ?? "Grace Fellowship"}

@@ -22,6 +22,7 @@ import {
   Radio,
   ShoppingBag,
   Megaphone,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -59,14 +60,15 @@ export const dynamic = "force-dynamic";
 
 export default async function EventManagePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ saved?: string }>;
 }) {
-  console.log("EventManagePage params:", params);
   const unwrappedParams = await params;
-  console.log("EventManagePage unwrapped:", unwrappedParams);
+  const query = searchParams ? await searchParams : {};
+  const isSaved = query?.saved === "true" || query?.saved === "1";
   const { id } = unwrappedParams;
-  console.log("EventManagePage id:", id);
   const event = await getEventById(id);
   if (!event) notFound();
 
@@ -88,6 +90,17 @@ export default async function EventManagePage({
     <div className="space-y-11">
       {/* Header */}
       <section>
+        {isSaved && (
+          <div className="mb-6 rounded-2xl border border-emerald-500/40 bg-emerald-500/15 p-4 text-emerald-300 backdrop-blur-md shadow-lg flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 size={18} className="text-emerald-400 shrink-0" />
+              <span className="text-sm font-semibold">✨ Event changes saved successfully! All updates and details are live.</span>
+            </div>
+            <Link href={`/e/${event.slug}`} target="_blank" className="btn btn-secondary !py-1 !px-3 text-xs font-semibold shrink-0">
+              View Public Page &rarr;
+            </Link>
+          </div>
+        )}
         <Link
           href="/dashboard"
           className="inline-flex items-center gap-2 text-[0.8125rem] font-semibold text-warm-500 transition-colors hover:text-ink"
@@ -257,6 +270,13 @@ export default async function EventManagePage({
                   className="btn btn-light"
                 >
                   <Printer size={16} /> Venue Poster
+                </Link>
+
+                <Link
+                  href={`/dashboard/events/${event.id}/attending-poster`}
+                  className="btn btn-light !border-brass/40 hover:!border-brass text-brass-light"
+                >
+                  <Sparkles size={16} className="text-brass" /> Attendee DP Poster
                 </Link>
 
                 <Link
