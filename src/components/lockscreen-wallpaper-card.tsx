@@ -111,14 +111,49 @@ export function LockscreenWallpaperCard({ verse, reference, theme }: Props) {
       ctx.letterSpacing = "3px";
       ctx.fillText("PAUSE · REST · REFLECT · SELAH.EVENTS", 540, 1800);
 
-      // Download as PNG
-      const link = document.createElement("a");
-      link.download = `selah-lockscreen-${reference.replace(/\s+/g, "-")}.png`;
-      link.href = canvas.toDataURL("image/png");
-      link.click();
+      // Convert to Blob for Web Share API or download
+      canvas.toBlob(async (blob) => {
+        if (!blob) {
+          setDownloading(false);
+          return;
+        }
+
+        const fileName = `selah-lockscreen-${reference.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.png`;
+        const file = new File([blob], fileName, { type: "image/png" });
+
+        // Native mobile Save to Photos / Camera Roll via Web Share API
+        if (typeof navigator !== "undefined" && navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: `Selah Daily Scripture · ${reference}`,
+              text: `"${verse}" — ${reference}`,
+            });
+            setDownloading(false);
+            return;
+          } catch (err: any) {
+            // If user simply closed/canceled the share sheet, return gracefully
+            if (err.name === "AbortError") {
+              setDownloading(false);
+              return;
+            }
+            console.warn("Native share failed, proceeding with direct download:", err);
+          }
+        }
+
+        // Direct browser download fallback
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.download = fileName;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        setDownloading(false);
+      }, "image/png");
     } catch (e) {
       console.error("Failed to generate lockscreen wallpaper:", e);
-    } finally {
       setDownloading(false);
     }
   };

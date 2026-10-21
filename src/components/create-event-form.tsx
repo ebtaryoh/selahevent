@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Plus,
   X,
@@ -24,11 +24,13 @@ import {
   Utensils,
   CheckCircle2,
   Info,
+  Clock,
 } from "lucide-react";
 import { createEvent, createEventFromBlueprint, updateEvent } from "@/lib/actions";
 import { validateChristianEventContent } from "@/lib/christian-moderation";
 import { useRouter } from "next/navigation";
 import { FocusImageUpload } from "./focus-image-upload";
+import { compressImageFile } from "@/lib/image-compress";
 
 export type CustomQuestion = {
   id: string;
@@ -37,6 +39,11 @@ export type CustomQuestion = {
   required: boolean;
   options?: string[];
 };
+
+const toDateTimeLocal = (d?: string | Date) => 
+  d ? new Date(new Date(d).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : "";
+
+const DRAFT_STORAGE_KEY = "selah_create_event_draft_v1";
 
 export function CreateEventForm({ blueprints = [], initialData }: { blueprints?: any[]; initialData?: any }) {
   const router = useRouter();
@@ -74,6 +81,134 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
   const [selectedBlueprintId, setSelectedBlueprintId] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+
+  // Controlled form states for draft auto-save and date validation
+  const [title, setTitle] = useState(initialData?.title || "");
+  const [theme, setTheme] = useState(initialData?.theme || "");
+  const [tagline, setTagline] = useState(initialData?.tagline || "");
+  const [description, setDescription] = useState(initialData?.description || "");
+  const [startsAt, setStartsAt] = useState(toDateTimeLocal(initialData?.startsAt));
+  const [endsAt, setEndsAt] = useState(toDateTimeLocal(initialData?.endsAt));
+  const [venueName, setVenueName] = useState(initialData?.venueName || "");
+  const [venueAddress, setVenueAddress] = useState(initialData?.venueAddress || "");
+  const [city, setCity] = useState(initialData?.city || "");
+  const [country, setCountry] = useState(initialData?.country || "Nigeria");
+
+  // Draft recovery state
+  const [savedDraft, setSavedDraft] = useState<any | null>(null);
+  const [showDraftNotice, setShowDraftNotice] = useState<boolean>(false);
+  const [draftRestoredAt, setDraftRestoredAt] = useState<string | null>(null);
+
+  const isEditing = !!initialData;
+  const isDateInvalid = Boolean(startsAt && endsAt && new Date(endsAt) <= new Date(startsAt));
+
+  // Detect unsaved draft on mount
+  useEffect(() => {
+    if (!isEditing && typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && (parsed.title || parsed.description)) {
+            setSavedDraft(parsed);
+            setShowDraftNotice(true);
+          }
+        }
+      } catch (e) {
+        console.error("Could not parse saved draft:", e);
+      }
+    }
+  }, [isEditing]);
+
+  // Debounced auto-save draft to localStorage
+  useEffect(() => {
+    if (!isEditing && typeof window !== "undefined") {
+      const timer = setTimeout(() => {
+        if (title.trim() || description.trim() || startsAt) {
+          const draft = {
+            title,
+            theme,
+            tagline,
+            description,
+            eventType: selectedEventType,
+            startsAt,
+            endsAt,
+            venueName,
+            venueAddress,
+            city,
+            country,
+            accommodationMode,
+            collectGender,
+            collectAgeBracket,
+            collectOccupation,
+            callForVolunteers,
+            volunteerUnitsInput,
+            customQuestions,
+            attendeeTypes,
+            savedAt: new Date().toISOString(),
+          };
+          localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+        }
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [
+    isEditing,
+    title,
+    theme,
+    tagline,
+    description,
+    selectedEventType,
+    startsAt,
+    endsAt,
+    venueName,
+    venueAddress,
+    city,
+    country,
+    accommodationMode,
+    collectGender,
+    collectAgeBracket,
+    collectOccupation,
+    callForVolunteers,
+    volunteerUnitsInput,
+    customQuestions,
+    attendeeTypes,
+  ]);
+
+  const handleRestoreDraft = () => {
+    if (!savedDraft) return;
+    if (savedDraft.title) setTitle(savedDraft.title);
+    if (savedDraft.theme) setTheme(savedDraft.theme);
+    if (savedDraft.tagline) setTagline(savedDraft.tagline);
+    if (savedDraft.description) setDescription(savedDraft.description);
+    if (savedDraft.eventType) setSelectedEventType(savedDraft.eventType);
+    if (savedDraft.startsAt) setStartsAt(savedDraft.startsAt);
+    if (savedDraft.endsAt) setEndsAt(savedDraft.endsAt);
+    if (savedDraft.venueName) setVenueName(savedDraft.venueName);
+    if (savedDraft.venueAddress) setVenueAddress(savedDraft.venueAddress);
+    if (savedDraft.city) setCity(savedDraft.city);
+    if (savedDraft.country) setCountry(savedDraft.country);
+    if (savedDraft.accommodationMode) setAccommodationMode(savedDraft.accommodationMode);
+    if (typeof savedDraft.collectGender === "boolean") setCollectGender(savedDraft.collectGender);
+    if (typeof savedDraft.collectAgeBracket === "boolean") setCollectAgeBracket(savedDraft.collectAgeBracket);
+    if (typeof savedDraft.collectOccupation === "boolean") setCollectOccupation(savedDraft.collectOccupation);
+    if (typeof savedDraft.callForVolunteers === "boolean") setCallForVolunteers(savedDraft.callForVolunteers);
+    if (savedDraft.volunteerUnitsInput) setVolunteerUnitsInput(savedDraft.volunteerUnitsInput);
+    if (Array.isArray(savedDraft.customQuestions)) setCustomQuestions(savedDraft.customQuestions);
+    if (savedDraft.attendeeTypes) setAttendeeTypes(savedDraft.attendeeTypes);
+
+    setShowDraftNotice(false);
+    setDraftRestoredAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
+    setTimeout(() => setDraftRestoredAt(null), 4000);
+  };
+
+  const handleDiscardDraft = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+    }
+    setSavedDraft(null);
+    setShowDraftNotice(false);
+  };
   
   // Extract existing focus point if editing
   const existingCoverImage = initialData?.media?.[0];
@@ -476,11 +611,6 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
   
   const existingVideoUrl = initialData?.media?.find((m: any) => m.type === "video")?.url;
 
-  const isEditing = !!initialData;
-
-  const toDateTimeLocal = (d?: string | Date) => 
-    d ? new Date(new Date(d).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : undefined;
-
   function addQuestion() {
     setCustomQuestions([...customQuestions, { id: Math.random().toString(36).substring(7), label: "", type: "text", required: false }]);
   }
@@ -597,6 +727,9 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
           "volunteerUnits",
           JSON.stringify(volunteerUnitsInput.split(",").map((u: string) => u.trim()).filter(Boolean))
         );
+        if (typeof window !== "undefined") {
+          localStorage.removeItem(DRAFT_STORAGE_KEY);
+        }
         const res = await createEvent(formData);
         
         // createEvent redirects on success, so if it returns it's usually an error
@@ -640,6 +773,44 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
           </div>
         </div>
       </div>
+
+      {/* Unsaved Draft Recovery Banner */}
+      {showDraftNotice && savedDraft && (
+        <div className="rounded-2xl border border-brass/50 bg-brass/15 p-5 backdrop-blur-md shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 font-display text-sm font-bold text-ink">
+              <Sparkles size={16} className="text-brass" />
+              <span>Unsaved Event Draft Detected</span>
+            </div>
+            <p className="text-xs text-warm-600 dark:text-warm-400">
+              We recovered an unsaved draft from {savedDraft.savedAt ? new Date(savedDraft.savedAt).toLocaleDateString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "a previous session"}. Would you like to restore your progress?
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleRestoreDraft}
+              className="btn btn-primary !py-2 !px-4 !text-xs font-bold"
+            >
+              Restore Draft
+            </button>
+            <button
+              type="button"
+              onClick={handleDiscardDraft}
+              className="btn btn-ghost !py-2 !px-3 !text-xs text-warm-500 hover:text-ink"
+            >
+              Discard
+            </button>
+          </div>
+        </div>
+      )}
+
+      {draftRestoredAt && (
+        <div className="rounded-xl border border-emerald-500/30 bg-emerald-950/20 px-4 py-2.5 text-xs font-semibold text-emerald-300 flex items-center gap-2">
+          <CheckCircle2 size={14} className="text-emerald-400" />
+          Draft restored successfully at {draftRestoredAt}. All details have been populated.
+        </div>
+      )}
 
       <div className="space-y-6">
         
@@ -718,7 +889,8 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                 name="title"
                 type="text"
                 required
-                defaultValue={initialData?.title}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
                 placeholder="e.g. Annual Youth Retreat 2026"
                 className="input !w-full"
               />
@@ -949,7 +1121,8 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                 id="theme"
                 name="theme"
                 type="text"
-                defaultValue={initialData?.theme}
+                value={theme}
+                onChange={(e) => setTheme(e.target.value)}
                 placeholder="e.g. Arise and Shine"
                 className="input !w-full"
               />
@@ -963,7 +1136,8 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                 id="tagline"
                 name="tagline"
                 type="text"
-                defaultValue={initialData?.tagline}
+                value={tagline}
+                onChange={(e) => setTagline(e.target.value)}
                 placeholder="e.g. A weekend of spiritual renewal"
                 className="input !w-full"
               />
@@ -978,7 +1152,8 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                 name="description"
                 required
                 rows={4}
-                defaultValue={initialData?.description}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
                 placeholder="Describe your event..."
                 className="input !w-full !rounded-[12px] !py-3 resize-none"
               />
@@ -1035,7 +1210,8 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                   name="startsAt"
                   type="datetime-local"
                   required
-                  defaultValue={toDateTimeLocal(initialData?.startsAt)}
+                  value={startsAt}
+                  onChange={(e) => setStartsAt(e.target.value)}
                   className="input !w-full"
                 />
               </div>
@@ -1048,9 +1224,16 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                   name="endsAt"
                   type="datetime-local"
                   required
-                  defaultValue={toDateTimeLocal(initialData?.endsAt)}
-                  className="input !w-full"
+                  value={endsAt}
+                  onChange={(e) => setEndsAt(e.target.value)}
+                  className={`input !w-full ${isDateInvalid ? "border-amber-400 focus:border-amber-400" : ""}`}
                 />
+                {isDateInvalid && (
+                  <p className="mt-1.5 text-xs text-amber-300 flex items-center gap-1 font-medium">
+                    <Clock size={12} className="shrink-0" />
+                    The event end time must be after the start time.
+                  </p>
+                )}
               </div>
               <div>
                 <label htmlFor="registrationOpensAt" className="mb-1.5 block text-sm font-medium text-white">
@@ -1142,7 +1325,8 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                   id="venueName"
                   name="venueName"
                   type="text"
-                  defaultValue={initialData?.venueName}
+                  value={venueName}
+                  onChange={(e) => setVenueName(e.target.value)}
                   placeholder="e.g. Main Auditorium"
                   className="input !w-full"
                 />
@@ -1155,7 +1339,8 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                   id="venueAddress"
                   name="venueAddress"
                   type="text"
-                  defaultValue={initialData?.venueAddress}
+                  value={venueAddress}
+                  onChange={(e) => setVenueAddress(e.target.value)}
                   placeholder="e.g. 123 Church Way"
                   className="input !w-full"
                 />
@@ -1169,7 +1354,8 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                   name="city"
                   type="text"
                   required
-                  defaultValue={initialData?.city}
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
                   placeholder="e.g. Lagos"
                   className="input !w-full"
                 />
@@ -1183,7 +1369,8 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                   name="country"
                   type="text"
                   required
-                  defaultValue={initialData?.country || "Nigeria"}
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
                   placeholder="e.g. Nigeria"
                   className="input !w-full"
                 />
@@ -1584,9 +1771,13 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
                 multiple
                 accept="image/*,video/*"
                 className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                onChange={(e) => {
+                onChange={async (e) => {
                   if (e.target.files) {
-                    setSelectedFiles((prev: File[]) => [...prev, ...Array.from(e.target.files!)]);
+                    const raw = Array.from(e.target.files);
+                    const compressed = await Promise.all(
+                      raw.map((f) => (f.type.startsWith("image/") ? compressImageFile(f) : Promise.resolve(f)))
+                    );
+                    setSelectedFiles((prev: File[]) => [...prev, ...compressed]);
                   }
                 }}
               />
@@ -1644,7 +1835,7 @@ export function CreateEventForm({ blueprints = [], initialData }: { blueprints?:
         <div className="flex justify-end">
         <button
           type="submit"
-          disabled={isPending}
+          disabled={isPending || isDateInvalid}
           className="btn btn-primary !px-8 !py-3 w-full sm:w-auto"
         >
           {isPending ? (

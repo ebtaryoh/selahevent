@@ -66,16 +66,13 @@ export function FocusImageUpload({
           type="file"
           accept="image/*"
           className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-          onChange={(e) => {
+          onChange={async (e) => {
             const selected = e.target.files?.[0];
             if (selected) {
-              if (selected.size > 4 * 1024 * 1024) {
-                alert("File size exceeds 4MB limit. Please select a smaller image.");
-                e.target.value = ""; // Reset input
-                return;
-              }
-              setFile(selected);
-              onImageChange(selected);
+              const { compressImageFile } = await import("@/lib/image-compress");
+              const optimized = await compressImageFile(selected);
+              setFile(optimized);
+              onImageChange(optimized);
               onFocusChange({ x: 50, y: 50 }); // Reset focus on new image
             }
           }}

@@ -605,49 +605,77 @@ export function RegistrationForm({
           />
         ) : (
           <>
-            {/* Stepper */}
-            <div className="border-b border-white/10 px-6 pt-7 pb-6 sm:px-9">
-          <div className="flex items-center justify-between gap-3">
-            {STEPS.map((s, i) => (
-              <div key={s.n} className="flex flex-1 items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => s.n < step && setStep(s.n)}
-                  disabled={s.n > step}
-                  className={cn(
-                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-[0.8rem] font-semibold transition-colors",
-                    s.n === step
-                      ? "border-transparent bg-brass text-black"
-                      : s.n < step
-                        ? "border-brass/30 bg-brass/10 text-brass"
-                        : "border-white/10 bg-transparent text-warm-500"
-                  )}
-                  aria-current={s.n === step ? "step" : undefined}
-                >
-                  {s.n < step ? <Check size={15} strokeWidth={2.6} /> : s.n}
-                </button>
-                <div className="min-w-0 flex-1">
-                  <div
-                    className={cn(
-                      "truncate text-[0.795rem] font-semibold",
-                      s.n === step ? "text-ink" : "text-warm-400"
-                    )}
-                  >
-                    {s.label}
-                  </div>
-                  {i < STEPS.length - 1 ? (
-                    <div className="mt-2 h-[2px] w-full overflow-hidden rounded-full bg-white/10">
-                      <div
-                        className="h-full rounded-full bg-[var(--color-brass)] transition-[width] duration-500"
-                        style={{ width: s.n < step ? "100%" : "0%" }}
-                      />
-                    </div>
-                  ) : null}
+            {/* Stepper Header */}
+            <div className="border-b border-white/10 px-6 pt-6 pb-5 sm:px-9 sm:pt-7 sm:pb-6">
+              {/* Mobile View (< sm): Sleek Compact Segmented Bar */}
+              <div className="block sm:hidden space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-brass uppercase tracking-wider">
+                    Step {step} of 4
+                  </span>
+                  <span className="font-semibold text-ink">
+                    {STEPS[step - 1].label}
+                  </span>
+                </div>
+                <div className="grid grid-cols-4 gap-1.5 h-1.5 w-full">
+                  {STEPS.map((s) => (
+                    <div
+                      key={s.n}
+                      className={cn(
+                        "h-full rounded-full transition-all duration-300",
+                        s.n < step
+                          ? "bg-brass"
+                          : s.n === step
+                          ? "bg-brass/90 shadow-[0_0_8px_rgba(226,192,115,0.6)]"
+                          : "bg-white/15"
+                      )}
+                    />
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
+
+              {/* Tablet & Desktop View (>= sm): Full Interactive Stepper */}
+              <div className="hidden sm:flex items-center justify-between gap-3">
+                {STEPS.map((s, i) => (
+                  <div key={s.n} className="flex flex-1 items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => s.n < step && setStep(s.n)}
+                      disabled={s.n > step}
+                      className={cn(
+                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-[0.8rem] font-semibold transition-colors",
+                        s.n === step
+                          ? "border-transparent bg-brass text-black"
+                          : s.n < step
+                            ? "border-brass/30 bg-brass/10 text-brass cursor-pointer hover:bg-brass/20"
+                            : "border-white/10 bg-transparent text-warm-500 cursor-not-allowed"
+                      )}
+                      aria-current={s.n === step ? "step" : undefined}
+                    >
+                      {s.n < step ? <Check size={15} strokeWidth={2.6} /> : s.n}
+                    </button>
+                    <div className="min-w-0 flex-1">
+                      <div
+                        className={cn(
+                          "truncate text-[0.795rem] font-semibold",
+                          s.n === step ? "text-ink" : "text-warm-400"
+                        )}
+                      >
+                        {s.label}
+                      </div>
+                      {i < STEPS.length - 1 ? (
+                        <div className="mt-2 h-[2px] w-full overflow-hidden rounded-full bg-white/10">
+                          <div
+                            className="h-full rounded-full bg-[var(--color-brass)] transition-[width] duration-500"
+                            style={{ width: s.n < step ? "100%" : "0%" }}
+                          />
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
 
         <div className="px-6 py-8 sm:px-9">
           {step === 1 ? (

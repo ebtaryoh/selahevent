@@ -93,6 +93,13 @@ export function PrayerWall() {
       prev.map((p) => (p.id === id ? { ...p, prayerCount: p.prayerCount + 1 } : p))
     );
 
+    // Subtle tactile haptic on mobile
+    if (typeof window !== "undefined" && "vibrate" in navigator) {
+      try {
+        navigator.vibrate(35);
+      } catch {}
+    }
+
     try {
       await fetch(`/api/prayer-requests/${id}/pray`, { method: "POST" });
     } catch (e) {

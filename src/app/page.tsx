@@ -327,12 +327,31 @@ export default async function HomePage({
 
             {publicEvents.length === 0 ? (
               <Reveal delay={0.2}>
-                <div className="mt-8 flex flex-col items-center justify-center rounded-3xl border border-[var(--card-border)] bg-[var(--card-bg)] py-24 text-center backdrop-blur-md shadow-lg">
-                  <CalendarDays size={48} className="text-brass/40 mb-6" strokeWidth={1} />
-                  <h3 className="font-display text-2xl font-semibold text-ink">No upcoming convocations found</h3>
-                  <p className="mt-3 text-warm-500 max-w-sm font-light">
-                    We couldn&apos;t find any events matching your selected criteria. Try adjusting your filters or browse All Cities.
+                <div className="mt-8 flex flex-col items-center justify-center rounded-3xl border border-[var(--card-border)] bg-[var(--card-bg)] py-20 px-6 text-center backdrop-blur-md shadow-lg">
+                  <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-brass/15 border border-brass/35 text-brass">
+                    <CalendarDays size={30} strokeWidth={1.8} />
+                  </div>
+                  <h3 className="font-display text-2xl sm:text-3xl font-semibold text-ink">
+                    No upcoming convocations found in this selection
+                  </h3>
+                  <p className="mt-3 text-warm-500 max-w-md text-sm sm:text-base leading-relaxed">
+                    Be the first ministry to bring believers together in holy assembly in this city or category.
                   </p>
+                  <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
+                    <Link
+                      href={session ? "/dashboard/events/new" : "/register"}
+                      className="btn btn-brass !rounded-full !px-7 !py-3.5 text-sm font-bold shadow-lift flex items-center gap-2"
+                    >
+                      <Sparkles size={16} />
+                      Host Gathering Here
+                    </Link>
+                    <Link
+                      href="/#events"
+                      className="btn btn-ghost !rounded-full !px-6 !py-3.5 border border-brass/35 text-sm font-semibold text-ink"
+                    >
+                      Browse All Convocations
+                    </Link>
+                  </div>
                 </div>
               </Reveal>
             ) : (
@@ -344,6 +363,8 @@ export default async function HomePage({
                       className="group flex h-full flex-col overflow-hidden rounded-[26px] border border-[var(--card-border)] bg-[var(--card-bg)] backdrop-blur-xl transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.15)] dark:hover:shadow-[0_20px_40px_rgba(0,0,0,0.6)] hover:border-brass/60"
                     >
                       <div className="relative aspect-[4/3] w-full overflow-hidden bg-parchment-deep">
+                        {/* Shimmer skeleton background while image loads */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-brass/10 to-transparent animate-pulse" />
                         {event.coverImage && (
                           <Image
                             src={event.coverImage}
@@ -537,12 +558,17 @@ export default async function HomePage({
                     ))}
                   </div>
 
-                  <div className="mt-5 flex items-center justify-between rounded-[12px] bg-brass/15 border border-brass/30 px-4 py-3 text-brass">
-                    <span className="text-[0.76rem] text-brass-deep dark:text-brass-light font-medium">Next Year Deployment</span>
-                    <span className="text-[0.78rem] font-bold text-brass-deep dark:text-brass-light flex items-center gap-1">
+                  <Link
+                    href={session ? "/dashboard/events/new" : "/register"}
+                    className="mt-5 flex items-center justify-between rounded-[12px] bg-brass/15 hover:bg-brass/25 border border-brass/30 px-4 py-3 text-brass transition-all group cursor-pointer"
+                  >
+                    <span className="text-[0.76rem] text-brass-deep dark:text-brass-light font-medium">
+                      Next Year Deployment
+                    </span>
+                    <span className="text-[0.78rem] font-bold text-brass-deep dark:text-brass-light flex items-center gap-1 group-hover:translate-x-1 transition-transform">
                       1-Click Clone <ArrowRight size={13} />
                     </span>
-                  </div>
+                  </Link>
                 </div>
               </div>
             </Reveal>
