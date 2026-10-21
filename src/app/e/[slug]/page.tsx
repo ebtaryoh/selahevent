@@ -385,10 +385,10 @@ export default async function EventPage({ params, searchParams }: Params) {
                   ) : (
                     <Link
                       href={`/e/${event.slug}/register`}
-                      className="btn btn-brass !rounded-full !px-8 !py-4.5 !text-[1.025rem] font-bold shadow-[0_0_35px_rgba(226,192,115,0.45)] hover:shadow-[0_0_55px_rgba(226,192,115,0.65)] transition-all duration-300 hover:-translate-y-0.5 inline-flex items-center gap-2 group"
+                      className="btn !bg-gradient-to-r !from-[#fceec5] !via-[#e2c073] !to-[#b89745] !text-[#120e06] font-bold !rounded-full !px-8 !py-4.5 !text-[1.025rem] shadow-[0_0_35px_rgba(226,192,115,0.45)] hover:shadow-[0_0_55px_rgba(226,192,115,0.65)] transition-all duration-300 hover:-translate-y-0.5 inline-flex items-center gap-2 group"
                     >
-                      <span>Register now</span>
-                      <ArrowUpRight size={18} strokeWidth={2.5} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                      <span className="!text-[#120e06] font-bold">Register now</span>
+                      <ArrowUpRight size={18} strokeWidth={2.5} className="!text-[#120e06] transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                     </Link>
                   )}
 
@@ -490,13 +490,13 @@ export default async function EventPage({ params, searchParams }: Params) {
                             href={row.mapUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="mt-0.5 inline-flex items-center gap-1.5 text-[0.88rem] leading-snug font-medium text-parchment hover:text-brass-light transition-colors group"
+                            className="mt-0.5 inline-flex items-center gap-1.5 text-[0.88rem] leading-snug font-medium text-white hover:text-brass-light transition-colors group"
                           >
                             <span className="truncate">{row.value}</span>
                             <ArrowUpRight size={13} className="shrink-0 text-brass-light group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                           </a>
                         ) : (
-                          <dd className="mt-0.5 text-[0.88rem] leading-snug font-medium text-parchment">
+                          <dd className="mt-0.5 text-[0.88rem] leading-snug font-medium text-white">
                             {row.value}
                           </dd>
                         )}
@@ -620,8 +620,8 @@ export default async function EventPage({ params, searchParams }: Params) {
 
           <div className="relative min-h-[320px] w-full overflow-hidden rounded-[16px] border border-[rgba(22,19,17,0.1)] flex flex-col justify-end">
             <Image
-              src="/images/welcome-desk.jpg"
-              alt="Volunteers preparing the welcome desk before the event"
+              src={event.coverImage || "/images/hero-gathering.jpg"}
+              alt={`${event.title} venue atmosphere`}
               className="object-cover"
               fill
               sizes="(max-width: 1024px) 100vw, 500px"
@@ -1125,10 +1125,10 @@ export default async function EventPage({ params, searchParams }: Params) {
         </div>
 
         <div className="mx-auto w-full max-w-[1180px] px-5 py-20 text-center sm:px-8 sm:py-24">
-          <h2 className="font-display mx-auto max-w-[34rem] text-[clamp(1.95rem,4.2vw,2.95rem)] leading-[1.1] font-semibold text-parchment">
+          <h2 className="font-display mx-auto max-w-[34rem] text-[clamp(1.95rem,4.2vw,2.95rem)] leading-[1.1] font-semibold text-white">
             Ready to be part of {event.title}?
           </h2>
-          <p className="mx-auto mt-5 max-w-[32rem] text-[1.045rem] leading-[1.72] text-[rgba(247,243,236,0.8)]">
+          <p className="mx-auto mt-5 max-w-[32rem] text-[1.045rem] leading-[1.72] text-[rgba(247,243,236,0.85)]">
             Registration takes about two minutes. You&apos;ll get your digital
             ticket immediately — no account, no app to download.
           </p>
@@ -1150,10 +1150,10 @@ export default async function EventPage({ params, searchParams }: Params) {
             ) : (
               <Link
                 href={`/e/${event.slug}/register`}
-                className="btn btn-brass !px-8 !py-4 !text-[0.98rem]"
+                className="btn !bg-gradient-to-r !from-[#fceec5] !via-[#e2c073] !to-[#b89745] !text-[#120e06] font-bold !px-8 !py-4 !text-[0.98rem] shadow-lg shadow-brass/30"
               >
-                Register for this event
-                <ArrowUpRight size={18} strokeWidth={2.1} />
+                <span className="!text-[#120e06] font-bold">Register for this event</span>
+                <ArrowUpRight size={18} strokeWidth={2.1} className="!text-[#120e06]" />
               </Link>
             )}
             <Link href="/" className="btn btn-light !px-8 !py-4 !text-[0.98rem]">
@@ -1191,8 +1191,12 @@ export default async function EventPage({ params, searchParams }: Params) {
               showIcon={true}
               label=""
             />
-            <Link href={`/e/${event.slug}/register`} className="btn btn-brass !px-5 !py-3 !text-[0.78rem]">
-              Register <ArrowUpRight size={15} />
+            <Link
+              href={`/e/${event.slug}/register`}
+              className="btn !bg-gradient-to-r !from-[#fceec5] !via-[#e2c073] !to-[#b89745] !text-[#120e06] font-bold !px-5 !py-3 !text-[0.78rem] shadow-md shadow-brass/30 shrink-0"
+            >
+              <span className="!text-[#120e06] font-bold">Register</span>
+              <ArrowUpRight size={15} className="!text-[#120e06]" />
             </Link>
           </div>
         </div>

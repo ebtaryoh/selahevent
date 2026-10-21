@@ -79,15 +79,15 @@ export default async function HomePage({
         <section className="relative isolate overflow-hidden pt-[135px] pb-32 sm:pt-[150px] sm:pb-36">
           <div className="absolute inset-0 -z-10 bg-parchment-deep transition-colors duration-300">
             <Image
-              src="/images/hero-sanctuary.jpg"
-              alt="A reverent cathedral sanctuary with soaring stone arches and soft celestial sunlight"
-              className="object-cover object-[center_32%] sm:object-[center_28%] opacity-[0.16] sm:opacity-[0.22] mix-blend-multiply dark:mix-blend-luminosity dark:opacity-[0.28] sm:dark:opacity-[0.34]"
+              src="/images/hero-gathering.jpg"
+              alt="A reverent Christian congregation gathered in unified worship and prayer"
+              className="object-cover object-[center_35%] sm:object-[center_30%] opacity-[0.20] sm:opacity-[0.26] mix-blend-multiply dark:mix-blend-luminosity dark:opacity-[0.34] sm:dark:opacity-[0.40]"
               priority
               fill
               sizes="100vw"
             />
-            {/* Multi-tier luminance & radial veil: ensures high-contrast legibility for both light mode & dark mode on mobile and desktop */}
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(252,250,246,0.85)_0%,rgba(243,237,225,0.65)_50%,var(--color-parchment-deep)_92%)] dark:bg-[radial-gradient(ellipse_at_center,rgba(8,8,10,0.75)_0%,rgba(4,4,5,0.88)_55%,var(--color-parchment-deep)_95%)]" />
+            {/* Multi-tier luminance & radial veil: ensures razor-sharp contrast for both light mode & dark mode on mobile and desktop */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(252,250,246,0.88)_0%,rgba(243,237,225,0.70)_50%,var(--color-parchment-deep)_94%)] dark:bg-[radial-gradient(ellipse_at_center,rgba(8,8,10,0.80)_0%,rgba(4,4,5,0.90)_55%,var(--color-parchment-deep)_96%)]" />
             <div className="grain pointer-events-none absolute inset-0 opacity-[0.2]" />
 
             {/* Moving Celestial Glowing Orbs with multi-axis drift */}

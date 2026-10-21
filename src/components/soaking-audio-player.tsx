@@ -423,7 +423,7 @@ export function SoakingAudioPlayer() {
       {isMinimized ? (
         <aside
           aria-label="Sanctuary Audio Player"
-          className="fixed bottom-4 left-4 z-40 sm:bottom-6 sm:left-6 animate-in fade-in duration-200"
+          className="fixed bottom-20 left-4 z-40 sm:bottom-6 sm:left-6 animate-in fade-in duration-200"
         >
           <div className="flex items-center gap-1.5 p-1 rounded-full bg-[#0d1217]/95 border border-[rgba(192,138,46,0.45)] text-brass shadow-2xl shadow-black/60 backdrop-blur-xl">
             {/* Quick Play/Pause Button */}
@@ -482,7 +482,7 @@ export function SoakingAudioPlayer() {
       ) : (
         <aside
           aria-label="Sanctuary Audio Player"
-          className="fixed bottom-4 left-4 z-40 w-[calc(100vw-2rem)] max-w-[380px] sm:bottom-6 sm:left-6 animate-in fade-in zoom-in-95 duration-200"
+          className="fixed bottom-20 left-4 z-40 w-[calc(100vw-2rem)] max-w-[380px] sm:bottom-6 sm:left-6 animate-in fade-in zoom-in-95 duration-200"
         >
           <div className="overflow-hidden rounded-2xl border border-[rgba(192,138,46,0.4)] bg-[#0d1217]/95 p-3.5 shadow-2xl backdrop-blur-xl transition-all">
           {/* Compact Main Bar */}

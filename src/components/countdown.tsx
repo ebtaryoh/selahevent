@@ -55,7 +55,7 @@ export function Countdown({
             <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-brass/40 to-transparent pointer-events-none" />
             <div
               suppressHydrationWarning
-              className="font-display tnum text-[clamp(1.5rem,3.8vw,2.2rem)] leading-none font-bold text-parchment drop-shadow-[0_2px_12px_rgba(226,192,115,0.3)] transition-transform duration-300 group-hover:scale-105"
+              className="font-display tnum text-[clamp(1.5rem,3.8vw,2.2rem)] leading-none font-bold text-white drop-shadow-[0_2px_12px_rgba(226,192,115,0.4)] transition-transform duration-300 group-hover:scale-105"
             >
               {mounted ? String(unit.value).padStart(2, "0") : "00"}
             </div>
