@@ -16,6 +16,7 @@ import {
   X,
   Radio,
   Sliders,
+  Minimize2,
 } from "lucide-react";
 import { cn } from "@/lib/format";
 
@@ -166,8 +167,25 @@ export function SoakingAudioPlayer() {
   const [duration, setDuration] = useState(0);
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
 
-  // Visitor Auto-Prompt Popup State
-  const [showVisitorPrompt, setShowVisitorPrompt] = useState(false);
+  // Minimized state (starts minimized so it never blocks the app on mobile or desktop)
+  const [isMinimized, setIsMinimized] = useState(true);
+
+  // Sync minimize preference with localStorage if available
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("selah_audio_minimized");
+      if (saved !== null) {
+        setIsMinimized(saved === "true");
+      }
+    } catch {}
+  }, []);
+
+  const handleSetMinimized = (val: boolean) => {
+    setIsMinimized(val);
+    try {
+      localStorage.setItem("selah_audio_minimized", String(val));
+    } catch {}
+  };
 
   const currentTrack = TRACK_CATALOG[currentTrackIndex];
 
@@ -375,34 +393,6 @@ export function SoakingAudioPlayer() {
     }
   }, [volume, isMuted]);
 
-  // Check Visitor Popup Prompt on initial app visit
-  useEffect(() => {
-    try {
-      const hasSeenPrompt = sessionStorage.getItem("selah_hymn_prompt_dismissed");
-      if (!hasSeenPrompt) {
-        const timer = setTimeout(() => {
-          setShowVisitorPrompt(true);
-        }, 1400);
-        return () => clearTimeout(timer);
-      }
-    } catch {}
-  }, []);
-
-  const handleDismissPrompt = () => {
-    setShowVisitorPrompt(false);
-    try {
-      sessionStorage.setItem("selah_hymn_prompt_dismissed", "true");
-    } catch {}
-  };
-
-  const handleAcceptPrompt = () => {
-    setShowVisitorPrompt(false);
-    try {
-      sessionStorage.setItem("selah_hymn_prompt_dismissed", "true");
-    } catch {}
-    void playTrack(TRACK_CATALOG[0]);
-  };
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -425,92 +415,76 @@ export function SoakingAudioPlayer() {
 
   return (
     <>
-      {/* -------------------------------------------------------------------- */}
-      {/* VISITOR WELCOME POPUP MODAL                                          */}
-      {/* -------------------------------------------------------------------- */}
-      {showVisitorPrompt && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="visitor-hymn-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-300"
-        >
-          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-brass/40 bg-[#0d1015]/95 p-6 shadow-2xl shadow-brass/10 backdrop-blur-2xl animate-in zoom-in-95 duration-200">
-            {/* Ambient Background Aura */}
-            <div className="absolute -top-24 -right-24 h-48 w-48 rounded-full bg-brass/20 blur-3xl pointer-events-none" />
-            <div className="absolute -bottom-24 -left-24 h-48 w-48 rounded-full bg-brass-deep/15 blur-3xl pointer-events-none" />
 
-            {/* Close Button */}
-            <button
-              type="button"
-              onClick={handleDismissPrompt}
-              className="absolute top-4 right-4 p-1.5 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
-              title="Dismiss"
-            >
-              <X size={18} />
-            </button>
-
-            {/* Header Motif */}
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brass/15 border border-brass/30 text-brass shadow-inner">
-                <Music size={22} className="animate-pulse" />
-              </div>
-              <div>
-                <span className="text-[0.68rem] font-bold tracking-widest uppercase text-brass">
-                  Selah Sanctuary Music
-                </span>
-                <h3 id="visitor-hymn-title" className="text-lg font-serif font-bold text-white leading-tight">
-                  Worship & Sacred Hymns
-                </h3>
-              </div>
-            </div>
-
-            {/* Description */}
-            <p className="mt-4 text-xs text-white/70 leading-relaxed">
-              Step into peace while you explore conferences, prayer fellowships, and ministry gatherings. Listen to genuine acoustic and orchestral sacred hymns.
-            </p>
-
-            {/* Featured Track Pill */}
-            <div className="mt-4 flex items-center gap-3 p-3 rounded-2xl bg-black/40 border border-white/10">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brass text-black font-bold">
-                <Play size={14} className="ml-0.5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-xs font-semibold text-white truncate">
-                  {TRACK_CATALOG[0].title}
-                </div>
-                <div className="text-[0.68rem] text-brass/80 truncate">
-                  {TRACK_CATALOG[0].subtitle}
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="mt-6 flex flex-col sm:flex-row items-center gap-2.5">
-              <button
-                type="button"
-                onClick={handleAcceptPrompt}
-                className="w-full sm:flex-1 py-3 px-5 rounded-xl bg-gradient-to-r from-brass-deep to-brass text-black font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-brass/25 hover:brightness-110 active:scale-[0.98] transition-all cursor-pointer"
-              >
-                <Play size={15} fill="currentColor" /> Play Sacred Hymns
-              </button>
-              <button
-                type="button"
-                onClick={handleDismissPrompt}
-                className="w-full sm:w-auto py-3 px-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-xs font-medium transition-all cursor-pointer text-center"
-              >
-                Listen Later
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* -------------------------------------------------------------------- */}
       {/* FLOATING SANCTUARY AUDIO CONTROLLER                                 */}
       {/* -------------------------------------------------------------------- */}
-      <div className="fixed bottom-4 left-4 z-40 max-w-[380px] w-full sm:bottom-6 sm:left-6">
-        <div className="overflow-hidden rounded-2xl border border-[rgba(192,138,46,0.4)] bg-[#0d1217]/95 p-3.5 shadow-2xl backdrop-blur-xl transition-all">
+      {isMinimized ? (
+        <aside
+          aria-label="Sanctuary Audio Player"
+          className="fixed bottom-4 left-4 z-40 sm:bottom-6 sm:left-6 animate-in fade-in duration-200"
+        >
+          <div className="flex items-center gap-1.5 p-1 rounded-full bg-[#0d1217]/95 border border-[rgba(192,138,46,0.45)] text-brass shadow-2xl shadow-black/60 backdrop-blur-xl">
+            {/* Quick Play/Pause Button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                togglePlay();
+              }}
+              disabled={isLoadingAudio}
+              className={cn(
+                "flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-all cursor-pointer shadow-md",
+                isPlaying
+                  ? "border-brass bg-brass text-black shadow-brass/30 ring-1 ring-brass/20"
+                  : "border-white/10 bg-white/5 text-brass hover:border-brass/50 hover:bg-white/10"
+              )}
+              title={isPlaying ? "Pause Music" : "Play Sacred Hymn / Soaking Pad"}
+              aria-label={isPlaying ? "Pause Sacred Hymns" : "Play Sacred Hymns"}
+            >
+              {isLoadingAudio ? (
+                <span className="h-3.5 w-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />
+              ) : isPlaying ? (
+                <Pause size={14} />
+              ) : (
+                <Play size={14} className="ml-0.5" />
+              )}
+            </button>
+
+            {/* Info & Expand Trigger */}
+            <button
+              type="button"
+              onClick={() => handleSetMinimized(false)}
+              className="flex items-center gap-2 pl-1 pr-3 py-1 cursor-pointer text-left group"
+              title="Open Sanctuary Music Player"
+              aria-label="Open Sanctuary Music Player"
+            >
+              <div className="flex flex-col min-w-0 max-w-[120px] sm:max-w-[160px]">
+                <span className="text-[0.68rem] font-semibold text-white group-hover:text-brass transition-colors truncate leading-tight">
+                  {isPlaying ? currentTrack.title : "Sacred Hymns"}
+                </span>
+                <span className="text-[0.58rem] text-brass/80 font-mono truncate leading-tight">
+                  {isPlaying
+                    ? currentTrack.type === "hymn"
+                      ? "Hymn · Tap to expand"
+                      : "Pad · Tap to expand"
+                    : "Worship Sanctuary"}
+                </span>
+              </div>
+              <ChevronUp
+                size={14}
+                className="text-white/40 group-hover:text-white shrink-0 transition-transform group-hover:-translate-y-0.5"
+              />
+            </button>
+          </div>
+        </aside>
+      ) : (
+        <aside
+          aria-label="Sanctuary Audio Player"
+          className="fixed bottom-4 left-4 z-40 w-[calc(100vw-2rem)] max-w-[380px] sm:bottom-6 sm:left-6 animate-in fade-in zoom-in-95 duration-200"
+        >
+          <div className="overflow-hidden rounded-2xl border border-[rgba(192,138,46,0.4)] bg-[#0d1217]/95 p-3.5 shadow-2xl backdrop-blur-xl transition-all">
           {/* Compact Main Bar */}
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
@@ -589,9 +563,20 @@ export function SoakingAudioPlayer() {
                 type="button"
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="text-white/60 hover:text-white p-1.5 cursor-pointer transition-colors"
-                title={isExpanded ? "Collapse Player" : "Show All Hymns & Controls"}
+                title={isExpanded ? "Collapse Song List" : "Show All Hymns & Controls"}
+                aria-label={isExpanded ? "Collapse Song List" : "Show All Hymns & Controls"}
               >
                 {isExpanded ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSetMinimized(true)}
+                className="text-white/60 hover:text-brass p-1.5 cursor-pointer transition-colors ml-0.5"
+                title="Minimize Player"
+                aria-label="Minimize Player"
+              >
+                <Minimize2 size={15} />
               </button>
             </div>
           </div>
@@ -716,7 +701,8 @@ export function SoakingAudioPlayer() {
             </div>
           )}
         </div>
-      </div>
-    </>
+      </aside>
+    )}
+  </>
   );
 }

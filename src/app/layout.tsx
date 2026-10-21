@@ -43,10 +43,10 @@ export const metadata: Metadata = {
       "Run every Christian event from one place, and connect daily with believers in prayer and meditation.",
     images: [
       {
-        url: "/images/hero-auditorium.jpg",
-        width: 1536,
+        url: "/images/hero-sanctuary.jpg",
+        width: 1792,
         height: 1024,
-        alt: "A Christian leadership gathering in a warmly lit auditorium",
+        alt: "A reverent cathedral sanctuary with soaring arches and sacred light",
       },
     ],
   },
@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     title: "Selah — The Christian Event Operating System",
     description:
       "Run every Christian event from one place — then reuse the entire setup next time.",
-    images: ["/images/hero-auditorium.jpg"],
+    images: ["/images/hero-sanctuary.jpg"],
   },
   robots: {
     index: true,
